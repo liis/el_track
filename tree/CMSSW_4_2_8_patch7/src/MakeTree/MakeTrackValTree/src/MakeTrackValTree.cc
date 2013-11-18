@@ -37,12 +37,15 @@
 #include "DataFormats/GsfTrackReco/interface/GsfTrackFwd.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
 
+#include "CommonTools/RecoAlgos/interface/TrackingParticleSelector.h"
+
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "TTree.h"
 //
 // class declaration
 //
+#define MAXPART 100
 
 class MakeTrackValTree : public edm::EDAnalyzer {
    public:
@@ -63,13 +66,18 @@ class MakeTrackValTree : public edm::EDAnalyzer {
       virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
 
       // ----------member data ---------------------------
+  double ptMinTP, minRapidityTP, maxRapidityTP, tipTP, lipTP, signalOnlyTP, chargedOnlyTP, stableOnlyTP, minAbsEtaTP, maxAbsEtaTP;
+  std::vector<int> pdgIdTP;
+  int minHitTP;
 
   TTree *trackValTree_;
 
+  int np_gen_;
   int nr_gen_trk_, nr_reco_trk_;
-  double gen_pt_, gen_eta_;
+  double gen_pt_[MAXPART], gen_eta_[MAXPART];
 
   bool debug_;
+
 };
 
 //
@@ -87,6 +95,20 @@ MakeTrackValTree::MakeTrackValTree(const edm::ParameterSet& iConfig)
 
 {
    //now do what ever initialization is needed
+  //--------------get cut thresholds for sim tracks----------------
+  ptMinTP =   iConfig.getParameter<double>("ptMinTP");
+  minRapidityTP = iConfig.getParameter<double>("minRapidityTP");
+  maxRapidityTP = iConfig.getParameter<double>("maxRapidityTP");
+  tipTP =  iConfig.getParameter<double>("tipTP");
+  lipTP =  iConfig.getParameter<double>("lipTP");
+  minHitTP =  iConfig.getParameter<int>("minHitTP");
+  signalOnlyTP =  iConfig.getParameter<bool>("signalOnlyTP");
+  chargedOnlyTP =  iConfig.getParameter<bool>("chargedOnlyTP");
+  stableOnlyTP =   iConfig.getParameter<bool>("stableOnlyTP");
+  pdgIdTP =  iConfig.getParameter<std::vector<int> >("pdgIdTP");
+  minAbsEtaTP =  iConfig.getParameter<double>("minAbsEtaTP");
+  maxAbsEtaTP =  iConfig.getParameter<double>("maxAbsEtaTP");
+  //-----------------------------------------------------------
 
 }
 
@@ -110,31 +132,42 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 {
   debug_ = true;
 
+  //reinitialize at each event
+  for (unsigned int i = 0; i < MAXPART; i++){
+    gen_eta_[i] = -9999;
+    gen_pt_[i] = -9999;
+  }
+
+
   edm::Handle<TrackingParticleCollection>  TPCollectionHeff ; //simulated tracks
   iEvent.getByLabel("mergedtruth","MergedTrackTruth",TPCollectionHeff);
   const TrackingParticleCollection tPCeff = *(TPCollectionHeff.product());
 
-  nr_gen_trk_ = tPCeff.size();
+
   
   if(debug_)
     std::cout <<"Number of simulated tracks = "<<tPCeff.size() << std::endl;
 
-  for (TrackingParticleCollection::size_type i=0; i<tPCeff.size(); i++){ // get information from get tracks                                      
+  TrackingParticleSelector tpSelector = TrackingParticleSelector(ptMinTP, minRapidityTP, maxRapidityTP,tipTP, lipTP, minHitTP,               
+								 signalOnlyTP, chargedOnlyTP, stableOnlyTP,pdgIdTP,minAbsEtaTP,maxAbsEtaTP);  
+  np_gen_ = 0;
+  for (TrackingParticleCollection::size_type i=0; i<tPCeff.size(); i++){ // get information from get tracks   
     TrackingParticleRef tpr(TPCollectionHeff, i);
     TrackingParticle* tp=const_cast<TrackingParticle*>(tpr.get());
 
-    gen_pt_ = tp->pt();
-    gen_eta_ = tp->eta();
+    if( tpSelector(*tp) ){
+      gen_eta_[np_gen_] = tp->eta();
+      gen_pt_[np_gen_] = tp->pt();
 
-    //    std::cout<<"gen track pT = "<<(tp->pt())<<", eta = "<< tp->eta()<<std::endl;                                                           
-    //if( tpSelector(*tp) ) nr_sel_simtracks++;
-    
-    trackValTree_->Fill();
+      np_gen_++;
+    }
 
   }
-
-
-
+  
+  if(debug_)
+    std::cout<<"nr of selected gen tracks = "<<np_gen_<<std::endl;
+  
+  trackValTree_->Fill();
 }
 
 
@@ -144,12 +177,12 @@ MakeTrackValTree::beginJob()
 {
   edm::Service<TFileService> fs;
   trackValTree_ = fs->make<TTree>("trackValTree","trackValTree");
-  
-  trackValTree_->Branch("nr_reco_trk", &nr_reco_trk_, "nr_reco_trk/I");
+ 
+  trackValTree_->Branch("np_reco_", &nr_reco_trk_, "np_reco_/I");
 
-  trackValTree_->Branch("nr_gen_trk", &nr_gen_trk_, "nr_gen_trk/I");
-  trackValTree_->Branch("gen_pt", &gen_pt_, "gen_pt_/D");
-  trackValTree_->Branch("gen_eta", &gen_eta_, "gen_eta_/D");
+  trackValTree_->Branch("np_gen",&np_gen_,"np_gen/I"); // needs to be filled in order to fill x[np]
+  trackValTree_->Branch("gen_pt", gen_pt_, "gen_pt[np_gen]/D");
+  trackValTree_->Branch("gen_eta", gen_eta_, "gen_eta[np_gen]/D");
   
 }
 
@@ -195,3 +228,5 @@ MakeTrackValTree::fillDescriptions(edm::ConfigurationDescriptions& descriptions)
 
 //define this as a plug-in
 DEFINE_FWK_MODULE(MakeTrackValTree);
+
+

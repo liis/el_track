@@ -17,8 +17,15 @@ process.TFileService = cms.Service("TFileService",
                                    fileName = cms.string('trackValTree.root')
                                    )
 
-process.demo = cms.EDAnalyzer('MakeTrackValTree'
-)
+
+process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi")
+
+#process.demo = cms.EDAnalyzer('MakeTrackValTree'
+#)
 
 
-process.p = cms.Path(process.demo)
+
+process.p = cms.Path(
+    process.demo
+    )
+

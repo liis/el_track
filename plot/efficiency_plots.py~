@@ -1,0 +1,45 @@
+import sys
+import os
+
+import tdrstyle
+tdrstyle.tdrstyle()
+import ROOT
+
+indir ="/shome/liis/tracking/usercode/TrackingMacrosTRK-11-001/input/elKF/" #location of input histograms
+infiles_eff_pt = {"barrel": ["elFlatPtBarrelForEff.root", 1], #["elFlatPtBarrelForEff.root", 1],
+                  "endcap": ["elFlatPtEndcapForEff.root",2], #["elFlatPtEndcapForEff.root", ROOT.kBlue()],
+                  "trabs": ["elFlatPtTransitionForEff.root",3] #["elFlatPtTransitionForEff.root", ROOT.kRed()]
+                  }
+
+infiles = []
+for infilename in infiles_eff_pt.values():
+    inpath = indir + infilename[0]
+    print inpath
+    infiles.append(ROOT.TFile(inpath) )
+
+eff_hists = []
+eff_hists.append( infiles[0].Get("DQMData/Tracking/Track/general_AssociatorByHits/efficPt") )
+eff_hists.append( infiles[1].Get("DQMData/Tracking/Track/general_AssociatorByHits/efficPt") )
+eff_hists.append( infiles[2].Get("DQMData/Tracking/Track/general_AssociatorByHits/efficPt") )
+
+c_effpt = ROOT.TCanvas("c","")
+c_effpt.SetLogx()
+c_effpt.SetGrid()
+
+
+first = True
+for hist in eff_hists:
+    if first:
+        hist.Draw()
+        hist.GetXaxis().SetTitle("p_{T} (GeV)")
+        hist.SetMaximum(1)
+        hist.SetMinimum(0.)
+        first = False
+    else:
+        hist.Draw("same")
+
+
+
+
+
+

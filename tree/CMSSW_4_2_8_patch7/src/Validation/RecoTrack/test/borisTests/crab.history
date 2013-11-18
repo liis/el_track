@@ -1,0 +1,4 @@
+131118_161527: /swshare/CRAB/patchedT3/CRAB_2_9_1/python/crab.py -create
+131118_161759: /swshare/CRAB/patchedT3/CRAB_2_9_1/python/crab.py -create
+131118_161827: /swshare/CRAB/patchedT3/CRAB_2_9_1/python/crab.py -status
+131118_161846: /swshare/CRAB/patchedT3/CRAB_2_9_1/python/crab.py -submit

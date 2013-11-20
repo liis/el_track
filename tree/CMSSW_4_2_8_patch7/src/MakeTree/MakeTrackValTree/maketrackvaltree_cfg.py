@@ -40,9 +40,12 @@ process.TFileService = cms.Service("TFileService",
 
 
 process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi")
+process.load("SimTracker.TrackAssociation.trackingParticleRecoTrackAsssociation_cfi")
 
 process.load("SimTracker.TrackAssociation.TrackAssociatorByHits_cfi")
-process.load("SimTracker.TrackAssociation.trackingParticleRecoTrackAsssociation_cfi")
+process.TrackAssociatorByHits.SimToRecoDenominator = cms.string("reco") #Quality_SimToReco = shared hits/#reco(or #sim)
+process.TrackAssociatorByHits.Quality_SimToReco = cms.double(0.5)
+
 
 
 #process.demo = cms.EDAnalyzer('MakeTrackValTree'

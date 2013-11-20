@@ -3,5 +3,6 @@ from Validation.RecoTrack.TrackingParticleSelectionForEfficiency_cfi import * # 
 
 
 demo = cms.EDAnalyzer('MakeTrackValTree',
-                      TrackingParticleSelectionForEfficiency
+                      TrackingParticleSelectionForEfficiency,
+                      debug = cms.bool(True)
 )

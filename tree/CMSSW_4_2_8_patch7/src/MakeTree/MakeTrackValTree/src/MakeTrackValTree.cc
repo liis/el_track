@@ -80,11 +80,11 @@ class MakeTrackValTree : public edm::EDAnalyzer {
 
   TTree *trackValTree_;
 
-  int np_gen_, np_gen_toReco_, np_reco_;
-  bool is_reco_matched_[MAXPART];
-  double gen_pt_[MAXPART], gen_eta_[MAXPART];
-
-
+  int np_gen_, np_gen_toReco_, np_reco_, np_reco_toGen_;
+  bool is_reco_matched_[MAXPART], is_gen_matched_[MAXPART];
+  double gen_pt_[MAXPART], gen_eta_[MAXPART], reco_pt_[MAXPART], reco_eta_[MAXPART];
+  int gen_nrSimHits_[MAXPART], gen_nrSharedHits_[MAXPART], gen_nrRecoHits_[MAXPART], reco_nrRecoHits_[MAXPART], reco_nrSimHits_[MAXPART], reco_nrSharedHits_[MAXPART];
+  
   bool debug_;
 
 };
@@ -105,6 +105,7 @@ MakeTrackValTree::MakeTrackValTree(const edm::ParameterSet& iConfig)
 {
    //now do what ever initialization is needed
   //--------------get cut thresholds for sim tracks----------------
+  debug_ = iConfig.getParameter<bool>("debug");
   ptMinTP =   iConfig.getParameter<double>("ptMinTP");
   minRapidityTP = iConfig.getParameter<double>("minRapidityTP");
   maxRapidityTP = iConfig.getParameter<double>("maxRapidityTP");
@@ -139,13 +140,20 @@ MakeTrackValTree::~MakeTrackValTree()
 void
 MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-  debug_ = true;
-
   //reinitialize at each event
   for (unsigned int i = 0; i < MAXPART; i++){
-    gen_eta_[i] = -9999;
-    gen_pt_[i] = -9999;
+    gen_eta_[i] = -999;
+    gen_pt_[i] = -999;
+    gen_nrSimHits_[i] = -999;
+    gen_nrRecoHits_[i] = -999;
+    gen_nrSharedHits_[i] = -999;
     is_reco_matched_[i] = false;
+    is_gen_matched_[i] = false;
+    reco_eta_[i] = -999;
+    reco_pt_[i] = -999;
+    reco_nrSimHits_[i] = -999;
+    reco_nrRecoHits_[i] = -999;
+    reco_nrSharedHits_[i] = -999;
   }
 
   edm::Handle<edm::View<reco::Track> >   trackCollection; //reconstructed tracks
@@ -157,7 +165,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   const TrackingParticleCollection tPCeff = *(TPCollectionHeff.product());
 
   edm::ESHandle<TrackAssociatorBase> theAssociator; //create track associators for MC truth matching
-  iSetup.get<TrackAssociatorRecord>().get("TrackAssociatorByHitsRecoDenom" ,theAssociator);
+  iSetup.get<TrackAssociatorRecord>().get("TrackAssociatorByHits" ,theAssociator);
   reco::SimToRecoCollection simRecColl = theAssociator->associateSimToReco(trackCollection, TPCollectionHeff, &iEvent);
   reco::RecoToSimCollection recSimColl = theAssociator->associateRecoToSim(trackCollection, TPCollectionHeff, &iEvent);
 
@@ -170,6 +178,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
   TrackingParticleSelector tpSelector = TrackingParticleSelector(ptMinTP, minRapidityTP, maxRapidityTP,tipTP, lipTP, minHitTP,               
 								 signalOnlyTP, chargedOnlyTP, stableOnlyTP,pdgIdTP,minAbsEtaTP,maxAbsEtaTP);  
+  //----------------------Loop over sim tracks--------------------------------
   np_gen_ = 0;
   np_gen_toReco_ = 0;
   for (TrackingParticleCollection::size_type i=0; i<tPCeff.size(); i++){ // get information from simulated  tracks   
@@ -177,41 +186,69 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     TrackingParticle* tp=const_cast<TrackingParticle*>(tpr.get());
 
     if( !tpSelector(*tp) ) continue;
-      
+
     gen_eta_[np_gen_] = tp->eta();
     gen_pt_[np_gen_] = tp->pt();
+
     std::vector<PSimHit> simhits=tp->trackPSimHit(DetId::Tracker);        
-    std::cout<<"number of hits on sim track "<<simhits.size()<<std::endl;
-    
+    gen_nrSimHits_[np_gen_] =  simhits.size();
+
     //--------check for matched reco tracks-----------
 
     const reco::Track* matchedTrackPointer=0;
     std::vector<std::pair<edm::RefToBase<reco::Track>, double> > rt;
     int nSharedHits(0), nRecoTrackHits(0);
-    if(simRecColl.find(tpr) != simRecColl.end()){
-      rt = simRecColl[tpr];
-      matchedTrackPointer = rt.begin()->first.get(); //pointer to corresponding reco track                                                 
-      nRecoTrackHits = matchedTrackPointer->numberOfValidHits();
-      nSharedHits = rt.begin()->second;
-      std::cout<<"nr reco track hits = "<<nRecoTrackHits<<std::endl;
-      std::cout<<"nr shared hits = "<<nSharedHits<<std::endl;
 
+    if(simRecColl.find(tpr) != simRecColl.end()){
+      rt = simRecColl[tpr]; // find sim-to-reco association
       if ( rt.size()!=0 ) {
-	np_gen_toReco_++; //This counter counts the number of simTracks that have a recoTrack associated
+        np_gen_toReco_++; //count the number of simTracks that have a recoTrack associated
+	
+	
+	matchedTrackPointer = rt.begin()->first.get(); //pointer to corresponding reco track                                                 
+	nSharedHits = rt.begin()->second;
+	nRecoTrackHits = matchedTrackPointer->numberOfValidHits();
+	
+	//if( (nRecoTrackHits < nSharedHits) || ( (int)simhits.size() < nSharedHits) )
+	//	if( nSharedHits < (int)simhits.size()/2) ){
+	if(debug_){
+ std::cout<<"Found a matched reco track with:"<<"nr reco track hits = "<<nRecoTrackHits<<" and nr shared hits = "<<nSharedHits<<", nr sim track hits = "<<simhits.size()<<std::endl;
+	}
+
 	is_reco_matched_[np_gen_] = true;
-	//	matchedTrackPointer = rt.begin()->first.get(); //pointer to corresponding reco track
-	//	nRecoTrackHits = matchedTrackPointer->numberOfValidHits();
-	//	nSharedHits = rt.begin()->second;
-	//std::cout<<"nr reco track hits = "<<nRecoTrackHits<<std::endl;
-	//std::cout<<"nr shared hits = "<<nSharedHits<<std::endl;
+	gen_nrSharedHits_[np_gen_] = nSharedHits;
+	gen_nrRecoHits_[np_gen_] = nRecoTrackHits; 
       }
     }
-    np_gen_++;
+     np_gen_++; //count selected sim tracks passing the selection (important to keep in the end of the loop for tree items)      
   }
+  //--------------------Loop over reco tracks-----------------------------------
+  np_reco_ = 0;
+  np_reco_toGen_ = 0;
   
+  
+  for( edm::View<reco::Track>::size_type i=0; i<trackCollection->size(); i++){
+    edm::RefToBase<reco::Track> track(trackCollection, i);
+    reco_pt_[np_reco_] = track->pt();
+    reco_eta_[np_reco_] = track->eta();
+
+    std::vector<std::pair<TrackingParticleRef, double> > tp;
+    if(recSimColl.find(track) != recSimColl.end()){
+      tp = recSimColl[track];
+      if(tp.size() != 0) {
+	is_gen_matched_[np_reco_] = true;
+	np_reco_toGen_++;
+      }
+    }
+    np_reco_++;
+  }
+
+  //---------------------------------------------------------------------------
   if(debug_){
-    std::cout<<"nr of selected gen tracks = "<<np_gen_<<std::endl;
-    std::cout<<"nr of reco matched gen tracks = "<<np_gen_toReco_<<std::endl;
+    std::cout<<"Total simulated = "<<np_gen_<<std::endl;
+    std::cout<<"Total simulated SimToReco assoc. = "<<np_gen_toReco_<<std::endl;
+    std::cout<<"Total reconstructed = "<<np_reco_<<std::endl;
+    std::cout<<"Total reconstructed RecoToSim assoc. = "<<np_reco_toGen_<<std::endl;
   }
   trackValTree_->Fill();
 }
@@ -224,14 +261,20 @@ MakeTrackValTree::beginJob()
   edm::Service<TFileService> fs;
   trackValTree_ = fs->make<TTree>("trackValTree","trackValTree");
  
-  trackValTree_->Branch("np_reco_", &np_reco_, "np_reco_/I");
+  trackValTree_->Branch("np_reco", &np_reco_, "np_reco/I");
+  
+  trackValTree_->Branch("reco_pt", reco_pt_, "reco_pt[np_reco]/D");
+  trackValTree_->Branch("reco_eta", reco_eta_, "reco_eta[np_reco]/D");
 
   trackValTree_->Branch("np_gen",&np_gen_,"np_gen/I"); // needs to be filled in order to fill x[np]
   trackValTree_->Branch("np_gen_toReco", &np_gen_toReco_, "np_gen_ToReco/I");
 
-  trackValTree_->Branch("gen_reco_matched", &is_reco_matched_, "gen_reco_matched/B");
+  trackValTree_->Branch("gen_reco_matched", is_reco_matched_, "gen_reco_matched[np_gen]/I");
   trackValTree_->Branch("gen_pt", gen_pt_, "gen_pt[np_gen]/D");
   trackValTree_->Branch("gen_eta", gen_eta_, "gen_eta[np_gen]/D");
+  trackValTree_->Branch("gen_nrSimHits", gen_nrSimHits_, "gen_nrSimHits[np_gen]/I");
+  trackValTree_->Branch("gen_nrRecoHits", gen_nrRecoHits_, "gen_nrRecoHits[np_gen]/I");
+  trackValTree_->Branch("gen_nrSharedHits", gen_nrSharedHits_, "gen_nrSharedHits[np_gen]/I");
   
 }
 

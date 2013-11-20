@@ -2,11 +2,16 @@
 *~
 #*#
 *.root
+*__init__.py
+
 CVS
 
 # CMSSW related stuff
 tree/CMSSW_4_2_8_patch7/*
 !tree/CMSSW_4_2_8_patch7/src
 
-# Compiled libraries
+# Crab jobs
+crab_0*/
+
+# Compilation related files
 *.so

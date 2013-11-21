@@ -238,7 +238,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     reco_nrRecoHits_[np_reco_] = track->numberOfValidHits();
 
     const TrackingParticle* matchedTrackingParticlePointer = 0;
-    std::vector<std::pair<TrackingParticleRef, double> > tp;
+    std::vector<std::pair<, double> > tp;
     int nSharedHits(0), nSimTrackHits(0);
     if(recSimColl.find(track) != recSimColl.end()){
       tp = recSimColl[track];

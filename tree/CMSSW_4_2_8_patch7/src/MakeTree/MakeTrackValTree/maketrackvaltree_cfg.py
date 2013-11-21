@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-process = cms.Process("Demo")
+process = cms.Process("TrackValTreeMaker")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
 
@@ -46,16 +46,17 @@ process.load("SimTracker.TrackAssociation.TrackAssociatorByHits_cfi")
 process.TrackAssociatorByHits.SimToRecoDenominator = cms.string("reco") #Quality_SimToReco = shared hits/#reco(or #sim)
 process.TrackAssociatorByHits.Quality_SimToReco = cms.double(0.5)
 
+process.cutsRecoTracksHp.minAbsEta = cms.double(0.0)
+process.cutsRecoTracksHp.maxAbsEta = cms.double(2.5)
+#process.cutsRecoTracksHp.ptMin = cms.double(20)
 
-
-#process.demo = cms.EDAnalyzer('MakeTrackValTree'
-#)
-
-
+process.ValidationSelectors = cms.Sequence(
+    process.cutsRecoTracksHp
+    )
 
 process.p = cms.Path(
-#    process.trackingParticleRecoTrackAsssociation *
-    process.demo
+    process.ValidationSelectors *
+    process.TrackValTreeMaker
     )
 
 process.schedule = cms.Schedule(

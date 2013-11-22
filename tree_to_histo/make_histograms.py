@@ -1,5 +1,5 @@
 import ROOT
-from array import *
+from tree_variables import var_list, var_type
 
 indir = "$WORKING_DIR/tree_to_histo/input_trees/"
 infile = "trackValTree_elPt100.root"
@@ -13,25 +13,19 @@ nEvt = t.GetEntries()
 
 print "Analyzing " + str(nEvt) + " events"
 
-allvars = ["np_reco", "reco_pt", "reco_eta"]
-
+#### initialize tree #######
 t.SetBranchStatus("*",0)
-#cacheSize=10000000
-#t.SetCacheSize(cacheSize)
 
-for v in allvars:
+vList = dict([ (v, var_type(v)) for v in var_list ]) #associate proper data type for every variable in the tree
+
+for v in var_list: # relate vList to the tree
     t.SetBranchStatus(v, 1)
-
-vList = {"np_reco": array('i',[0]), "reco_pt": array('i',[0]*100), "reco_eta": array('i',[0]*100) }
-
-for v in allvars:
     t.SetBranchAddress(v, vList[v])
     t.AddBranchToCache(v, ROOT.kTRUE)
     
 t.StopCacheLearningPhase()
 
-t.Draw("np_reco")
-
+# Event loop
 for i in range(nEvt):
     if i % report_every == 0: print "Event nr: " + str(i)
     t.LoadTree(i)

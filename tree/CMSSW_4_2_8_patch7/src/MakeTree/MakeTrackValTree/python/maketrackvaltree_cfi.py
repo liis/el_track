@@ -4,5 +4,5 @@ from Validation.RecoTrack.TrackingParticleSelectionForEfficiency_cfi import * # 
 
 TrackValTreeMaker = cms.EDAnalyzer('MakeTrackValTree',
                       TrackingParticleSelectionForEfficiency,
-                      debug = cms.bool(True)
+                      debug = cms.bool(False)
 )

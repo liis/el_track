@@ -1,6 +1,6 @@
 *.pyc
 *~
-#*#
+*#
 *.root
 *__init__.py
 
@@ -12,6 +12,7 @@ tree/CMSSW_4_2_8_patch7/*
 
 # Crab jobs
 crab_0*/
+*.history
 
 # Compilation related files
 *.so

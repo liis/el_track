@@ -80,12 +80,12 @@ class MakeTrackValTree : public edm::EDAnalyzer {
 
   TTree *trackValTree_;
 
-  int np_gen_, np_gen_toReco_, np_reco_, np_reco_toGen_;
-  //  bool is_reco_matched_[MAXPART], 
-  //  bool is_gen_matched_[MAXPART];
+  int np_gen_, np_gen_toReco_, np_reco_, np_reco_toGen_, np_fake_;
   int is_reco_matched_[MAXPART], is_gen_matched_[MAXPART];
-  double gen_pt_[MAXPART], gen_eta_[MAXPART], reco_pt_[MAXPART], reco_eta_[MAXPART];
-  int gen_pdgId_[MAXPART], gen_nrSimHits_[MAXPART], gen_nrSharedHits_[MAXPART], gen_nrRecoHits_[MAXPART], reco_nrRecoHits_[MAXPART], reco_nrSimHits_[MAXPART], reco_nrSharedHits_[MAXPART];
+  double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_phi_[MAXPART];
+  double reco_pt_[MAXPART], reco_eta_[MAXPART], reco_phi_[MAXPART], fake_pt_[MAXPART], fake_eta_[MAXPART], fake_phi_[MAXPART];
+  int gen_pdgId_[MAXPART], gen_nrSimHits_[MAXPART], gen_nrRecoHits_[MAXPART], reco_nrRecoHits_[MAXPART], reco_nrSimHits_[MAXPART];
+  double reco_nrSharedHits_[MAXPART], gen_nrSharedHits_[MAXPART];
   
   bool debug_;
 
@@ -144,19 +144,30 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 {
   //reinitialize at each event
   for (unsigned int i = 0; i < MAXPART; i++){
+    is_reco_matched_[i] = 0;
     gen_eta_[i] = -999;
+    gen_phi_[i] = -999;
     gen_pt_[i] = -999;
     gen_pdgId_[i] = -999;
-    gen_nrSimHits_[i] = -999;
-    gen_nrRecoHits_[i] = -999;
-    gen_nrSharedHits_[i] = -999;
-    is_reco_matched_[i] = 0;
+    gen_nrSimHits_[i] = -10;
+    gen_nrRecoHits_[i] = -10;
+    gen_nrSharedHits_[i] = -10;
+
+    gen_matched_eta_[i] = -999;
+    gen_matched_pt_[i] = -999;
+    gen_matched_phi_[i] = -999;
+
     is_gen_matched_[i] = 0;
     reco_eta_[i] = -999;
+    reco_phi_[i] = -999;
     reco_pt_[i] = -999;
     reco_nrSimHits_[i] = -10;
     reco_nrRecoHits_[i] = -10;
     reco_nrSharedHits_[i] = -10;
+  
+    fake_eta_[i] = -999;
+    fake_phi_[i] = -999;
+    fake_pt_[i] = -999;
   }
 
   edm::Handle<edm::View<reco::Track> >   trackCollection; //reconstructed tracks
@@ -191,6 +202,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     if( !tpSelector(*tp) ) continue;
 
     gen_eta_[np_gen_] = tp->eta();
+    gen_phi_[np_gen_] = tp->phi();
     gen_pt_[np_gen_] = tp->pt();
     gen_pdgId_[np_gen_] = tp->pdgId();
 
@@ -205,10 +217,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
     if(simRecColl.find(tpr) != simRecColl.end()){
       rt = simRecColl[tpr]; // find sim-to-reco association
-      if ( rt.size()!=0 ) {
-        np_gen_toReco_++; //count the number of simTracks that have a recoTrack associated
-	
-	
+      if ( rt.size()!=0 ) {	
 	matchedTrackPointer = rt.begin()->first.get(); //pointer to corresponding reco track                                                 
 	nSharedHits = rt.begin()->second;
 	nRecoTrackHits = matchedTrackPointer->numberOfValidHits();
@@ -223,35 +232,66 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	is_reco_matched_[np_gen_] = 1;
 	gen_nrSharedHits_[np_gen_] = nSharedHits;
 	gen_nrRecoHits_[np_gen_] = nRecoTrackHits; 
+	
+	gen_matched_pt_[np_gen_] = tp->pt();
+	gen_matched_eta_[np_gen_] = tp->eta();
+	gen_matched_phi_[np_gen_] = tp->phi();
+
+        np_gen_toReco_++; //count the number of simTracks that have a recoTrack associated
       }
     }
-     np_gen_++; //count selected sim tracks passing the selection (important to keep in the end of the loop for tree items)      
+    
+    np_gen_++; //count selected sim tracks passing the selection (important to keep in the end of the loop for tree items)      
   }
   //--------------------Loop over reco tracks-----------------------------------
   np_reco_ = 0;
   np_reco_toGen_ = 0;
+  np_fake_ = 0;
   
   for( edm::View<reco::Track>::size_type i=0; i<trackCollection->size(); i++){
     edm::RefToBase<reco::Track> track(trackCollection, i);
     reco_pt_[np_reco_] = track->pt();
+    reco_phi_[np_reco_] = track->phi();
     reco_eta_[np_reco_] = track->eta();
     reco_nrRecoHits_[np_reco_] = track->numberOfValidHits();
 
-    const TrackingParticle* matchedTrackingParticlePointer = 0;
     std::vector<std::pair<TrackingParticleRef, double> > tp;
-    int nSharedHits(0), nSimTrackHits(0);
-    if(recSimColl.find(track) != recSimColl.end()){
+
+    if(recSimColl.find(track) != recSimColl.end()){ // if matched
       tp = recSimColl[track];
       if(tp.size() != 0) {
 	is_gen_matched_[np_reco_] = 1;
 	np_reco_toGen_++;
-	matchedTrackingParticlePointer = tp.begin()->first.get();
+	TrackingParticleRef matchedTrackingParticle = tp.begin()->first;
 	reco_nrSharedHits_[np_reco_] = tp.begin()->second;
-	
-	reco_nrSimHits_[np_reco_] = (matchedTrackingParticlePointer->trackPSimHit(DetId::Tracker) ).size();
+	reco_nrSimHits_[np_reco_] = (matchedTrackingParticle->trackPSimHit(DetId::Tracker) ).size();
 
-	std::cout<<"Found a matched sim track with:"<<"nr sim track hits = "<<reco_nrSimHits_[np_reco_]<<" and nr shared hits = "<<tp.begin()->second<<", nr reco track hits = "<<track->numberOfValidHits()<<", eta = "<<track->eta()<<", phi = "<<track->phi()<<std::endl;
+	if(debug_)
+	  std::cout<<"Found a matched sim track with:"<<"nr sim track hits = "<<reco_nrSimHits_[np_reco_]<<" and nr shared hits = "<<tp.begin()->second<<", nr reco track hits = "<<track->numberOfValidHits()<<", eta = "<<track->eta()<<", phi = "<<track->phi()<<std::endl;
       }
+    }
+    else{  // if fake
+      fake_eta_[np_fake_] = track->eta();
+      fake_pt_[np_fake_] = track->pt();
+      fake_phi_[np_fake_] = track->phi();
+	
+      np_fake_++;
+    }
+    
+    //--------------------check the hit pattern-----------------
+    if(true){ //add condition for fake tracks later
+      const reco::HitPattern& p = track->hitPattern();
+      if(debug_)
+	std::cout<<"-----------------trak hit pattern information for track nr "<<i<<"--------------"<<std::endl;      
+      for(int i=0; i<p.numberOfHits(); i++){
+	int hit = p.getHitPattern(i);
+	if(p.validHitFilter(hit) && p.pixelHitFilter(hit) ){
+	  if(debug_)
+	    std::cout<<"found hit in pixel detector layer "<<p.getLayer(hit)<<" from "<<hit<<std::endl;
+	}
+      }
+      if(debug_)
+	std::cout<<"-----------------------------------------------------"<<std::endl;
     }
     np_reco_++;
   }
@@ -278,13 +318,21 @@ MakeTrackValTree::beginJob()
  
   trackValTree_->Branch("np_reco", &np_reco_, "np_reco/I");
   trackValTree_->Branch("np_reco_toGen", &np_reco_toGen_, "np_reco_toGen/I");
+  trackValTree_->Branch("np_fake", &np_fake_, "np_fake/I");
 
   trackValTree_->Branch("reco_gen_matched", is_gen_matched_, "reco_gen_matched[np_reco]/I");
   trackValTree_->Branch("reco_pt", reco_pt_, "reco_pt[np_reco]/D");
   trackValTree_->Branch("reco_eta", reco_eta_, "reco_eta[np_reco]/D");
+  trackValTree_->Branch("reco_phi", reco_phi_, "reco_phi[np_reco]/D");
   trackValTree_->Branch("reco_nrSimHits", reco_nrSimHits_, "reco_nrSimHits[np_reco]/I");
   trackValTree_->Branch("reco_nrRecoHits", reco_nrRecoHits_, "reco_nrRecoHits[np_reco]/I");
-  trackValTree_->Branch("reco_nrSharedHits", reco_nrSharedHits_, "reco_nrSharedHits[np_reco]/I");
+  trackValTree_->Branch("reco_nrSharedHits", reco_nrSharedHits_, "reco_nrSharedHits[np_reco]/D");
+
+  trackValTree_->Branch("fake_pt", fake_pt_, "fake_pt[np_fake]/D");
+  trackValTree_->Branch("fake_eta", fake_eta_, "fake_eta[np_fake]/D");
+  trackValTree_->Branch("fake_phi", fake_phi_, "fake_phi[np_fake]/D");
+
+  //-----------------------------------------------------------------------
 
   trackValTree_->Branch("np_gen",&np_gen_,"np_gen/I"); // needs to be filled in order to fill x[np]
   trackValTree_->Branch("np_gen_toReco", &np_gen_toReco_, "np_gen_ToReco/I");
@@ -293,9 +341,14 @@ MakeTrackValTree::beginJob()
   trackValTree_->Branch("gen_pdgId", gen_pdgId_, "gen_pdgId[np_gen]/I");
   trackValTree_->Branch("gen_pt", gen_pt_, "gen_pt[np_gen]/D");
   trackValTree_->Branch("gen_eta", gen_eta_, "gen_eta[np_gen]/D");
+  trackValTree_->Branch("gen_phi", gen_phi_, "gen_phi[np_gen]/D");
   trackValTree_->Branch("gen_nrSimHits", gen_nrSimHits_, "gen_nrSimHits[np_gen]/I");
   trackValTree_->Branch("gen_nrRecoHits", gen_nrRecoHits_, "gen_nrRecoHits[np_gen]/I");
-  trackValTree_->Branch("gen_nrSharedHits", gen_nrSharedHits_, "gen_nrSharedHits[np_gen]/I");  
+  trackValTree_->Branch("gen_nrSharedHits", gen_nrSharedHits_, "gen_nrSharedHits[np_gen]/D");  
+
+  trackValTree_->Branch("gen_matched_pt", gen_matched_pt_, "gen_matched_pt[np_gen]/D");
+  trackValTree_->Branch("gen_matched_eta", gen_matched_eta_, "gen_matched_eta[np_gen]/D");
+  trackValTree_->Branch("gen_matched_phi", gen_matched_phi_, "gen_matched_phi[np_gen]/D");
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

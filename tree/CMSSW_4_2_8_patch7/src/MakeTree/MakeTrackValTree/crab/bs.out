@@ -1,0 +1,28 @@
+crab:  Version 2.9.1 running on Mon Nov 25 16:23:44 2013 CET (15:23:44 UTC)
+
+crab. Working options:
+	scheduler           remoteGlidein
+	job type            CMSSW
+	server              OFF
+	working directory   /shome/liis/el_track/tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab/crab_0_elPt1Mode/
+
+crab:  error detecting glite version 
+crab:  error detecting glite version 
+crab:  Checking the status of all jobs: please wait
+crab:  
+ID    END STATUS            ACTION       ExeExitCode JobExitCode E_HOST
+----- --- ----------------- ------------  ---------- ----------- ---------
+1     Y   Retrieved         Cleared       0          0           cmsgrid02.hep.wisc.edu
+
+crab:  ExitCodes Summary
+ >>>>>>>>> 1 Jobs with Wrapper Exit Code : 0 
+	 List of jobs: 1 
+	See https://twiki.cern.ch/twiki/bin/view/CMS/JobExitCodes for Exit Code meaning
+
+crab:   1 Total Jobs 
+
+crab:  You can also follow the status of this task on :
+	CMS Dashboard: http://dashb-cms-job-task.cern.ch/taskmon.html#task=liis_crab_0_elPt1Mode_dua496
+	Your task name is: liis_crab_0_elPt1Mode_dua496 
+
+Log file is /shome/liis/el_track/tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab/crab_0_elPt1Mode/log/crab.log

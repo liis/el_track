@@ -26,7 +26,7 @@ process.load("Validation.Configuration.postValidation_cff")
 process.load("Validation.RecoTrack.TrackValidation_cff") # defines track associator
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
-process.MessageLogger.cerr.FwkReport.reportEvery = 100
+process.MessageLogger.cerr.FwkReport.reportEvery = 1
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
@@ -45,11 +45,11 @@ process.load("SimTracker.TrackAssociation.trackingParticleRecoTrackAsssociation_
 
 process.load("SimTracker.TrackAssociation.TrackAssociatorByHits_cfi")
 process.TrackAssociatorByHits.SimToRecoDenominator = cms.string("reco") #Quality_SimToReco = shared hits/#reco(or #sim)
-process.TrackAssociatorByHits.Quality_SimToReco = cms.double(0.5)
+process.TrackAssociatorByHits.Quality_SimToReco = cms.double(0.75)
+#process.TrackAssociatorByHits.AbsoluteNumberOfHits = cms.bool(True)
 
 process.cutsRecoTracksHp.minAbsEta = cms.double(0.0)
 process.cutsRecoTracksHp.maxAbsEta = cms.double(2.5)
-#process.cutsRecoTracksHp.ptMin = cms.double(20)
 
 process.ValidationSelectors = cms.Sequence(
     process.cutsRecoTracksHp

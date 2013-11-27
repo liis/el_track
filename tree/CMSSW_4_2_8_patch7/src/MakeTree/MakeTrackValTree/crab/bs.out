@@ -1,4 +1,4 @@
-crab:  Version 2.9.1 running on Mon Nov 25 16:23:44 2013 CET (15:23:44 UTC)
+crab:  Version 2.9.1 running on Wed Nov 27 18:00:49 2013 CET (17:00:49 UTC)
 
 crab. Working options:
 	scheduler           remoteGlidein
@@ -22,7 +22,7 @@ crab:  ExitCodes Summary
 crab:   1 Total Jobs 
 
 crab:  You can also follow the status of this task on :
-	CMS Dashboard: http://dashb-cms-job-task.cern.ch/taskmon.html#task=liis_crab_0_elPt1Mode_dua496
-	Your task name is: liis_crab_0_elPt1Mode_dua496 
+	CMS Dashboard: http://dashb-cms-job-task.cern.ch/taskmon.html#task=liis_crab_0_elPt1Mode_g6v29o
+	Your task name is: liis_crab_0_elPt1Mode_g6v29o 
 
 Log file is /shome/liis/el_track/tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab/crab_0_elPt1Mode/log/crab.log

@@ -1,6 +1,7 @@
 *.pyc
 *~
 *#
+*.out
 *.root
 *__init__.py
 

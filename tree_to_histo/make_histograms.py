@@ -3,7 +3,7 @@ from tree_variables import var_list, var_type
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--ptmode', dest='ptmode', choices=["Pt1","Pt10","Pt100","PtFlat"], required=True, help= "pt cut in analyzed dataset")
+parser.add_argument('--ptmode', dest='ptmode', choices=["Pt1","Pt10","Pt100","FlatPt"], required=True, help= "pt cut in analyzed dataset")
 
 args = parser.parse_args()
 

@@ -5,7 +5,9 @@ import tdrstyle
 tdrstyle.tdrstyle()
 import ROOT
 
-indir = "$WORKING_DIR/plot/input/elKF/" #location of input histograms
+indir_pt = "$WORKING_DIR/plot/input/elKF/" #location of input histograms
+indir_eta = "$WORKING_DIR/tree_to_histo/histograms/"
+do_only_eta = True
 
 infiles_eff_pt = {"barrel": ["elFlatPtBarrelForEff.root"],
                   "endcap": ["elFlatPtEndcapForEff.root"], 
@@ -17,7 +19,16 @@ infiles_fake_pt = {"barrel": ["elFlatPtBarrelForFake.root"],
                    "trans": ["elFlatPtTransitionForFake.root"]
                    }
 
-style = {"barrel": [1, 24], "endcap": [ROOT.kBlue, 25], "trans": [ROOT.kRed, 26] } #[color, markerStyle]
+infiles_eff_eta = {"Pt1":["trackValHistogramsPt1.root"],
+                   "Pt10":["trackValHistogramsPt10.root"],
+                   "Pt100":["trackValHistogramsPt100.root"]
+                   }
+
+
+style = {"pt": {"barrel": [1, 24], "endcap": [ROOT.kBlue, 25], "trans": [ROOT.kRed, 26] },
+         "eta": "Pt1": [1, 24], "Pt10": [ROOT.kBlue, 25], "Pt100": [ROOT.kRed, 26] }}
+
+#[color, markerStyle]
 
 
 infiles_eff = {}
@@ -25,15 +36,18 @@ infiles_fake = {}
 eff_hists = {}
 fake_hists = {}
 for region in infiles_eff_pt:
-    inpath_eff = indir + infiles_eff_pt[region][0]
-    inpath_fake = indir + infiles_fake_pt[region][0]
-    print "loading efficiency histograms from: " + inpath_eff
-    print "loading fake rate histograms from: " + inpath_fake 
-    infiles_eff[region] = ROOT.TFile(inpath_eff) # need to write in dictionary, otherwise doesnt work
-    infiles_fake[region] = ROOT.TFile(inpath_fake)
-    
-    eff_hists[region] = infiles_eff[region].Get("DQMData/Tracking/Track/cutsRecoHp_AssociatorByHits/efficPt")
+    inpath_eff_pt = indir_pt + infiles_eff_pt[region][0]
+    inpath_eff_eta = indir_eta + infiles_eff_eta[region][0]
+    inpath_fake_pt = indir_pt + infiles_fake_pt[region][0]
+    print "loading efficiency histograms from: " + inpath_eff_pt
+    print "loading fake rate histograms from: " + inpath_fake_pt 
+    infiles_eff_pt[region] = ROOT.TFile(inpath_eff_pt) # need to write in dictionary, otherwise doesnt work
+    infiles_fake_pt[region] = ROOT.TFile(inpath_fake_pt)
+    infiles_eff_eta[region] = ROOT.TFile(inpath_eff_eta)
+
+    eff_hists_pt[region] = infiles_eff_pt[region].Get("DQMData/Tracking/Track/cutsRecoHp_AssociatorByHits/efficPt")
     fake_hists[region] = infiles_fake[region].Get("DQMData/Tracking/Track/cutsRecoHp_AssociatorByHits/fakeratePt")
+    eff_hists_eta[region] = infiles_eff_eta[region].Get("")
 
 
 #------------ plot efficiencies----------------------

@@ -4,7 +4,7 @@ maxpart = 100
 int_list = ["np_reco", "np_gen", "np_fake", "np_gen_toReco"]
 int_array_list = [] #["reco_genMatched", "gen_recoMatched"]
 double_list = []
-double_array_list = ["reco_pt", "reco_eta", "reco_phi", "gen_pt", "gen_eta", "gen_phi", "fake_pt", "fake_eta", "fake_phi", "gen_matched_eta", "gen_matched_phi", "gen_matched_pt"] 
+double_array_list = ["reco_pt", "reco_eta", "reco_phi", "gen_pt", "gen_eta", "gen_phi", "fake_pt", "fake_eta", "fake_phi", "gen_matched_eta", "gen_matched_phi", "gen_matched_pt", "gen_dxy", "gen_dz"] 
 
 var_list = int_list + int_array_list + double_list + double_array_list
 

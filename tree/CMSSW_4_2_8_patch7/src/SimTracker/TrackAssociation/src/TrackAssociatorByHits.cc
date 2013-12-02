@@ -124,10 +124,15 @@ TrackAssociatorByHits::associateRecoToSim(const edm::RefToBaseVector<reco::Track
 	if (AbsoluteNumberOfHits) quality = static_cast<double>(nshared);
 	else if(ri!=0) quality = (static_cast<double>(nshared)/static_cast<double>(ri));
 	else quality = 0;
+	//std::cout<<"RecoToSim: TrackAssociatorByHits quality = "<<quality<<std::endl;
+	//std::cout<<"With AbsoluteNumberOfHits = "<<AbsoluteNumberOfHits<<std::endl;
+
 	//cut on the fraction
        	//float purity = 1.0*nshared/ri;
 	if(quality > cut_RecoToSim && !(ThreeHitTracksAreSpecial && ri==3 && nshared<3)){
 	  //if a track has just 3 hits we require that all 3 hits are shared
+	  //std::cout<<"TrackAssociatorByHits.cc:RecoToSim: nshared = "<<nshared<<", n reco = "<<ri<<", quality = "<<quality<<std::endl;
+
 	  outputCollection.insert(tC[tindex],
 	  			  std::make_pair(edm::Ref<TrackingParticleCollection>(TPCollectionH, tpindex),quality));
 	  // BM 13.12.2012: to make hit-purity/hit-finding-efficiency plots
@@ -263,18 +268,29 @@ TrackAssociatorByHits::associateSimToReco(const edm::RefToBaseVector<reco::Track
 	}
 
 	if (AbsoluteNumberOfHits) quality = static_cast<double>(nshared);
-	else if(SimToRecoDenominator == denomsim && totsimhit!=0) quality = ((double) nshared)/((double)totsimhit);
-	else if(SimToRecoDenominator == denomreco && ri!=0) quality = ((double) nshared)/((double)ri);
+	else if(SimToRecoDenominator == denomsim && totsimhit!=0){
+	  quality = (static_cast<double>(nshared)/static_cast<double>(totsimhit)); 
+	  //	  std::cout<<"SIM denominator"<<std::endl;
+	}
+	else if(SimToRecoDenominator == denomreco && ri!=0){
+	  quality = (static_cast<double>(nshared)/static_cast<double>(ri));
+	  //	  std::cout<<"RECO denominator"<<std::endl;
+	}
 	else quality = 0;
+
+
+	//std::cout<<"SimToReco quality = "<<quality<<", with AbsoluteNumberOfHits = "<<AbsoluteNumberOfHits<<std::endl;
 	//LogTrace("TrackAssociator") << "Final count: nhit(TP) = " << nsimhit << " re-counted = " << totsimhit 
-	//<< " nshared = " << nshared << " nrechit = " << ri;
-	
+	//<< " nshared = " << nshared << " nrechit = " << ri;	
 	float purity = 1.0*nshared/ri;
 	if (quality>quality_SimToReco && !(ThreeHitTracksAreSpecial && totsimhit==3 && nshared<3) && (AbsoluteNumberOfHits||(purity>purity_SimToReco))) {
 	  //if a track has just 3 hits we require that all 3 hits are shared
 	  // BM 13.12.2012: to make hit-purity/hit-finding-efficiency plots
+	  //if(quality < 1)
+	  //	  std::cout<<"TrackAssociatorByHits.cc:SimToReco: nshared = "<<nshared<<", ntotsim = "<<totsimhit<<", n reco = "<<ri<<", quality = "<<quality<<std::endl;
+	  
 	  outputCollection.insert(edm::Ref<TrackingParticleCollection>(TPCollectionH, tpindex), 
-				  std::make_pair(tC[tindex],nshared));
+				  std::make_pair(tC[tindex],quality));
 	  //outputCollection.insert(edm::Ref<TrackingParticleCollection>(TPCollectionH, tpindex), 
 	  //			  std::make_pair(tC[tindex],quality));
 //          LogTrace("TrackAssociator") << "TrackingParticle number " << tpindex << " with #hits=" << nsimhit 

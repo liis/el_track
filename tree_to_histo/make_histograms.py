@@ -3,9 +3,18 @@ from tree_variables import var_list, var_type
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--ptmode', dest='ptmode', choices=["Pt1","Pt10","Pt100","PtFlat"], required=True, help= "pt cut in analyzed dataset")
+parser.add_argument('--ptmode', dest='ptmode', choices=["Pt1","Pt10","Pt100","FlatPt"], required=True, help= "pt cut in analyzed dataset")
 
 args = parser.parse_args()
+
+if args.ptmode == "Pt1":
+    fixpt = 1
+if args.ptmode == "Pt10":
+    fixpt = 10
+if args.ptmode == "Pt100":
+    fixpt = 100
+if args.ptmode == "FlatPt":
+    fixpt = 1
 
 indir = "$WORKING_DIR/tree_to_histo/input_trees/"
 infile = "trackValTree_el" + args.ptmode + ".root"
@@ -67,14 +76,15 @@ for i in range(nEvt):
         h_fake_pt.Fill(vt['fake_pt'][it_p])
 
     for it_p in range( vt['np_gen'][0]):
-        if(vt['gen_pt'][it_p] > 99 and vt['gen_pt'][it_p] < 101):
+        #if( (vt['gen_pt'][it_p] > fixpt*0.8 and vt['gen_pt'][it_p] < fixpt*1.3) or args.ptmode == "FlatPt"): # to be understood !!!!
+        if vt['gen_dxy'][it_p] < 3 and vt['gen_dz'][it_p] < 30:
             h_sim_eta.Fill(vt['gen_eta'][it_p])
             h_sim_pt.Fill(vt['gen_pt'][it_p])
 
     for it_p in range( vt['np_gen_toReco'][0]):
-        if(vt['gen_pt'][it_p] >99 and vt['gen_pt'][it_p] < 101):
-            h_sim_to_reco_match_eta.Fill(vt['gen_matched_eta'][it_p])
-            h_sim_to_reco_match_pt.Fill(vt['gen_matched_pt'][it_p])
+#        if( (vt['gen_pt'][it_p] > fixpt*0.8 and vt['gen_pt'][it_p] < fixpt*1.3) or args.ptmode == "FlatPt"):
+        h_sim_to_reco_match_eta.Fill(vt['gen_matched_eta'][it_p])
+        h_sim_to_reco_match_pt.Fill(vt['gen_matched_pt'][it_p])
 
 # efficiency and fake rate wrt eta
 for i in range(1,neta+1): 

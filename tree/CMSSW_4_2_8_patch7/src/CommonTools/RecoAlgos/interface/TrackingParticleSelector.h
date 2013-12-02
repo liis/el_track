@@ -56,7 +56,7 @@ public:
 	tp.g4Track_begin()->momentum().pt() ;
 
     //std::cout << "fbrem,maxfBrem_: " << fbrem << " , " << maxfBrem_ << std::endl;
-    
+
     return (
 	    tp.matchedHit() >= minHit_ &&
 	    sqrt(tp.momentum().perp2()) >= ptMin_ && 

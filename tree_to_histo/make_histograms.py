@@ -50,16 +50,26 @@ h_sim_to_reco_match_eta = ROOT.TH1F("nsimtoreco_eta", "nr sim to reco matched vs
 h_fakerate_eta = ROOT.TH1F("fake_rate_eta","Fake rate", neta, mineta, maxeta)
 h_eff_eta = ROOT.TH1F("eff_eta","Efficiency", neta, mineta, maxeta)
 
-npt = 100
+npt = 50
 minpt = 0
 maxpt = 200
 
-h_reco_pt = ROOT.TH1F("nreco_pt","nrReco vs pt", npt, minpt, maxpt)
-h_fake_pt = ROOT.TH1F("nfake_pt","nrFake vs pt", npt, minpt, maxpt)
+h_reco_pt_barrel = ROOT.TH1F("nreco_pt_barrel","nrReco vs pt barrel", npt, minpt, maxpt)
+
+h_reco_pt_endcap = ROOT.TH1F("nreco_pt_endcap","nrReco vs pt endcap", npt, minpt, maxpt)
+h_reco_pt_trans = ROOT.TH1F("nreco_pt_trans","nrReco vs pt trans", npt, minpt, maxpt)
+
+h_fake_pt_barrel = ROOT.TH1F("nfake_pt_barrel","nrFake vs pt barrel", npt, minpt, maxpt)
+h_fake_pt_endcap = ROOT.TH1F("nfake_pt_endcap","nrFake vs pt endcap", npt, minpt, maxpt)
+h_fake_pt_trans = ROOT.TH1F("nfake_pt_trans","nrFake vs pt trans", npt, minpt, maxpt)
+
 h_sim_pt = ROOT.TH1F("nsim_pt", "nrSim vs pt", npt, minpt, maxpt)
 h_sim_to_reco_match_pt = ROOT.TH1F("nsimtoreco_pt", "nr sim to reco matched vs pt", npt,minpt,maxpt)
 
-h_fakerate_pt = ROOT.TH1F("fake_rate_pt","Fake rate", npt, minpt, maxpt)
+h_fakerate_pt_barrel = ROOT.TH1F("fake_rate_pt_barrel","Fake rate barrel", npt, minpt, maxpt)
+h_fakerate_pt_endcap = ROOT.TH1F("fake_rate_pt_endcap","Fake rate endcap", npt, minpt, maxpt)
+h_fakerate_pt_trans = ROOT.TH1F("fake_rate_pt_trans","Fake rate trans", npt, minpt, maxpt)
+
 h_eff_pt = ROOT.TH1F("eff_pt","Efficiency", npt, minpt, maxpt)
 
 # Event loop
@@ -69,22 +79,33 @@ for i in range(nEvt):
     t.GetEntry(i)
     for it_p in range( vt['np_reco'][0]): # loop over reco-tracks
         h_reco_eta.Fill(vt['reco_eta'][it_p])
-        h_reco_pt.Fill(vt['reco_pt'][it_p])
+        
+        if abs(vt['reco_eta'][it_p]) < 0.9:
+            h_reco_pt_barrel.Fill(vt['reco_pt'][it_p])
+        elif abs(vt['reco_eta'][it_p]) < 1.4:
+            h_reco_pt_trans.Fill(vt['reco_pt'][it_p])
+        elif abs(vt['reco_eta'][it_p]) < 2.5:
+            h_reco_pt_endcap.Fill(vt['reco_pt'][it_p])
 
     for it_p in range( vt['np_fake'][0]): # loop over fake traks
         h_fake_eta.Fill(vt['fake_eta'][it_p])
-        h_fake_pt.Fill(vt['fake_pt'][it_p])
+
+        if abs(vt['reco_eta'][it_p]) < 0.9:
+            h_fake_pt_barrel.Fill(vt['fake_pt'][it_p])
+        elif abs(vt['reco_eta'][it_p]) < 1.4:
+            h_fake_pt_trans.Fill(vt['fake_pt'][it_p])
+        elif abs(vt['reco_eta'][it_p]) < 2.5:
+            h_fake_pt_endcap.Fill(vt['fake_pt'][it_p])
 
     for it_p in range( vt['np_gen'][0]):
-        #if( (vt['gen_pt'][it_p] > fixpt*0.8 and vt['gen_pt'][it_p] < fixpt*1.3) or args.ptmode == "FlatPt"): # to be understood !!!!
-        if vt['gen_dxy'][it_p] < 3 and vt['gen_dz'][it_p] < 30:
+        #if vt['gen_dxy'][it_p] < 3 and vt['gen_dz'][it_p] < 30:
             h_sim_eta.Fill(vt['gen_eta'][it_p])
             h_sim_pt.Fill(vt['gen_pt'][it_p])
 
     for it_p in range( vt['np_gen_toReco'][0]):
-#        if( (vt['gen_pt'][it_p] > fixpt*0.8 and vt['gen_pt'][it_p] < fixpt*1.3) or args.ptmode == "FlatPt"):
         h_sim_to_reco_match_eta.Fill(vt['gen_matched_eta'][it_p])
         h_sim_to_reco_match_pt.Fill(vt['gen_matched_pt'][it_p])
+
 
 # efficiency and fake rate wrt eta
 for i in range(1,neta+1): 
@@ -100,10 +121,19 @@ for i in range(1,neta+1):
 
 # efficiency and fake rate wrt pt
 for i in range(1,npt+1):
-    if not h_reco_pt.GetBinContent(i) == 0:
-        h_fakerate_pt.SetBinContent(i, h_fake_pt.GetBinContent(i)/h_reco_pt.GetBinContent(i) )
+    if not h_reco_pt_barrel.GetBinContent(i) == 0:
+        h_fakerate_pt_barrel.SetBinContent(i, h_fake_pt_barrel.GetBinContent(i)/h_reco_pt_barrel.GetBinContent(i) )
     else:
-        h_fakerate_pt.SetBinContent(i,0)
+        h_fakerate_pt_barrel.SetBinContent(i,0)
+    if not h_reco_pt_endcap.GetBinContent(i) == 0:
+        h_fakerate_pt_endcap.SetBinContent(i, h_fake_pt_endcap.GetBinContent(i)/h_reco_pt_endcap.GetBinContent(i) )
+    else:
+        h_fakerate_pt_endcap.SetBinContent(i,0)
+
+    if not h_reco_pt_trans.GetBinContent(i) ==0:
+        h_fakerate_pt_trans.SetBinContent(i, h_fake_pt_trans.GetBinContent(i)/h_reco_pt_trans.GetBinContent(i) )
+    else:
+        h_fakerate_pt_trans.SetBinContent(i,0)
         
     if not h_sim_pt.GetBinContent(i) == 0:
         h_eff_pt.SetBinContent(i, h_sim_to_reco_match_pt.GetBinContent(i)/h_sim_pt.GetBinContent(i) )
@@ -118,14 +148,24 @@ h_fake_eta.Write()
 h_sim_eta.Write()
 h_sim_to_reco_match_eta.Write()
 
-h_reco_pt.Write()
-h_fake_pt.Write()
+h_reco_pt_barrel.Write()
+h_reco_pt_endcap.Write()
+h_reco_pt_trans.Write()
+
+h_fake_pt_barrel.Write()
+h_fake_pt_endcap.Write()
+h_fake_pt_trans.Write()
+
 h_sim_pt.Write()
 h_sim_to_reco_match_pt.Write()
 
 h_fakerate_eta.Write()
 h_eff_eta.Write()
-h_fakerate_pt.Write()
+
+h_fakerate_pt_barrel.Write()
+h_fakerate_pt_endcap.Write()
+h_fakerate_pt_trans.Write()
+
 h_eff_pt.Write()
 
 o.Close()

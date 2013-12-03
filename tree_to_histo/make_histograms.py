@@ -1,4 +1,5 @@
 import ROOT
+from array import array
 from tree_variables import var_list, var_type
 
 import argparse
@@ -51,24 +52,35 @@ h_fakerate_eta = ROOT.TH1F("fake_rate_eta","Fake rate", neta, mineta, maxeta)
 h_eff_eta = ROOT.TH1F("eff_eta","Efficiency", neta, mineta, maxeta)
 
 npt = 50
-minpt = 0
+minpt = 0.1
 maxpt = 200
 
-h_reco_pt_barrel = ROOT.TH1F("nreco_pt_barrel","nrReco vs pt barrel", npt, minpt, maxpt)
+logxmin = ROOT.TMath.log10(minpt); #get logarithmic bins for pt histograms
+print "logxmin = " + str(logxmin)
+logxmax = ROOT.TMath.log10(maxpt);
+binwidth = (logxmax-logxmin)/npt;
+xbins = []
+xbins.append(minpt);
+for i in range(1,npt+1):
+    xbins.append(minpt + ROOT.TMath.Power(10,logxmin + i*binwidth))
 
-h_reco_pt_endcap = ROOT.TH1F("nreco_pt_endcap","nrReco vs pt endcap", npt, minpt, maxpt)
-h_reco_pt_trans = ROOT.TH1F("nreco_pt_trans","nrReco vs pt trans", npt, minpt, maxpt)
+#h_reco_pt_barrel = ROOT.TH1F("nreco_pt_barrel","nrReco vs pt barrel", npt, minpt, maxpt)
+h_reco_pt_barrel = ROOT.TH1F("nreco_pt_barrel","nrReco vs pt barrel", npt, array('d',xbins) )
+h_reco_pt_endcap = ROOT.TH1F("nreco_pt_endcap","nrReco vs pt endcap", npt, array('d',xbins) )
+h_reco_pt_trans = ROOT.TH1F("nreco_pt_trans","nrReco vs pt trans", npt, array('d',xbins) )
 
-h_fake_pt_barrel = ROOT.TH1F("nfake_pt_barrel","nrFake vs pt barrel", npt, minpt, maxpt)
-h_fake_pt_endcap = ROOT.TH1F("nfake_pt_endcap","nrFake vs pt endcap", npt, minpt, maxpt)
-h_fake_pt_trans = ROOT.TH1F("nfake_pt_trans","nrFake vs pt trans", npt, minpt, maxpt)
+#h_fake_pt_barrel = ROOT.TH1F("nfake_pt_barrel","nrFake vs pt barrel", npt, minpt, maxpt)
+h_fake_pt_barrel = ROOT.TH1F("nfake_pt_barrel","nrFake vs pt barrel", npt, array('d', xbins) )
+h_fake_pt_endcap = ROOT.TH1F("nfake_pt_endcap","nrFake vs pt endcap", npt, array('d', xbins) )
+h_fake_pt_trans = ROOT.TH1F("nfake_pt_trans","nrFake vs pt trans", npt, array('d',xbins) )
 
 h_sim_pt = ROOT.TH1F("nsim_pt", "nrSim vs pt", npt, minpt, maxpt)
 h_sim_to_reco_match_pt = ROOT.TH1F("nsimtoreco_pt", "nr sim to reco matched vs pt", npt,minpt,maxpt)
 
-h_fakerate_pt_barrel = ROOT.TH1F("fake_rate_pt_barrel","Fake rate barrel", npt, minpt, maxpt)
-h_fakerate_pt_endcap = ROOT.TH1F("fake_rate_pt_endcap","Fake rate endcap", npt, minpt, maxpt)
-h_fakerate_pt_trans = ROOT.TH1F("fake_rate_pt_trans","Fake rate trans", npt, minpt, maxpt)
+#h_fakerate_pt_barrel = ROOT.TH1F("fake_rate_pt_barrel","Fake rate barrel", npt, minpt, maxpt)
+h_fakerate_pt_barrel = ROOT.TH1F("fake_rate_pt_barrel","Fake rate barrel", npt, array('d',xbins))
+h_fakerate_pt_endcap = ROOT.TH1F("fake_rate_pt_endcap","Fake rate endcap", npt, array('d',xbins))
+h_fakerate_pt_trans = ROOT.TH1F("fake_rate_pt_trans","Fake rate trans", npt, array('d',xbins))
 
 h_eff_pt = ROOT.TH1F("eff_pt","Efficiency", npt, minpt, maxpt)
 

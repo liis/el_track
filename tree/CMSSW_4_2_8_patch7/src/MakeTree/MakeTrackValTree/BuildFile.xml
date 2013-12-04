@@ -3,6 +3,8 @@
 <use name="FWCore/ParameterSet"/>
 
 <use name="DataFormats/TrackReco"/>
+<use name="DataFormats/SiPixelDetId"/>
+<use name="DataFormats/SiStripDetId"/>
 <use name="CommonTools/UtilAlgos"/>
 
 <use name="DQMServices/Core"/>
@@ -12,8 +14,10 @@
 <use name="Geometry/Records"/>
 <use name="MagneticField/Records"/>
 <use name="MagneticField/Engine"/>
+
 <use name="SimDataFormats/Vertex"/>
 <use name="SimDataFormats/TrackingAnalysis"/>
+
 <use name="SimTracker/Records"/>
 <use name="RecoLocalTracker/ClusterParameterEstimator"/>
 <use name="rootcintex"/>
@@ -21,6 +25,10 @@
 <use name="SimTracker/TrackAssociation"/>
 <use name="SimTracker/TrackerHitAssociation"/>
 <use name="DQMServices/ClientConfig"/>
+
+<use   name="Geometry/CommonDetUnit"/>
+<use   name="Geometry/Records"/>
+<use   name="Geometry/TrackerGeometryBuilder"/>
 
 <flags EDM_PLUGIN="1"/>
 <export>

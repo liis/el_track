@@ -57,7 +57,7 @@ for region in infiles_eta:
     fake_hists_eta[region] = infiles_eta[region].Get("fake_rate_eta")
 
 #------------ plot efficiencies----------------------
-style = {"pt": {"barrel": [1, 24], "endcap": [ROOT.kBlue, 25], "trans": [ROOT.kRed, 26] },
+style = {"pt": {"barrel": [1, 24], "endcap": [ROOT.kRed, 25], "trans": [ROOT.kBlue, 26] },
          "eta": {"Pt1": [1, 24], "Pt10": [ROOT.kBlue, 25], "Pt100": [ROOT.kRed, 26] }}
 
 c_effpt = ROOT.TCanvas("c_eff","")

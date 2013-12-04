@@ -5,7 +5,7 @@ import tdrstyle
 tdrstyle.tdrstyle()
 import ROOT
 
-indir_pt = "$WORKING_DIR/plot/input/elKF/" #location of input histograms
+indir_pt = "$WORKING_DIR/tree_to_histo/histograms/" #location of input histograms -->clean up!
 indir_eta = "$WORKING_DIR/tree_to_histo/histograms/"
 
 infiles_eff_pt = {"barrel": ["elFlatPtBarrelForEff.root"],
@@ -33,19 +33,24 @@ for region in infiles_fake_pt:
     print histname_pt
     fake_hists_pt[region] = infile_pt.Get(histname_pt)
 
-infiles_eff = {}
-infiles_fake = {}
 eff_hists_pt = {}
-fake_hists_eta = {}
+
 for region in infiles_eff_pt:
-    inpath_eff_pt = indir_pt + infiles_eff_pt[region][0]
-    inpath_fake_pt = indir_pt + infiles_fake_pt[region][0]
+    histname_pt = "eff_pt_" +str(region)
+    eff_hists_pt[region] = infile_pt.Get(histname_pt)
+
+#infiles_eff = {}
+#infiles_fake = {}
+fake_hists_eta = {}
+#for region in infiles_eff_pt:
+#    inpath_eff_pt = indir_pt + infiles_eff_pt[region][0]
+#    inpath_fake_pt = indir_pt + infiles_fake_pt[region][0]
 #    print "loading efficiency histograms from: " + inpath_eff_pt
 #    print "loading fake rate histograms from: " + inpath_fake_pt 
-    infiles_eff_pt[region] = ROOT.TFile(inpath_eff_pt) # need to write in dictionary, otherwise doesnt work
-    infiles_fake_pt[region] = ROOT.TFile(inpath_fake_pt)
+#    infiles_eff_pt[region] = ROOT.TFile(inpath_eff_pt) # need to write in dictionary, otherwise doesnt work
+#    infiles_fake_pt[region] = ROOT.TFile(inpath_fake_pt)
 
-    eff_hists_pt[region] = infiles_eff_pt[region].Get("DQMData/Tracking/Track/cutsRecoHp_AssociatorByHits/efficPt")
+#    eff_hists_pt[region] = infiles_eff_pt[region].Get("DQMData/Tracking/Track/cutsRecoHp_AssociatorByHits/efficPt")
 #    fake_hists_pt[region] = infiles_fake_pt[region].Get("DQMData/Tracking/Track/cutsRecoHp_AssociatorByHits/fakeratePt")
 
 eff_hists_eta = {}

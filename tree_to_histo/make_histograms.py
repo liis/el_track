@@ -1,6 +1,7 @@
 import ROOT
 from array import array
 from tree_variables import var_list, var_type
+from histlib import fill_hist_ratio
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -176,6 +177,7 @@ for i in range(1,npt+1):
         h_eff_pt_trans.SetBinContent(i, h_sim_to_reco_match_pt_trans.GetBinContent(i)/h_sim_pt_trans.GetBinContent(i) )
     else:
         h_eff_pt_trans.SetBinContent(i,0)
+h_eff_pt_trans = fill_hist_ratio(h_sim_to_reco_match_pt_trans, h_sim_pt_trans)
 
 outfile = "histograms/trackValHistograms" + args.ptmode  + ".root"    
 o = ROOT.TFile(outfile,"recreate")

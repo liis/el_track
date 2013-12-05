@@ -2,7 +2,6 @@
 if [ "x$1" != "x" ]; then fl=$1; else fl=`ls -d crab_0*|grep -v lumi`; fi
 celist="kbfi"
 local=1
-cmsenv
 for i in $fl; do 
     echo "Starting: $i"
     if [ `ps -efa|grep $i|grep -v grep|grep -v babysit|wc -l` != "0" ]; then

@@ -75,6 +75,7 @@
 // class declaration
 //
 #define MAXPART 100
+#define MAXHIT 100
 
 class MakeTrackValTree : public edm::EDAnalyzer {
    public:
@@ -103,6 +104,8 @@ class MakeTrackValTree : public edm::EDAnalyzer {
 
   int np_gen_, np_gen_toReco_, np_reco_, np_reco_toGen_, np_fake_;
   int is_reco_matched_[MAXPART], is_gen_matched_[MAXPART];
+  int gen_passhit075_[MAXPART][MAXHIT], gen_passhit080_[MAXPART][MAXHIT];
+
   double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_phi_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART], gen_passhit3_pt_[MAXPART], gen_passhit3_eta_[MAXPART], gen_passlast_pt_[MAXPART], gen_passlast_eta_[MAXPART];
   double reco_pt_[MAXPART], reco_eta_[MAXPART], reco_phi_[MAXPART], fake_pt_[MAXPART], fake_eta_[MAXPART], fake_phi_[MAXPART];
   int gen_pdgId_[MAXPART], gen_nrSimHits_[MAXPART], gen_nrRecoHits_[MAXPART], reco_nrRecoHits_[MAXPART], reco_nrSimHits_[MAXPART];
@@ -196,6 +199,11 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     fake_eta_[i] = -999;
     fake_phi_[i] = -999;
     fake_pt_[i] = -999;
+
+    for(unsigned int h = 0; h < MAXHIT; h++){
+      gen_passhit075_[i][h] = -1;
+      gen_passhit080_[i][h] = -1;
+    }
   }
 
   edm::Handle<edm::View<reco::Track> >   trackCollection; //reconstructed tracks
@@ -257,6 +265,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     TrackingParticle* tp=const_cast<TrackingParticle*>(tpr.get());
 
     if( !tpSelector(*tp) ) continue;
+    if(tp->pt() < 1) continue; // reduce noise. such tracks are irrelevant for electrons - never makes it to ECAL
 
     ParticleBase::Point vertex = parametersDefinerTP->vertex(iEvent,iSetup,*tp);
     gen_dxy_[np_gen_] = -vertex.x()*sin(tp->phi())+vertex.y()*cos(tp->phi()); 
@@ -271,13 +280,16 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     double nr_simhits = simhits.size();
     gen_nrSimHits_[np_gen_] =  nr_simhits;
 
+  
 
+    
     bool hitdebug = false;
     if(hitdebug)
       std::cout<<"TRACKING PARTICLE with pt = "<<tp->pt()<<std::endl;
-    int hit_nr = 0;
+
+    unsigned int hit_count = 0;
     for(std::vector<PSimHit>::const_iterator it_hit = simhits.begin(); it_hit != simhits.end(); it_hit++){
-      hit_nr++;
+      hit_count++;
       DetId dId = DetId(it_hit->detUnitId() );
       unsigned int subdetId = static_cast<unsigned int>(dId.subdetId());
       int layerNumber = 0;
@@ -320,7 +332,6 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	  std::cout<<"Hit at strip TEC layer = "<<layerNumber<<std::endl;
       }
 
-      //      float hit_energy_loss = it_hit->energyLoss();
       LocalVector local_p = it_hit->momentumAtEntry();
       const GeomDetUnit* detunit = tracker->idToDetUnit(dId.rawId());
       GlobalVector global_p = detunit->toGlobal(local_p);
@@ -330,18 +341,25 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
       float hit_pt_eff = pt_at_entry/tp->pt();
 
-      if( hit_nr==3 && hit_pt_eff>0.75){
-	gen_passhit3_pt_[np_gen_] = tp->pt();
-	gen_passhit3_eta_[np_gen_] = tp->eta();
-      }
-      if( hit_nr==nr_simhits && hit_pt_eff>0.75) {
-	gen_passlast_pt_[np_gen_] = tp->pt();
-	gen_passlast_eta_[np_gen_] = tp->eta();
+      for(unsigned int hit_nr = 1; hit_nr !=nr_simhits+1; hit_nr++){
+	if( hit_nr == hit_count) { //check the track pt efficiency at each track hit
+	  if( hit_pt_eff > 0.75 )
+	    gen_passhit075_[np_gen_][hit_nr] = 1; //pass	  
+	  else
+	    gen_passhit075_[np_gen_][hit_nr] = 0; //hit exists, but fails efficiency
+	  
+	  if( hit_pt_eff > 0.8 )
+	    gen_passhit080_[np_gen_][hit_nr] = 1;
+	  else
+	    gen_passhit080_[np_gen_][hit_nr] = 0;
+	  
+	  break; //exit the loop after finding the hit of interest
+	}
       }
     }
     
     if(hitdebug)
-      std::cout<<"Nr hits counted = "<<hit_nr<<std::endl;
+      std::cout<<"Nr hits counted = "<<hit_count<<std::endl;
 
     //--------check for matched reco tracks-----------
 
@@ -495,10 +513,12 @@ MakeTrackValTree::beginJob()
   trackValTree_->Branch("gen_passlast_pt", gen_passlast_pt_, "gen_passlast_pt[np_gen]/D");
   trackValTree_->Branch("gen_passlast_eta", gen_passlast_eta_, "gen_passlast_eta[np_gen]/D");
   
-
   trackValTree_->Branch("gen_matched_pt", gen_matched_pt_, "gen_matched_pt[np_gen]/D");
   trackValTree_->Branch("gen_matched_eta", gen_matched_eta_, "gen_matched_eta[np_gen]/D");
   trackValTree_->Branch("gen_matched_phi", gen_matched_phi_, "gen_matched_phi[np_gen]/D");
+
+  trackValTree_->Branch("gen_passhit075", gen_passhit075_, "gen_passhit075_hit1[np_gen][30]/I");
+  trackValTree_->Branch("gen_passhit080", gen_passhit080_, "gen_passhit080_hit1[np_gen][30]/I");
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

@@ -26,7 +26,7 @@ process.load("Validation.Configuration.postValidation_cff")
 process.load("Validation.RecoTrack.TrackValidation_cff") # defines track associator
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
-process.MessageLogger.cerr.FwkReport.reportEvery = 100
+process.MessageLogger.cerr.FwkReport.reportEvery = 1
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use

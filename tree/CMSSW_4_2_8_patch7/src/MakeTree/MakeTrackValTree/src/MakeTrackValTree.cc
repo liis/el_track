@@ -289,7 +289,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
     unsigned int hit_count = 0;
     for(std::vector<PSimHit>::const_iterator it_hit = simhits.begin(); it_hit != simhits.end(); it_hit++){
-      hit_count++;
+
       DetId dId = DetId(it_hit->detUnitId() );
       unsigned int subdetId = static_cast<unsigned int>(dId.subdetId());
       int layerNumber = 0;
@@ -341,7 +341,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
       float hit_pt_eff = pt_at_entry/tp->pt();
 
-      for(unsigned int hit_nr = 1; hit_nr !=nr_simhits+1; hit_nr++){
+      for(unsigned int hit_nr = 0; hit_nr !=nr_simhits; hit_nr++){
 	if( hit_nr == hit_count) { //check the track pt efficiency at each track hit
 	  if( hit_pt_eff > 0.75 )
 	    gen_passhit075_[np_gen_][hit_nr] = 1; //pass	  
@@ -356,8 +356,15 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	  break; //exit the loop after finding the hit of interest
 	}
       }
+
+      std::cout<<"hit efficiency at hit "<<hit_count<<" = "<<hit_pt_eff<<std::endl;
+      hit_count++;
     }
+    std::cout<<"Found track"<<std::endl;
+    std::cout<<"hit 0 = "<<gen_passhit075_[np_gen_][0]<<std::endl;
+    std::cout<<"hit 1 = "<<gen_passhit075_[np_gen_][1]<<std::endl;
     
+
     if(hitdebug)
       std::cout<<"Nr hits counted = "<<hit_count<<std::endl;
 

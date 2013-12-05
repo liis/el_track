@@ -10,12 +10,13 @@ parser.add_argument('--ptmode', dest='ptmode', choices=["Pt1","Pt10","Pt100","Fl
 args = parser.parse_args()
 
 indir = "$WORKING_DIR/tree_to_histo/input_trees/"
-infile = "trackValTree_el" + args.ptmode + ".root"
+#infile = "trackValTree_el" + args.ptmode + ".root"
+infile = "trackValTree.root" ## CLEAN UP!
 
 f = ROOT.TFile(indir + infile)
 t = f.Get("TrackValTreeMaker/trackValTree")
 
-report_every = 10000
+report_every = 1
 nEvt = t.GetEntries()
 
 print "Analyzing dataset for " + args.ptmode + " with " + str(nEvt) + " events"
@@ -92,6 +93,10 @@ for i in range(nEvt):
             h_fake_pt_endcap.Fill(vt['fake_pt'][it_p])
 
     for it_p in range( vt['np_gen'][0]): #loop over simulated tracks
+        print "Found generated track"
+        for nrhit in range(0,30):
+            print vt["gen_passhit075"][it_p][nrhit]
+        
         h_sim_eta.Fill(vt['gen_eta'][it_p])
         
         if(vt['gen_passhit3_eta'][it_p] > -100):

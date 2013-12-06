@@ -102,12 +102,13 @@ class MakeTrackValTree : public edm::EDAnalyzer {
 
   TTree *trackValTree_;
 
-  int np_gen_, np_gen_toReco_, np_reco_, np_reco_toGen_, np_fake_;
+  int np_gen_, np_gen_toReco_, np_reco_, np_reco_toGen_, np_fake_, run_nr_, evt_nr_, lumi_nr_;
   int is_reco_matched_[MAXPART], is_gen_matched_[MAXPART];
-  int gen_passhit075_[MAXPART][MAXHIT], gen_passhit080_[MAXPART][MAXHIT];
-  float gen_hit_pt_[MAXPART][MAXHIT];
+  
+  float gen_hit_pt_[MAXPART][MAXHIT], gen_hit_eta_[MAXPART][MAXHIT], gen_hit_phi_[MAXPART][MAXHIT];
+  int gen_hit_subdetector_[MAXPART][MAXHIT], gen_hit_layer_[MAXPART][MAXHIT];
 
-  double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_phi_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART], gen_passhit3_pt_[MAXPART], gen_passhit3_eta_[MAXPART], gen_passlast_pt_[MAXPART], gen_passlast_eta_[MAXPART];
+  double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_phi_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART];
   double reco_pt_[MAXPART], reco_eta_[MAXPART], reco_phi_[MAXPART], fake_pt_[MAXPART], fake_eta_[MAXPART], fake_phi_[MAXPART];
   int gen_pdgId_[MAXPART], gen_nrSimHits_[MAXPART], gen_nrRecoHits_[MAXPART], reco_nrRecoHits_[MAXPART], reco_nrSimHits_[MAXPART];
   double reco_nrSharedHits_[MAXPART], gen_nrSharedHits_[MAXPART];
@@ -167,6 +168,11 @@ MakeTrackValTree::~MakeTrackValTree()
 void
 MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
+
+  run_nr_ = iEvent.id().run();
+  lumi_nr_ = iEvent.id().luminosityBlock();
+  evt_nr_ = iEvent.id().event();
+
   //reinitialize at each event
   for (unsigned int i = 0; i < MAXPART; i++){
     is_reco_matched_[i] = 0;
@@ -180,11 +186,6 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     gen_nrRecoHits_[i] = -10;
     gen_nrSharedHits_[i] = -10;
     
-    gen_passhit3_pt_[i] = -999;
-    gen_passhit3_eta_[i] = -999;
-    gen_passlast_pt_[i] = -999;
-    gen_passlast_eta_[i] = -999;
-
     gen_matched_eta_[i] = -999;
     gen_matched_pt_[i] = -999;
     gen_matched_phi_[i] = -999;
@@ -203,8 +204,10 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
     for(unsigned int h = 0; h < MAXHIT; h++){
       gen_hit_pt_[i][h] = -999;
-      gen_passhit075_[i][h] = -1;
-      gen_passhit080_[i][h] = -1;
+      gen_hit_eta_[i][h] = -999;
+      gen_hit_phi_[i][h] = -999;
+      gen_hit_layer_[i][h] = -10;
+      gen_hit_subdetector_[i][h] = -10;
     }
   }
 
@@ -231,32 +234,10 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   iSetup.get<TrackerDigiGeometryRecord>().get(tracker);
 
 
-  /*
-  edm::Handle<edm::PSimHitContainer> hitsPxlBrlLow;
-  iEvent.getByLabel("g4SimHits","TrackerHitsPixelBarrelLowTof", hitsPxlBrlLow);
-  
-    if (!hitsPxlBrlLow.isValid()) {
-    edm::LogError("MakeTrackValTree::analyze")
-      << "Unable to find TrackerHitsPixelBarrelLowTof in event!";
-    return;                                             
-  }
-  */
-
   TrackingParticleSelector tpSelector = TrackingParticleSelector(ptMinTP, minRapidityTP, maxRapidityTP,tipTP, lipTP, minHitTP,               
 								 signalOnlyTP, chargedOnlyTP, stableOnlyTP,pdgIdTP,minAbsEtaTP,maxAbsEtaTP);  
   
-  //---------------------Loop over simulated hits------------------------------
-  edm::PSimHitContainer::const_iterator itHit;
-
-  /*
-  //pixel barrel low container
-  for (itHit = hitsPxlBrlLow->begin(); itHit != hitsPxlBrlLow->end(); ++itHit){
-    DetId detid=DetId(itHit->detUnitId());
-    std::cout<<"DetId = "<<detid<<std::endl;
-  }
-  */
-
-
+  
   //----------------------Loop over sim tracks--------------------------------
   np_gen_ = 0;
   np_gen_toReco_ = 0;
@@ -295,17 +276,20 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       DetId dId = DetId(it_hit->detUnitId() );
       unsigned int subdetId = static_cast<unsigned int>(dId.subdetId());
       int layerNumber = 0;
+      int subdetector = -1;
       if(subdetId == PixelSubdetector::PixelBarrel){
 	PXBDetId pxbid(dId.rawId());
 	layerNumber = pxbid.layer();
 	if(hitdebug)
 	  std::cout<<"Hit at pixel barrel layer = "<<layerNumber<<std::endl;
+	subdetector = 1;
       }
       else if(subdetId == PixelSubdetector::PixelEndcap){
 	PXFDetId pxfid(dId.rawId());
 	layerNumber = pxfid.disk();
 	if(hitdebug)
 	  std::cout<<"Hit at pixel endcap layer = "<<layerNumber<<std::endl;
+	subdetector = 2;
       }
       
       else if( subdetId == StripSubdetector::TIB){
@@ -313,6 +297,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	layerNumber = tibid.layer();
 	if(hitdebug)
 	  std::cout<<"Hit at strip TIB layer = "<<layerNumber<<std::endl;
+	subdetector = 3;
       }
     
       else if( subdetId == StripSubdetector::TOB){
@@ -320,16 +305,19 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	layerNumber = tobid.layer();
 	if(hitdebug)
 	  std::cout<<"Hit at strip TOB layer = "<<layerNumber<<std::endl;
+	subdetector = 4;
       }
       else if( subdetId == StripSubdetector::TID){
 	TIDDetId tidid(dId.rawId());
 	layerNumber = tidid.wheel();
 	if(hitdebug)
 	  std::cout<<"Hit at strip TID layer = "<<layerNumber<<std::endl;
+	subdetector = 5;
       }
       else if( subdetId == StripSubdetector::TEC ){
 	TECDetId tecid(dId.rawId());
 	layerNumber = tecid.wheel();
+	subdetector = 6;
 	if(hitdebug)
 	  std::cout<<"Hit at strip TEC layer = "<<layerNumber<<std::endl;
       }
@@ -337,38 +325,26 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       LocalVector local_p = it_hit->momentumAtEntry();
       const GeomDetUnit* detunit = tracker->idToDetUnit(dId.rawId());
       GlobalVector global_p = detunit->toGlobal(local_p);
-      float pt_at_entry = global_p.perp();
-      if(hitdebug)
-	std::cout<<"momentum at entry = "<<pt_at_entry<<std::endl;
 
+      float hit_eta_global = global_p.eta();
+      float hit_phi_global = global_p.phi();
+      float pt_at_entry = global_p.perp();
       float hit_pt_eff = pt_at_entry/tp->pt();
 
-      for(unsigned int hit_nr = 0; hit_nr !=nr_simhits; hit_nr++){
-	if( hit_nr == hit_count) { //check the track pt efficiency at each track hit
-	  pt_at_entry = gen_hit_pt_[np_gen_][hit_nr];
+      //-----------fill tree entries for each hit----------
+      gen_hit_pt_[np_gen_][hit_count] = pt_at_entry;
+      gen_hit_eta_[np_gen_][hit_count] = hit_eta_global;
+      gen_hit_phi_[np_gen_][hit_count] = hit_phi_global;
 
-	  //-----------efficiencies, possibly unnecessary----------
-	  if( hit_pt_eff > 0.75 )
-	    gen_passhit075_[np_gen_][hit_nr] = 1; //pass	  
-	  else
-	    gen_passhit075_[np_gen_][hit_nr] = 0; //hit exists, but fails efficiency
-	  
-	  if( hit_pt_eff > 0.8 )
-	    gen_passhit080_[np_gen_][hit_nr] = 1;
-	  else
-	    gen_passhit080_[np_gen_][hit_nr] = 0;
-	  //-----------------------------------------------
-	  break; //exit the loop after finding the hit of interest
-	}
+      gen_hit_layer_[np_gen_][hit_count] = layerNumber;
+      gen_hit_subdetector_[np_gen_][hit_count] = subdetector;        
+      //---------------------------------------------------
+      if(hitdebug){
+	std::cout<<"hit pt = "<<pt_at_entry<<", eta = "<<hit_eta_global<<", phi = "<<hit_phi_global<<std::endl;
+	std::cout<<"hit efficiency at hit "<<hit_count<<" = "<<hit_pt_eff<<std::endl;
       }
-
-      std::cout<<"hit efficiency at hit "<<hit_count<<" = "<<hit_pt_eff<<std::endl;
       hit_count++;
     }
-    std::cout<<"Found track with pt"<<tp->pt()<<std::endl;
-    std::cout<<"hit 0 = "<<gen_hit_pt_[np_gen_][0]<<std::endl;
-    std::cout<<"hit 1 = "<<gen_hit_pt_[np_gen_][1]<<std::endl;
-    
 
     if(hitdebug)
       std::cout<<"Nr hits counted = "<<hit_count<<std::endl;
@@ -487,6 +463,10 @@ MakeTrackValTree::beginJob()
 {
   edm::Service<TFileService> fs;
   trackValTree_ = fs->make<TTree>("trackValTree","trackValTree");
+
+  trackValTree_->Branch("run_nr", &run_nr_, "run_nr/I");
+  trackValTree_->Branch("evt_nr", &evt_nr_, "evt_nr/I");
+  trackValTree_->Branch("lumi_nr", &lumi_nr_, "lumi_nr/I");
  
   trackValTree_->Branch("np_reco", &np_reco_, "np_reco/I");
   trackValTree_->Branch("np_reco_toGen", &np_reco_toGen_, "np_reco_toGen/I");
@@ -520,18 +500,15 @@ MakeTrackValTree::beginJob()
   trackValTree_->Branch("gen_nrRecoHits", gen_nrRecoHits_, "gen_nrRecoHits[np_gen]/I");
   trackValTree_->Branch("gen_nrSharedHits", gen_nrSharedHits_, "gen_nrSharedHits[np_gen]/D");  
 
-  //  trackValTree_->Branch("gen_passhit3_pt", gen_passhit3_pt_, "gen_passhit3_pt[np_gen]/D");
-  //trackValTree_->Branch("gen_passhit3_eta", gen_passhit3_eta_, "gen_passhit3_eta[np_gen]/D");
-  //trackValTree_->Branch("gen_passlast_pt", gen_passlast_pt_, "gen_passlast_pt[np_gen]/D");
-  //trackValTree_->Branch("gen_passlast_eta", gen_passlast_eta_, "gen_passlast_eta[np_gen]/D");
-  
   trackValTree_->Branch("gen_matched_pt", gen_matched_pt_, "gen_matched_pt[np_gen]/D");
   trackValTree_->Branch("gen_matched_eta", gen_matched_eta_, "gen_matched_eta[np_gen]/D");
   trackValTree_->Branch("gen_matched_phi", gen_matched_phi_, "gen_matched_phi[np_gen]/D");
 
   trackValTree_->Branch("gen_hit_pt", gen_hit_pt_, "gen_hit_pt[np_gen][50]/F");
-  trackValTree_->Branch("gen_passhit075", gen_passhit075_, "gen_passhit075_hit1[np_gen][50]/I"); //only one variable dimension allowed, sync with MAXHIT
-  trackValTree_->Branch("gen_passhit080", gen_passhit080_, "gen_passhit080_hit1[np_gen][50]/I");
+  trackValTree_->Branch("gen_hit_eta", gen_hit_eta_, "gen_hit_eta[np_gen][50]/F");
+  trackValTree_->Branch("gen_hit_phi", gen_hit_phi_, "gen_hit_phi[np_gen][50]/F");
+  trackValTree_->Branch("gen_hit_layer", gen_hit_layer_, "gen_hit_layer[np_gen][50]/I");
+  trackValTree_->Branch("gen_hit_subdetector", gen_hit_subdetector_, "gen_hit_subdetector[np_gen][50]/I");
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

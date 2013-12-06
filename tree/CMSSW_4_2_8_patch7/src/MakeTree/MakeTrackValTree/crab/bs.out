@@ -1,10 +1,10 @@
-crab:  Version 2.9.1 running on Wed Dec  4 09:50:55 2013 CET (08:50:55 UTC)
+crab:  Version 2.9.1 running on Fri Dec  6 13:51:01 2013 CET (12:51:01 UTC)
 
 crab. Working options:
 	scheduler           remoteGlidein
 	job type            CMSSW
 	server              OFF
-	working directory   /shome/liis/el_track/tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab/crab_0_elPt100Mode/
+	working directory   /shome/liis/el_track/tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab/crab_0_elPt100/
 
 crab:  error detecting glite version 
 crab:  error detecting glite version 
@@ -12,8 +12,8 @@ crab:  Checking the status of all jobs: please wait
 crab:  
 ID    END STATUS            ACTION       ExeExitCode JobExitCode E_HOST
 ----- --- ----------------- ------------  ---------- ----------- ---------
-1     Y   Retrieved         Cleared       0          0           red.unl.edu
-2     Y   Retrieved         Cleared       0          0           red.unl.edu
+1     Y   Retrieved         Cleared       0          0           cit-gatekeeper.ultralight.org
+2     Y   Retrieved         Cleared       0          0           cmsgrid01.hep.wisc.edu
 
 crab:  ExitCodes Summary
  >>>>>>>>> 2 Jobs with Wrapper Exit Code : 0 
@@ -23,7 +23,7 @@ crab:  ExitCodes Summary
 crab:   2 Total Jobs 
 
 crab:  You can also follow the status of this task on :
-	CMS Dashboard: http://dashb-cms-job-task.cern.ch/taskmon.html#task=liis_crab_0_elPt100Mode_f924ei
-	Your task name is: liis_crab_0_elPt100Mode_f924ei 
+	CMS Dashboard: http://dashb-cms-job-task.cern.ch/taskmon.html#task=liis_crab_0_elPt100_73gvf6
+	Your task name is: liis_crab_0_elPt100_73gvf6 
 
-Log file is /shome/liis/el_track/tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab/crab_0_elPt100Mode/log/crab.log
+Log file is /shome/liis/el_track/tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab/crab_0_elPt100/log/crab.log

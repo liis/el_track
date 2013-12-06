@@ -75,7 +75,7 @@
 // class declaration
 //
 #define MAXPART 100
-#define MAXHIT 100
+#define MAXHIT 50
 
 class MakeTrackValTree : public edm::EDAnalyzer {
    public:
@@ -105,6 +105,7 @@ class MakeTrackValTree : public edm::EDAnalyzer {
   int np_gen_, np_gen_toReco_, np_reco_, np_reco_toGen_, np_fake_;
   int is_reco_matched_[MAXPART], is_gen_matched_[MAXPART];
   int gen_passhit075_[MAXPART][MAXHIT], gen_passhit080_[MAXPART][MAXHIT];
+  float gen_hit_pt_[MAXPART][MAXHIT];
 
   double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_phi_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART], gen_passhit3_pt_[MAXPART], gen_passhit3_eta_[MAXPART], gen_passlast_pt_[MAXPART], gen_passlast_eta_[MAXPART];
   double reco_pt_[MAXPART], reco_eta_[MAXPART], reco_phi_[MAXPART], fake_pt_[MAXPART], fake_eta_[MAXPART], fake_phi_[MAXPART];
@@ -201,6 +202,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     fake_pt_[i] = -999;
 
     for(unsigned int h = 0; h < MAXHIT; h++){
+      gen_hit_pt_[i][h] = -999;
       gen_passhit075_[i][h] = -1;
       gen_passhit080_[i][h] = -1;
     }
@@ -343,6 +345,9 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
       for(unsigned int hit_nr = 0; hit_nr !=nr_simhits; hit_nr++){
 	if( hit_nr == hit_count) { //check the track pt efficiency at each track hit
+	  pt_at_entry = gen_hit_pt_[np_gen_][hit_nr];
+
+	  //-----------efficiencies, possibly unnecessary----------
 	  if( hit_pt_eff > 0.75 )
 	    gen_passhit075_[np_gen_][hit_nr] = 1; //pass	  
 	  else
@@ -352,7 +357,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	    gen_passhit080_[np_gen_][hit_nr] = 1;
 	  else
 	    gen_passhit080_[np_gen_][hit_nr] = 0;
-	  
+	  //-----------------------------------------------
 	  break; //exit the loop after finding the hit of interest
 	}
       }
@@ -360,9 +365,9 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       std::cout<<"hit efficiency at hit "<<hit_count<<" = "<<hit_pt_eff<<std::endl;
       hit_count++;
     }
-    std::cout<<"Found track"<<std::endl;
-    std::cout<<"hit 0 = "<<gen_passhit075_[np_gen_][0]<<std::endl;
-    std::cout<<"hit 1 = "<<gen_passhit075_[np_gen_][1]<<std::endl;
+    std::cout<<"Found track with pt"<<tp->pt()<<std::endl;
+    std::cout<<"hit 0 = "<<gen_hit_pt_[np_gen_][0]<<std::endl;
+    std::cout<<"hit 1 = "<<gen_hit_pt_[np_gen_][1]<<std::endl;
     
 
     if(hitdebug)
@@ -515,17 +520,18 @@ MakeTrackValTree::beginJob()
   trackValTree_->Branch("gen_nrRecoHits", gen_nrRecoHits_, "gen_nrRecoHits[np_gen]/I");
   trackValTree_->Branch("gen_nrSharedHits", gen_nrSharedHits_, "gen_nrSharedHits[np_gen]/D");  
 
-  trackValTree_->Branch("gen_passhit3_pt", gen_passhit3_pt_, "gen_passhit3_pt[np_gen]/D");
-  trackValTree_->Branch("gen_passhit3_eta", gen_passhit3_eta_, "gen_passhit3_eta[np_gen]/D");
-  trackValTree_->Branch("gen_passlast_pt", gen_passlast_pt_, "gen_passlast_pt[np_gen]/D");
-  trackValTree_->Branch("gen_passlast_eta", gen_passlast_eta_, "gen_passlast_eta[np_gen]/D");
+  //  trackValTree_->Branch("gen_passhit3_pt", gen_passhit3_pt_, "gen_passhit3_pt[np_gen]/D");
+  //trackValTree_->Branch("gen_passhit3_eta", gen_passhit3_eta_, "gen_passhit3_eta[np_gen]/D");
+  //trackValTree_->Branch("gen_passlast_pt", gen_passlast_pt_, "gen_passlast_pt[np_gen]/D");
+  //trackValTree_->Branch("gen_passlast_eta", gen_passlast_eta_, "gen_passlast_eta[np_gen]/D");
   
   trackValTree_->Branch("gen_matched_pt", gen_matched_pt_, "gen_matched_pt[np_gen]/D");
   trackValTree_->Branch("gen_matched_eta", gen_matched_eta_, "gen_matched_eta[np_gen]/D");
   trackValTree_->Branch("gen_matched_phi", gen_matched_phi_, "gen_matched_phi[np_gen]/D");
 
-  trackValTree_->Branch("gen_passhit075", gen_passhit075_, "gen_passhit075_hit1[np_gen][30]/I");
-  trackValTree_->Branch("gen_passhit080", gen_passhit080_, "gen_passhit080_hit1[np_gen][30]/I");
+  trackValTree_->Branch("gen_hit_pt", gen_hit_pt_, "gen_hit_pt[np_gen][50]/F");
+  trackValTree_->Branch("gen_passhit075", gen_passhit075_, "gen_passhit075_hit1[np_gen][50]/I"); //only one variable dimension allowed, sync with MAXHIT
+  trackValTree_->Branch("gen_passhit080", gen_passhit080_, "gen_passhit080_hit1[np_gen][50]/I");
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

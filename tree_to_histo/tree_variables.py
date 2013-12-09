@@ -1,12 +1,12 @@
 from array import *
 import numpy as np
 maxpart = 100
-maxhit = 50
+maxhit = 30
 
 int_list = ["np_reco", "np_gen", "np_fake", "np_gen_toReco"]
 int_array_list = [] 
 double_list = []
-int_2D_array_list = ["gen_passhit075","gen_passhit080"]
+int_2D_array_list = ["gen_hit_subdetector", "gen_hit_layer"]
 float_2D_array_list = ["gen_hit_pt"]
 
 double_array_list_hits = []

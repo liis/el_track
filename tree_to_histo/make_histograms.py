@@ -12,13 +12,14 @@ parser.add_argument('--ptmode', dest='ptmode', choices=["Pt1","Pt10","Pt100","Fl
 args = parser.parse_args()
 
 indir = "$WORKING_DIR/tree_to_histo/input_trees/"
-#infile = "trackValTree_el" + args.ptmode + ".root"
-infile = "trackValTree.root" ## CLEAN UP!
+infile = "trackValTree_el" + args.ptmode + ".root"
+#infile = "trackValTree.root" ## CLEAN UP!
 
 f = ROOT.TFile(indir + infile)
 t = f.Get("TrackValTreeMaker/trackValTree")
 
-report_every = 1
+report_every = 100
+max_event = -1
 nEvt = t.GetEntries()
 
 print "Analyzing dataset for " + args.ptmode + " with " + str(nEvt) + " events"
@@ -91,6 +92,8 @@ for quality_flag in sim_hit_quality_flags:
 # Event loop
 for i in range(nEvt):
     if i % report_every == 0: print "Event nr: " + str(i)
+    if i == max_event and not i == -1: break
+
     t.LoadTree(i)
     t.GetEntry(i)
     for it_p in range( vt['np_reco'][0]): # loop over reco-tracks
@@ -119,20 +122,20 @@ for i in range(nEvt):
 
         h_sim_eta.Fill(gen_track_eta)
         
-        print "Found generated track with pt " + str(gen_track_pt)
+#        print "Found generated track with pt " + str(gen_track_pt)
         for nrhit in range(0,maxhit):
             pt_at_entry = vt["gen_hit_pt"][it_p][nrhit]
             hit_subdet = vt["gen_hit_subdetector"][it_p][nrhit]
             hit_layer = vt["gen_hit_layer"][it_p][nrhit]
 
-            print "hit pt = ", pt_at_entry
-            if pt_at_entry > 0: # Nth hit exists
+#            print "hit pt = " + str(pt_at_entry) + ", hit subdetector = " + str(hit_subdet) + ", layer = " + str(hit_layer);
+            if pt_at_entry > 0: # Nth hit exists -- fill eta and pt histograms for efficiency plots
                 h_sim_eta_byhit[nrhit].Fill(gen_track_eta)
                 h_sim_pt_byhit[nrhit].Fill(gen_track_pt)
                 for quality_flag, cut in sim_hit_quality_flags.iteritems():
-                    if pt_at_entry/gen_track_pt > cut: #
+                    if pt_at_entry/gen_track_pt > cut: # check hit pt-quality condition at each hit 
                         h_sim_eta_byhit_quality[quality_flag][nrhit].Fill(gen_track_eta)
-                        h_sim_pt_byhit_quality075[nrhit].Fill(gen_track_pt) #for pt efficiency plot at each hit
+                        h_sim_pt_byhit_quality075[nrhit].Fill(gen_track_pt) 
                    
                 
         if abs(vt['gen_eta'][it_p]) < 0.9:

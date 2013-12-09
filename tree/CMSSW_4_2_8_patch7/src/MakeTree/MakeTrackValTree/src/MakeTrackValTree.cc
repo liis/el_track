@@ -95,10 +95,9 @@ class MakeTrackValTree : public edm::EDAnalyzer {
       virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
       virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
       //------functions----------
-  //std::pair< std::vector<unsigned int>, int> getHitParameters(std::vector<PSimHit>::const_iterator); 
-      std::vector<unsigned int> getHitPosition(std::vector<PSimHit>::const_iterator, bool);
+      std::vector<int> getHitPosition(DetId, bool);
       GlobalVector getHitMomentum(std::vector<PSimHit>::const_iterator, edm::ESHandle<TrackerGeometry>, bool);
-      std::vector<PSimHit> getGoodHits(std::vector<PSimHit>);
+      std::vector<PSimHit> getGoodHits(std::vector<PSimHit>, bool);
     
   // ----------member data ---------------------------
   double ptMinTP, minRapidityTP, maxRapidityTP, tipTP, lipTP, signalOnlyTP, chargedOnlyTP, stableOnlyTP, minAbsEtaTP, maxAbsEtaTP;
@@ -169,24 +168,6 @@ MakeTrackValTree::~MakeTrackValTree()
 // member functions
 //
 
-//--------------------------functions----------------------------------                                                                                   
-
-//std::pair< std::vector<unsigned int>, int> getHitParameters(std::vector<PSimHit>::const_iterator it_hit)
-
-//int getHitPosition(int a){
-// return the number of the layer and a number corresponding to the subdetector
-
-  //  std::cout<<it_hit->momentumAtEntry()<<std::endl;
-  //  std::vector<unsigned int> tracker_pos;
-  // tracker_pos.push_back(0);
-  //tracker_pos.push_back(0);
-  //  int momentum_at_entry = 1; 
-
-
-
-//  return 1;
-//}
-
 GlobalVector MakeTrackValTree::getHitMomentum(std::vector<PSimHit>::const_iterator it_hit, edm::ESHandle<TrackerGeometry> tracker, bool hitdebug = false){
   DetId dId = DetId(it_hit->detUnitId() );
   LocalVector local_p = it_hit->momentumAtEntry();
@@ -198,11 +179,11 @@ GlobalVector MakeTrackValTree::getHitMomentum(std::vector<PSimHit>::const_iterat
   return global_p;
 }
 
-std::vector<unsigned int> MakeTrackValTree::getHitPosition(std::vector<PSimHit>::const_iterator it_hit, bool hitdebug = false) {
-  DetId dId = DetId(it_hit->detUnitId() );
+std::vector<int> MakeTrackValTree::getHitPosition(DetId dId, bool hitdebug = false) {
+  //  DetId dId = DetId(it_hit->detUnitId() );
 
-  unsigned int layerNumber = 0;
-  unsigned int subdetId = static_cast<unsigned int>(dId.subdetId());
+  int layerNumber = 0;
+  int subdetId = static_cast<int>(dId.subdetId());
 
   if(subdetId == PixelSubdetector::PixelBarrel){
     PXBDetId pxbid(dId.rawId());
@@ -244,39 +225,47 @@ std::vector<unsigned int> MakeTrackValTree::getHitPosition(std::vector<PSimHit>:
       std::cout<<"Hit at TEC layer = "<<layerNumber<<", corresponding to subdetId = "<<subdetId<<std::endl;
   }
 
-  std::vector<unsigned int> hit_position;
+  std::vector<int> hit_position;
   hit_position.push_back(subdetId);
   hit_position.push_back(layerNumber);
 
   return hit_position;
 }
 
-std::vector<PSimHit>  MakeTrackValTree::getGoodHits(std::vector<PSimHit> simhits) 
+std::vector<PSimHit>  MakeTrackValTree::getGoodHits(std::vector<PSimHit> simhits, bool hitdebug = false) 
 //loop over all hits in the event and omit subsequent hit in the same subdetector layer 
 {
-  std::cout<<"hits size = "<<simhits.size()<<std::endl;
-
+  
   std::vector<PSimHit> good_hits;
   for(std::vector<PSimHit>::const_iterator it_hit = simhits.begin(); it_hit != simhits.end(); it_hit++ ){
+    DetId dId = DetId(it_hit->detUnitId() ); 
+    std::vector<int> hitposition = getHitPosition(dId, hitdebug);
 
+    int hit_subdetector = hitposition.at(0);
+    int hit_layer = hitposition.at(1);
       
     if( !good_hits.size() )
       good_hits.push_back(*it_hit);
-    else{
-      DetId dIdGood = DetId(good_hits.back().detUnitId());
-      
+    else{ //compare to the previous hit position
+      DetId dId_good = DetId(good_hits.back().detUnitId() );
+
+      int good_hit_subdetector = (getHitPosition(dId_good)).at(0);
+      int good_hit_layer = (getHitPosition(dId_good)).at(1);
+
+      if( hit_subdetector == good_hit_subdetector && hit_layer == good_hit_layer){
+	good_hits.pop_back(); //replace the previous hit with a later one
+	good_hits.push_back(*it_hit);
+      }
+      else
+	good_hits.push_back(*it_hit);
     }
-    //    else{
-      //      if( good_hits.back().momentumAtEntry > it_hit->momentumAtEntry() )
-      //	good_hits.pop_back(); //remove the hit, if with higher pt
-      //	good_hits.push_back(*it_hit);
-    //	}
-    //std::cout<<good_hits.back().momentumAtEntry()<<std::endl;
   }
+ 
+  if(hitdebug)
+    std::cout<<"good hits size = "<<good_hits.size()<<std::endl;
   
-  std::cout<<"good hits size = "<<good_hits.size()<<std::endl;
   return good_hits;
-  }
+}
 
 // ------------ method called for each event  ------------
 void
@@ -361,7 +350,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     TrackingParticle* tp=const_cast<TrackingParticle*>(tpr.get());
 
     if( !tpSelector(*tp) ) continue;
-    if(tp->pt() < 1) continue; // reduce noise. such tracks are irrelevant for electrons - never makes it to ECAL
+    if( tp->pt() < 2 ) continue; // reduce noise. such tracks are irrelevant for electrons - never makes it to ECAL
 
     ParticleBase::Point vertex = parametersDefinerTP->vertex(iEvent,iSetup,*tp);
     gen_dxy_[np_gen_] = -vertex.x()*sin(tp->phi())+vertex.y()*cos(tp->phi()); 
@@ -372,18 +361,22 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     gen_pt_[np_gen_] = tp->pt();
     gen_pdgId_[np_gen_] = tp->pdgId();
 
-    std::vector<PSimHit> simhits=tp->trackPSimHit(DetId::Tracker);        
+    bool hitdebug = true;
+
+
+    std::vector<PSimHit> simhits=tp->trackPSimHit(DetId::Tracker);
     double nr_simhits = simhits.size();
-    gen_nrSimHits_[np_gen_] =  nr_simhits;
-    std::vector<PSimHit> goodhits=getGoodHits(simhits);
-    
-    bool hitdebug = false;
-    if(hitdebug)
+
+    if(hitdebug){
       std::cout<<"TRACKING PARTICLE with pt = "<<tp->pt()<<std::endl;
+      std::cout<<"Sim hits size = "<<simhits.size()<<std::endl;
+    }
+
+    gen_nrSimHits_[np_gen_] =  nr_simhits;
+    std::vector<PSimHit> goodhits=getGoodHits(simhits, hitdebug); //omit subsequent hits in the same subdetector layer  
 
     unsigned int hit_count = 0;
-
-    for(std::vector<PSimHit>::const_iterator it_hit = simhits.begin(); it_hit != simhits.end(); it_hit++){
+    for(std::vector<PSimHit>::const_iterator it_hit = goodhits.begin(); it_hit != goodhits.end(); it_hit++){
 
       GlobalVector global_p = getHitMomentum(it_hit,tracker, hitdebug);      
       float hit_eta_global = global_p.eta();
@@ -391,7 +384,8 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       float pt_at_entry = global_p.perp();
       float hit_pt_eff = pt_at_entry/tp->pt();
 
-      std::vector<unsigned int> hit_position= getHitPosition(it_hit, hitdebug);
+      DetId dId = DetId(it_hit->detUnitId() ); 
+      std::vector<int> hit_position= getHitPosition(dId, hitdebug);
       int subdetector = hit_position.at(0);
       int layerNumber = hit_position.at(1);
 
@@ -404,9 +398,9 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       gen_hit_subdetector_[np_gen_][hit_count] = subdetector;        
       //---------------------------------------------------
 	   
-      if(hitdebug){
+      if(hitdebug)
 	std::cout<<"hit efficiency at hit "<<hit_count<<" = "<<hit_pt_eff<<std::endl;
-      }
+      
       hit_count++;
     }
 

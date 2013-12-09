@@ -41,3 +41,11 @@ def fill_hist_ratio(h_numerator, h_denominator, outhistname, binning = "const"):
 
     return h_ratio
 
+#def filter_unique_hits(nhits):
+#    """
+#    loop over all hits in the event and omit subsequent hit in the same subdetector layer
+#    """
+#    good_hits = []
+#    for it_hit in range(0,nhits):
+#        good_hits.append()
+#    return good_hits

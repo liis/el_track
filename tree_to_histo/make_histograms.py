@@ -122,6 +122,9 @@ for i in range(nEvt):
         print "Found generated track with pt " + str(gen_track_pt)
         for nrhit in range(0,maxhit):
             pt_at_entry = vt["gen_hit_pt"][it_p][nrhit]
+            hit_subdet = vt["gen_hit_subdetector"][it_p][nrhit]
+            hit_layer = vt["gen_hit_layer"][it_p][nrhit]
+
             print "hit pt = ", pt_at_entry
             if pt_at_entry > 0: # Nth hit exists
                 h_sim_eta_byhit[nrhit].Fill(gen_track_eta)

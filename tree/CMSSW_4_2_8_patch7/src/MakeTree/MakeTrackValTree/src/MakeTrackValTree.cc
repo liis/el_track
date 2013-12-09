@@ -94,8 +94,13 @@ class MakeTrackValTree : public edm::EDAnalyzer {
       virtual void endRun(edm::Run const&, edm::EventSetup const&);
       virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
       virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
-
-      // ----------member data ---------------------------
+      //------functions----------
+  //std::pair< std::vector<unsigned int>, int> getHitParameters(std::vector<PSimHit>::const_iterator); 
+      std::vector<unsigned int> getHitPosition(std::vector<PSimHit>::const_iterator, bool);
+      GlobalVector getHitMomentum(std::vector<PSimHit>::const_iterator, edm::ESHandle<TrackerGeometry>, bool);
+      std::vector<PSimHit> getGoodHits(std::vector<PSimHit>);
+    
+  // ----------member data ---------------------------
   double ptMinTP, minRapidityTP, maxRapidityTP, tipTP, lipTP, signalOnlyTP, chargedOnlyTP, stableOnlyTP, minAbsEtaTP, maxAbsEtaTP;
   std::vector<int> pdgIdTP;
   int minHitTP;
@@ -164,11 +169,119 @@ MakeTrackValTree::~MakeTrackValTree()
 // member functions
 //
 
+//--------------------------functions----------------------------------                                                                                   
+
+//std::pair< std::vector<unsigned int>, int> getHitParameters(std::vector<PSimHit>::const_iterator it_hit)
+
+//int getHitPosition(int a){
+// return the number of the layer and a number corresponding to the subdetector
+
+  //  std::cout<<it_hit->momentumAtEntry()<<std::endl;
+  //  std::vector<unsigned int> tracker_pos;
+  // tracker_pos.push_back(0);
+  //tracker_pos.push_back(0);
+  //  int momentum_at_entry = 1; 
+
+
+
+//  return 1;
+//}
+
+GlobalVector MakeTrackValTree::getHitMomentum(std::vector<PSimHit>::const_iterator it_hit, edm::ESHandle<TrackerGeometry> tracker, bool hitdebug = false){
+  DetId dId = DetId(it_hit->detUnitId() );
+  LocalVector local_p = it_hit->momentumAtEntry();
+  const GeomDetUnit* detunit = tracker->idToDetUnit(dId.rawId());
+  GlobalVector global_p = detunit->toGlobal(local_p);
+  if( hitdebug )
+    std::cout<<"hit pt = "<<it_hit->momentumAtEntry().perp()<<", eta = "<<it_hit->momentumAtEntry().eta()<<", phi = "<<it_hit->momentumAtEntry().phi()<<std::endl;
+
+  return global_p;
+}
+
+std::vector<unsigned int> MakeTrackValTree::getHitPosition(std::vector<PSimHit>::const_iterator it_hit, bool hitdebug = false) {
+  DetId dId = DetId(it_hit->detUnitId() );
+
+  unsigned int layerNumber = 0;
+  unsigned int subdetId = static_cast<unsigned int>(dId.subdetId());
+
+  if(subdetId == PixelSubdetector::PixelBarrel){
+    PXBDetId pxbid(dId.rawId());
+    layerNumber = pxbid.layer();
+    if(hitdebug)
+      std::cout<<"Hit at pixel barrel layer = "<<layerNumber<<", corresponding to subdetId = "<<subdetId<<std::endl;
+  }
+
+  else if(subdetId == PixelSubdetector::PixelEndcap){
+    PXFDetId pxfid(dId.rawId());
+    layerNumber = pxfid.disk();
+    if(hitdebug)
+   std::cout<<"Hit at pixel endcap layer = "<<layerNumber<<", corresponding to subdetId = "<<subdetId<<std::endl;
+  }
+      
+  else if( subdetId == StripSubdetector::TIB){
+    TIBDetId tibid(dId.rawId());
+    layerNumber = tibid.layer();
+    if(hitdebug)
+      std::cout<<"Hit at TIB layer = "<<layerNumber<<", corresponding to subdetId = "<<subdetId<<std::endl;
+  }
+    
+  else if( subdetId == StripSubdetector::TOB){
+    TOBDetId tobid(dId.rawId());
+    layerNumber = tobid.layer();
+    if(hitdebug)
+      std::cout<<"Hit at TOB layer = "<<layerNumber<<", corresponding to subdetId = "<<subdetId<<std::endl;
+  }
+  else if( subdetId == StripSubdetector::TID){
+    TIDDetId tidid(dId.rawId());
+    layerNumber = tidid.wheel();
+    if(hitdebug)
+      std::cout<<"Hit at TID layer = "<<layerNumber<<", corresponding to subdetId = "<<subdetId<<std::endl;
+  }
+  else if( subdetId == StripSubdetector::TEC ){
+    TECDetId tecid(dId.rawId());
+    layerNumber = tecid.wheel();
+    if(hitdebug)
+      std::cout<<"Hit at TEC layer = "<<layerNumber<<", corresponding to subdetId = "<<subdetId<<std::endl;
+  }
+
+  std::vector<unsigned int> hit_position;
+  hit_position.push_back(subdetId);
+  hit_position.push_back(layerNumber);
+
+  return hit_position;
+}
+
+std::vector<PSimHit>  MakeTrackValTree::getGoodHits(std::vector<PSimHit> simhits) 
+//loop over all hits in the event and omit subsequent hit in the same subdetector layer 
+{
+  std::cout<<"hits size = "<<simhits.size()<<std::endl;
+
+  std::vector<PSimHit> good_hits;
+  for(std::vector<PSimHit>::const_iterator it_hit = simhits.begin(); it_hit != simhits.end(); it_hit++ ){
+
+      
+    if( !good_hits.size() )
+      good_hits.push_back(*it_hit);
+    else{
+      DetId dIdGood = DetId(good_hits.back().detUnitId());
+      
+    }
+    //    else{
+      //      if( good_hits.back().momentumAtEntry > it_hit->momentumAtEntry() )
+      //	good_hits.pop_back(); //remove the hit, if with higher pt
+      //	good_hits.push_back(*it_hit);
+    //	}
+    //std::cout<<good_hits.back().momentumAtEntry()<<std::endl;
+  }
+  
+  std::cout<<"good hits size = "<<good_hits.size()<<std::endl;
+  return good_hits;
+  }
+
 // ------------ method called for each event  ------------
 void
 MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-
   run_nr_ = iEvent.id().run();
   lumi_nr_ = iEvent.id().luminosityBlock();
   evt_nr_ = iEvent.id().event();
@@ -262,74 +375,25 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     std::vector<PSimHit> simhits=tp->trackPSimHit(DetId::Tracker);        
     double nr_simhits = simhits.size();
     gen_nrSimHits_[np_gen_] =  nr_simhits;
-
-  
-
+    std::vector<PSimHit> goodhits=getGoodHits(simhits);
     
     bool hitdebug = false;
     if(hitdebug)
       std::cout<<"TRACKING PARTICLE with pt = "<<tp->pt()<<std::endl;
 
     unsigned int hit_count = 0;
+
     for(std::vector<PSimHit>::const_iterator it_hit = simhits.begin(); it_hit != simhits.end(); it_hit++){
 
-      DetId dId = DetId(it_hit->detUnitId() );
-      unsigned int subdetId = static_cast<unsigned int>(dId.subdetId());
-      int layerNumber = 0;
-      int subdetector = -1;
-      if(subdetId == PixelSubdetector::PixelBarrel){
-	PXBDetId pxbid(dId.rawId());
-	layerNumber = pxbid.layer();
-	if(hitdebug)
-	  std::cout<<"Hit at pixel barrel layer = "<<layerNumber<<std::endl;
-	subdetector = 1;
-      }
-      else if(subdetId == PixelSubdetector::PixelEndcap){
-	PXFDetId pxfid(dId.rawId());
-	layerNumber = pxfid.disk();
-	if(hitdebug)
-	  std::cout<<"Hit at pixel endcap layer = "<<layerNumber<<std::endl;
-	subdetector = 2;
-      }
-      
-      else if( subdetId == StripSubdetector::TIB){
-	TIBDetId tibid(dId.rawId());
-	layerNumber = tibid.layer();
-	if(hitdebug)
-	  std::cout<<"Hit at strip TIB layer = "<<layerNumber<<std::endl;
-	subdetector = 3;
-      }
-    
-      else if( subdetId == StripSubdetector::TOB){
-	TOBDetId tobid(dId.rawId());
-	layerNumber = tobid.layer();
-	if(hitdebug)
-	  std::cout<<"Hit at strip TOB layer = "<<layerNumber<<std::endl;
-	subdetector = 4;
-      }
-      else if( subdetId == StripSubdetector::TID){
-	TIDDetId tidid(dId.rawId());
-	layerNumber = tidid.wheel();
-	if(hitdebug)
-	  std::cout<<"Hit at strip TID layer = "<<layerNumber<<std::endl;
-	subdetector = 5;
-      }
-      else if( subdetId == StripSubdetector::TEC ){
-	TECDetId tecid(dId.rawId());
-	layerNumber = tecid.wheel();
-	subdetector = 6;
-	if(hitdebug)
-	  std::cout<<"Hit at strip TEC layer = "<<layerNumber<<std::endl;
-      }
-
-      LocalVector local_p = it_hit->momentumAtEntry();
-      const GeomDetUnit* detunit = tracker->idToDetUnit(dId.rawId());
-      GlobalVector global_p = detunit->toGlobal(local_p);
-
+      GlobalVector global_p = getHitMomentum(it_hit,tracker, hitdebug);      
       float hit_eta_global = global_p.eta();
       float hit_phi_global = global_p.phi();
       float pt_at_entry = global_p.perp();
       float hit_pt_eff = pt_at_entry/tp->pt();
+
+      std::vector<unsigned int> hit_position= getHitPosition(it_hit, hitdebug);
+      int subdetector = hit_position.at(0);
+      int layerNumber = hit_position.at(1);
 
       //-----------fill tree entries for each hit----------
       gen_hit_pt_[np_gen_][hit_count] = pt_at_entry;
@@ -339,8 +403,8 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       gen_hit_layer_[np_gen_][hit_count] = layerNumber;
       gen_hit_subdetector_[np_gen_][hit_count] = subdetector;        
       //---------------------------------------------------
+	   
       if(hitdebug){
-	std::cout<<"hit pt = "<<pt_at_entry<<", eta = "<<hit_eta_global<<", phi = "<<hit_phi_global<<std::endl;
 	std::cout<<"hit efficiency at hit "<<hit_count<<" = "<<hit_pt_eff<<std::endl;
       }
       hit_count++;
@@ -510,6 +574,13 @@ MakeTrackValTree::beginJob()
   trackValTree_->Branch("gen_hit_layer", gen_hit_layer_, "gen_hit_layer[np_gen][50]/I");
   trackValTree_->Branch("gen_hit_subdetector", gen_hit_subdetector_, "gen_hit_subdetector[np_gen][50]/I");
 }
+
+//--------------------------functions----------------------------------
+/*int MakeTrackValTree::hitPosition(const DetId& detId) const
+{
+  std::cout<<"function works"<<std::endl;
+  return 1;
+  }*/
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 

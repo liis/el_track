@@ -84,5 +84,14 @@ def draw_efficiency_histograms(hists, region="none"):
         else:
             hist.Draw("same")
         n = n + 1
-        
+
+def draw_legend(hists):
+    """
+    hist - dictionary of process names and histograms
+    """
+    leg = ROOT.TLegend(0.4,0.6,0.89,0.89);
+    for process,hist in hists.iteritems():
+        leg.AddEntry(hist, process)
+    leg.Draw()
+
 #        eff_hist[region]

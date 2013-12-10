@@ -185,7 +185,7 @@ for i in range(nEvt):
         elif abs(vt['gen_eta'][it_p]) < 2.5:
             h_sim_to_reco_match_pt_endcap.Fill(vt['gen_matched_pt'][it_p])
 
-#----------------------------------efficiencies and fake rates wrt eta---------------------------------
+#----------------------------------hit-by-hit efficiencies---------------------------------
 h_fakerate_eta = fill_hist_ratio(h_fake_eta, h_reco_eta,"fake_rate_eta")
 h_eff_eta = fill_hist_ratio(h_sim_to_reco_match_eta, h_sim_eta, "eff_eta")    
 
@@ -206,6 +206,26 @@ for quality_flag in sim_hit_quality_flags:
         h_eff_hit_pt_trans[quality_flag].append( fill_hist_ratio(h_sim_pt_byhit_quality_trans[quality_flag][nrhit], h_sim_pt_byhit_trans[nrhit], "eff_pt_athit_"+str(nrhit)+"_trans_"+quality_flag, binning = "log") )
         h_eff_hit_pt_endcap[quality_flag].append( fill_hist_ratio(h_sim_pt_byhit_quality_endcap[quality_flag][nrhit], h_sim_pt_byhit_endcap[nrhit], "eff_pt_athit_"+str(nrhit)+"_endcap_"+quality_flag, binning = "log") )
 
+nbin = 15
+h_nrhit_barrel = {}
+h_nrhit_endcap = {}
+h_nrhit_trans = {}
+
+for quality_flag in sim_hit_quality_flags:
+    h_nrhit_barrel[quality_flag] = ROOT.TH1F("nr_hit_" + quality_flag + "_barrel", "nr_hit_" + quality_flag + "_barrel", nbin, 1, nbin+1)
+    h_nrhit_trans[quality_flag] = ROOT.TH1F("nr_hit_" + quality_flag + "_trans", "nr_hit_" + quality_flag + "_trans", nbin, 1, nbin+1)
+    h_nrhit_endcap[quality_flag] = ROOT.TH1F("nr_hit_" + quality_flag + "_endcap", "nr_hit_" + quality_flag + "_endcap", nbin, 1, nbin+1)
+
+    for ibin in range(1,nbin):
+        h_nrhit_barrel[quality_flag].SetBinContent(ibin, h_sim_pt_byhit_quality_barrel[quality_flag][ibin-1].Integral()/h_sim_pt_byhit_barrel[ibin-1].Integral())
+        h_nrhit_trans[quality_flag].SetBinContent(ibin, h_sim_pt_byhit_quality_trans[quality_flag][ibin-1].Integral()/h_sim_pt_byhit_trans[ibin-1].Integral())
+        h_nrhit_endcap[quality_flag].SetBinContent(ibin, h_sim_pt_byhit_quality_endcap[quality_flag][ibin-1].Integral()/h_sim_pt_byhit_endcap[ibin-1].Integral())
+    
+
+# efficiency and fake rate wrt eta
+h_fakerate_eta = fill_hist_ratio(h_fake_eta, h_reco_eta,"fake_rate_eta")
+h_eff_eta = fill_hist_ratio(h_sim_to_reco_match_eta, h_sim_eta, "eff_eta")
+
 # efficiency and fake rate wrt pt
 h_eff_pt_barrel = fill_hist_ratio(h_sim_to_reco_match_pt_barrel, h_sim_pt_barrel, "eff_pt_barrel", binning="log")
 h_eff_pt_trans = fill_hist_ratio(h_sim_to_reco_match_pt_trans, h_sim_pt_trans, "eff_pt_trans", binning="log")
@@ -222,6 +242,7 @@ else:
 
 
 o = ROOT.TFile(outfile,"recreate")
+
 h_reco_eta.Write()
 h_fake_eta.Write()
 h_sim_eta.Write()
@@ -259,6 +280,9 @@ h_eff_pt_trans.Write()
 dir = o.mkdir("VariablesBySimhit")
 dir.cd()
 for quality_flag in sim_hit_quality_flags:
+    h_nrhit_barrel[quality_flag].Write()
+    h_nrhit_trans[quality_flag].Write()
+    h_nrhit_endcap[quality_flag].Write()
     for nrhit in range(0,maxhit):
         h_eff_hit_eta[quality_flag][nrhit].Write()
         h_sim_eta_byhit_quality[quality_flag][nrhit].Write()

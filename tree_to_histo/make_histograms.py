@@ -8,12 +8,15 @@ debug = False
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--ptmode', dest='ptmode', choices=["Pt1","Pt10","Pt100","FlatPt"], required=True, help= "pt cut in analyzed dataset")
-
+parser.add_argument('--isGSF', dest='is_gsf',  action="store_true")
 args = parser.parse_args()
 
 indir = "$WORKING_DIR/tree_to_histo/input_trees/"
-infile = "trackValTree_el" + args.ptmode + ".root"
-#infile = "trackValTree.root" ## CLEAN UP!
+
+if args.is_gsf:
+    infile = "trackValTree_el" + args.ptmode + "GSF.root"
+else:
+    infile = "trackValTree_el" + args.ptmode + ".root"
 
 f = ROOT.TFile(indir + infile)
 t = f.Get("TrackValTreeMaker/trackValTree")
@@ -66,26 +69,40 @@ h_sim_to_reco_match_pt_barrel = ROOT.TH1F("nsimtoreco_pt_barrel", "nr sim to rec
 h_sim_to_reco_match_pt_endcap = ROOT.TH1F("nsimtoreco_pt_endcap", "nr sim to reco matched vs pt", npt, array('d',xbinspt))
 h_sim_to_reco_match_pt_trans = ROOT.TH1F("nsimtoreco_pt_trans", "nr sim to reco matched vs pt", npt, array('d', xbinspt))
 
-h_sim_eta_byhit = []
-h_sim_pt_byhit = []
-
 sim_hit_quality_flags = {"quality065": 0.65,"quality075": 0.75,"quality085": 0.85, "quality095": 0.95}
+
+h_sim_eta_byhit = []
+h_sim_pt_byhit_barrel = []
+h_sim_pt_byhit_trans = []
+h_sim_pt_byhit_endcap = []
+
 h_sim_eta_byhit_quality = {}
-h_sim_pt_byhit_quality075 = []
+h_sim_pt_byhit_quality_barrel = {}
+h_sim_pt_byhit_quality_trans = {}
+h_sim_pt_byhit_quality_endcap = {}
 
 #------------------------tracker-hit-histograms---------------------
 
 for nrhit in range(0,maxhit):
     h_sim_eta_byhit.append(ROOT.TH1F("eta_at_"+str(nrhit), "eta_at_"+str(nrhit),neta,mineta,maxeta) )
     
-    h_sim_pt_byhit.append(ROOT.TH1F("pt_at_"+str(nrhit), "pt_at_"+str(nrhit),neta,minpt,maxpt) )
-    h_sim_pt_byhit_quality075.append(ROOT.TH1F("pt_at_"+str(nrhit)+"_quality075", "pt_at_"+str(nrhit)+"_quality075",neta,minpt,maxpt) )
+    h_sim_pt_byhit_barrel.append(ROOT.TH1F("pt_at_"+str(nrhit)+"_barrel", "pt_at_"+str(nrhit),npt,array('d',xbinspt)) )
+    h_sim_pt_byhit_trans.append(ROOT.TH1F("pt_at_"+str(nrhit)+"_trans", "pt_at_"+str(nrhit),npt, array('d', xbinspt)) )
+    h_sim_pt_byhit_endcap.append(ROOT.TH1F("pt_at_"+str(nrhit)+"_endcap", "pt_at_"+str(nrhit),npt, array('d', xbinspt)) )
+
+
 
 for quality_flag in sim_hit_quality_flags:
     h_sim_eta_byhit_quality[quality_flag] = []
+    
+    h_sim_pt_byhit_quality_barrel[quality_flag] = []
+    h_sim_pt_byhit_quality_endcap[quality_flag] = []
+    h_sim_pt_byhit_quality_trans[quality_flag] = []
     for nrhit in range(0,maxhit):
         h_sim_eta_byhit_quality[quality_flag].append(ROOT.TH1F("eta_at_"+str(nrhit)+"_"+quality_flag,"eta_at_"+str(nrhit)+"_"+quality_flag, neta, mineta, maxeta) ) #pt for tracks, that have nth track (save for efficiencies)
-
+        h_sim_pt_byhit_quality_barrel[quality_flag].append(ROOT.TH1F("pt_at"+str(nrhit)+"_"+quality_flag+"_barrel", "pt_at"+str(nrhit)+"_"+quality_flag+"_barrel", npt, array('d', xbinspt)) )
+        h_sim_pt_byhit_quality_endcap[quality_flag].append(ROOT.TH1F("pt_at"+str(nrhit)+"_"+quality_flag+"_endcap", "pt_at"+str(nrhit)+"_"+quality_flag+"_barrel", npt, array('d', xbinspt)) )
+        h_sim_pt_byhit_quality_trans[quality_flag].append(ROOT.TH1F("pt_at"+str(nrhit)+"_"+quality_flag+"_trans", "pt_at"+str(nrhit)+"_"+quality_flag+"_barrel", npt, array('d',xbinspt)) )
 #--------------------------------------------------------------------
 
 
@@ -131,12 +148,25 @@ for i in range(nEvt):
 #            print "hit pt = " + str(pt_at_entry) + ", hit subdetector = " + str(hit_subdet) + ", layer = " + str(hit_layer);
             if pt_at_entry > 0: # Nth hit exists -- fill eta and pt histograms for efficiency plots
                 h_sim_eta_byhit[nrhit].Fill(gen_track_eta)
-                h_sim_pt_byhit[nrhit].Fill(gen_track_pt)
+                
+                if abs(vt['gen_eta'][it_p]) < 0.9:
+                    h_sim_pt_byhit_barrel[nrhit].Fill(gen_track_pt)
+                elif abs(vt['gen_eta'][it_p]) < 1.4:
+                    h_sim_pt_byhit_trans[nrhit].Fill(gen_track_pt)
+                elif abs(vt['gen_eta'][it_p]) < 2.5:
+                    h_sim_pt_byhit_endcap[nrhit].Fill(gen_track_pt)
+
                 for quality_flag, cut in sim_hit_quality_flags.iteritems():
                     if pt_at_entry/gen_track_pt > cut: # check hit pt-quality condition at each hit 
                         h_sim_eta_byhit_quality[quality_flag][nrhit].Fill(gen_track_eta)
-                        h_sim_pt_byhit_quality075[nrhit].Fill(gen_track_pt) 
-                   
+
+                        if abs(vt['gen_eta'][it_p]) < 0.9:
+                            h_sim_pt_byhit_quality_barrel[quality_flag][nrhit].Fill(gen_track_pt) 
+                        elif abs(vt['gen_eta'][it_p]) < 1.4:
+                            h_sim_pt_byhit_quality_trans[quality_flag][nrhit].Fill(gen_track_pt) 
+                        elif abs(vt['gen_eta'][it_p]) < 2.5:
+                            h_sim_pt_byhit_quality_endcap[quality_flag][nrhit].Fill(gen_track_pt) 
+
                 
         if abs(vt['gen_eta'][it_p]) < 0.9:
             h_sim_pt_barrel.Fill(vt['gen_pt'][it_p])
@@ -160,11 +190,22 @@ h_fakerate_eta = fill_hist_ratio(h_fake_eta, h_reco_eta,"fake_rate_eta")
 h_eff_eta = fill_hist_ratio(h_sim_to_reco_match_eta, h_sim_eta, "eff_eta")    
 
 h_eff_hit_eta = {}
+h_eff_hit_pt_barrel = {}
+h_eff_hit_pt_endcap = {}
+h_eff_hit_pt_trans = {}
 for quality_flag in sim_hit_quality_flags:
     h_eff_hit_eta[quality_flag] = []
+    h_eff_hit_pt_barrel[quality_flag] = []
+    h_eff_hit_pt_trans[quality_flag] = []
+    h_eff_hit_pt_endcap[quality_flag] = []
+
     for nrhit in range(0,maxhit):
         h_eff_hit_eta[quality_flag].append( fill_hist_ratio(h_sim_eta_byhit_quality[quality_flag][nrhit], h_sim_eta_byhit[nrhit], "eff_eta_athit_"+str(nrhit)+"_"+quality_flag) )
-    
+        
+        h_eff_hit_pt_barrel[quality_flag].append( fill_hist_ratio(h_sim_pt_byhit_quality_barrel[quality_flag][nrhit], h_sim_pt_byhit_barrel[nrhit], "eff_pt_athit_"+str(nrhit)+"_barrel_"+quality_flag, binning = "log") )
+        h_eff_hit_pt_trans[quality_flag].append( fill_hist_ratio(h_sim_pt_byhit_quality_trans[quality_flag][nrhit], h_sim_pt_byhit_trans[nrhit], "eff_pt_athit_"+str(nrhit)+"_trans_"+quality_flag, binning = "log") )
+        h_eff_hit_pt_endcap[quality_flag].append( fill_hist_ratio(h_sim_pt_byhit_quality_endcap[quality_flag][nrhit], h_sim_pt_byhit_endcap[nrhit], "eff_pt_athit_"+str(nrhit)+"_endcap_"+quality_flag, binning = "log") )
+
 # efficiency and fake rate wrt pt
 h_eff_pt_barrel = fill_hist_ratio(h_sim_to_reco_match_pt_barrel, h_sim_pt_barrel, "eff_pt_barrel", binning="log")
 h_eff_pt_trans = fill_hist_ratio(h_sim_to_reco_match_pt_trans, h_sim_pt_trans, "eff_pt_trans", binning="log")
@@ -174,7 +215,12 @@ h_fakerate_pt_barrel = fill_hist_ratio(h_fake_pt_barrel, h_reco_pt_barrel, "fake
 h_fakerate_pt_trans = fill_hist_ratio(h_fake_pt_trans, h_reco_pt_trans, "fake_rate_pt_trans", binning = "log")
 h_fakerate_pt_endcap = fill_hist_ratio(h_fake_pt_endcap, h_reco_pt_endcap, "fake_rate_pt_endcap", binning = "log")
 
-outfile = "histograms/trackValHistograms" + args.ptmode  + ".root"    
+if args.is_gsf:
+    outfile = "histograms/trackValHistograms" + args.ptmode + "GSF.root"
+else:
+    outfile = "histograms/trackValHistograms" + args.ptmode  + ".root"    
+
+
 o = ROOT.TFile(outfile,"recreate")
 h_reco_eta.Write()
 h_fake_eta.Write()
@@ -216,7 +262,19 @@ for quality_flag in sim_hit_quality_flags:
     for nrhit in range(0,maxhit):
         h_eff_hit_eta[quality_flag][nrhit].Write()
         h_sim_eta_byhit_quality[quality_flag][nrhit].Write()
+
+        h_eff_hit_pt_barrel[quality_flag][nrhit].Write()
+        h_eff_hit_pt_endcap[quality_flag][nrhit].Write()
+        h_eff_hit_pt_trans[quality_flag][nrhit].Write()
+
+        h_sim_pt_byhit_quality_barrel[quality_flag][nrhit].Write()
+        h_sim_pt_byhit_quality_endcap[quality_flag][nrhit].Write()
+        h_sim_pt_byhit_quality_trans[quality_flag][nrhit].Write()
 for nrhit in range(0,maxhit):
     h_sim_eta_byhit[nrhit].Write()
+
+    h_sim_pt_byhit_barrel[nrhit].Write()
+    h_sim_pt_byhit_endcap[nrhit].Write()
+    h_sim_pt_byhit_trans[nrhit].Write()
 
 o.Close()

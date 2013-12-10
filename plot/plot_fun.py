@@ -2,7 +2,7 @@ import ROOT
 
 infilenames_eta = {
 #    "Pt1": "trackValHistogramsPt1.root",
-#    "Pt10": "trackValHistogramsPt10.root",
+    "Pt10": "trackValHistogramsPt10.root",
     "Pt100": "trackValHistogramsPt100.root"
 }
 
@@ -33,15 +33,56 @@ def get_hit_efficiency_hist(infiles, var, quality, nrhits = 10):
     hit_eff_hists = {}
 
     for region, histfile in infiles.iteritems():
-        hit_eff_hists[region] = [] # at each region save a vector of efficiencies for each hit
+        if region=="FlatPt":
+            hit_eff_hists[region + "_barrel"] = []
+            hit_eff_hists[region + "_trans"] = []
+            hit_eff_hists[region + "_endcap"] = []
+        else:
+            hit_eff_hists[region] = [] # at each region save a vector of efficiencies for each hit
+
         for ihit in range(0, nrhits):
-            hist_name = hit_dir + "eff_" + var + "_athit_" + str(ihit) + "_quality0" + str(quality) 
-            print "Opening histogram: " + hist_name
-            hit_eff_hists[region].append( histfile.Get(hist_name) )
+            if region=="FlatPt": #separate different eta regions
+                hist_name = hit_dir + "eff_" + var + "_athit_" + str(ihit) + "_barrel_quality0" + str(quality)
+                print "Opening histogram: " + hist_name
+                hit_eff_hists[region+"_barrel"].append(histfile.Get(hist_name))
+                
+                hist_name = hit_dir + "eff_" + var + "_athit_" + str(ihit) + "_trans_quality0" + str(quality)
+                print "Opening histogram: " + hist_name
+                hit_eff_hists[region+"_trans"].append(histfile.Get(hist_name))
+
+                hist_name = hit_dir + "eff_" + var + "_athit_" + str(ihit) + "_endcap_quality0" + str(quality)
+                print "Opening histogram: " + hist_name
+                hit_eff_hists[region+"_endcap"].append(histfile.Get(hist_name))
+            else:
+                hist_name = hit_dir + "eff_" + var + "_athit_" + str(ihit) + "_quality0" + str(quality) 
+                print "Opening histogram: " + hist_name
+                hit_eff_hists[region].append( histfile.Get(hist_name) )
 
 
     
     return hit_eff_hists
         
+
+colors = [ROOT.kBlack, ROOT.kRed, ROOT.kYellow, ROOT.kYellow-3, ROOT.kGreen, ROOT.kGreen+3, ROOT.kCyan, ROOT.kCyan+1, ROOT.kCyan+2, ROOT.kCyan+3, ROOT.kCyan+4, ROOT.kBlue, ROOT.kViolet-3, ROOT.kViolet+3]
+
+def draw_efficiency_histograms(hists, region="none"):
+    """
+    plot a list of efficiency histogras
+    """
+    n = 0
+    for hist in hists:
+        hist.SetLineColor(colors[n])
+        if n==0:
+            hist.SetMaximum(1.)
+            hist.SetMinimum(0.)
+            if( region[:3]=="Pt1"):
+                hist.GetXaxis().SetTitle("#eta")
+            if( region[:6]=="FlatPt"):
+                hist.GetXaxis().SetTitle("p_{T}")
+                hist.SetAxisRange(1., 200, 'x')
+            hist.Draw()
+        else:
+            hist.Draw("same")
+        n = n + 1
         
 #        eff_hist[region]

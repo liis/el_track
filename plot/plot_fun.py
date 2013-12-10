@@ -65,7 +65,7 @@ def get_hit_efficiency_hist(infiles, var, quality, nrhits = 10):
 
 colors = [ROOT.kBlack, ROOT.kRed, ROOT.kYellow, ROOT.kYellow-3, ROOT.kGreen, ROOT.kGreen+3, ROOT.kCyan, ROOT.kCyan+1, ROOT.kCyan+2, ROOT.kCyan+3, ROOT.kCyan+4, ROOT.kBlue, ROOT.kViolet-3, ROOT.kViolet+3]
 
-def draw_efficiency_histograms(hists, region="none"):
+def draw_efficiency_histograms(hists, xtitle = "none", region="none"):
     """
     plot a list of efficiency histogras
     """
@@ -77,9 +77,11 @@ def draw_efficiency_histograms(hists, region="none"):
             hist.SetMinimum(0.)
             if( region[:3]=="Pt1"):
                 hist.GetXaxis().SetTitle("#eta")
-            if( region[:6]=="FlatPt"):
+            elif( region[:6]=="FlatPt"):
                 hist.GetXaxis().SetTitle("p_{T}")
                 hist.SetAxisRange(1., 200, 'x')
+            if not xtitle == "none":
+                hist.GetXaxis().SetTitle(xtitle)
             hist.Draw()
         else:
             hist.Draw("same")

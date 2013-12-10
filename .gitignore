@@ -3,6 +3,7 @@
 *#
 *.out
 *.pdf
+*.png
 *.root
 *__init__.py
 

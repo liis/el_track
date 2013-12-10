@@ -35,11 +35,11 @@ for eta_region in eta_regions:
 print hit_hists["barrel"]
 
 for eta_region, hists_by_quality in hit_hists.iteritems():
-    c_eff = ROOT.TCanvas("c_eff_" + eta_region,"")
+    c_eff = ROOT.TCanvas("c_eff_" + eta_region, eta_region)
 
     print hists_by_quality.values()
     print hists_by_quality.keys()
-    draw_efficiency_histograms(hists_by_quality.values())
+    draw_efficiency_histograms(hists_by_quality.values(), xtitle = "hit nr. in tracker (" + eta_region + ")")
 
     leg = ROOT.TLegend(0.6,0.7,0.9,0.9);
     leg.SetBorderSize(0)
@@ -49,6 +49,7 @@ for eta_region, hists_by_quality in hit_hists.iteritems():
     leg.Draw()
 
     c_eff.SaveAs("$WORKING_DIR/plot/out_plots/eff_by_hit_" + eta_region + ".pdf")
+    c_eff.SaveAs("$WORKING_DIR/plot/out_plots/eff_by_hit_" + eta_region + ".png")
 
 
 #---------------plots--------------------
@@ -61,6 +62,7 @@ for quality, hist_dictionary in hist_hit_eff.iteritems():
         if region[:6] == "FlatPt":
             c_eff.SetLogx()
 
-        draw_efficiency_histograms(hists,region)
-        
+        draw_efficiency_histograms(hists,region = region, xtitle = "(quality = " + quality + ", pt = " + region + ")")
+       
         c_eff.SaveAs("$WORKING_DIR/plot/out_plots/hiteff_" + quality + "_" + region + ".pdf")
+        c_eff.SaveAs("$WORKING_DIR/plot/out_plots/hiteff_" + quality + "_" + region + ".png")

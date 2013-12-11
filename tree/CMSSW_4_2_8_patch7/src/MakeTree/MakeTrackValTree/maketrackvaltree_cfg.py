@@ -17,8 +17,10 @@ process.load("Configuration.StandardSequences.Reconstruction_cff")
 process.load("Configuration.StandardSequences.MagneticField_cff")
 
 ### validation-specific includes
-process.load("SimTracker.TrackAssociation.TrackAssociatorByHits_cfi")
+#process.load("SimTracker.TrackAssociation.trackingParticleRecoTrackAsssociation_cff")
 process.load("SimTracker.TrackAssociation.trackingParticleRecoTrackAsssociation_cfi")
+process.trackingParticleRecoTrackAsssociation.label_tr = cms.InputTag("electronGsfTracks")
+
 process.load("Validation.RecoTrack.cuts_cff")
 process.load("Validation.RecoTrack.MultiTrackValidator_cff")
 process.load("DQMServices.Components.EDMtoMEConverter_cff")
@@ -41,22 +43,29 @@ process.TFileService = cms.Service("TFileService",
 
 
 process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi")
-process.load("SimTracker.TrackAssociation.trackingParticleRecoTrackAsssociation_cfi")
+#process.load("SimTracker.TrackAssociation.trackingParticleRecoTrackAsssociation_cfi")
 
 process.load("SimTracker.TrackAssociation.TrackAssociatorByHits_cfi")
 process.TrackAssociatorByHits.SimToRecoDenominator = cms.string("reco") #Quality_SimToReco = shared hits/#reco(or #sim)
 process.TrackAssociatorByHits.Quality_SimToReco = cms.double(0.75)
 #process.TrackAssociatorByHits.AbsoluteNumberOfHits = cms.bool(True)
+#process.trackingParticleRecoTrackAssociation.label_tr = cms.InputTag("electronGsfTracks")
 
 process.cutsRecoTracksHp.minAbsEta = cms.double(0.0)
 process.cutsRecoTracksHp.maxAbsEta = cms.double(2.5)
+#process.cutsRecoTracksHp.src = cms.InputTag("electronGsfTracks")
 
 process.ValidationSelectors = cms.Sequence(
     process.cutsRecoTracksHp
     )
 
+process.AssociationMapProducers = cms.Sequence(
+    process.trackingParticleRecoTrackAsssociation
+    )
+
 process.p = cms.Path(
     process.ValidationSelectors *
+    process.AssociationMapProducers *
     process.TrackValTreeMaker
     )
 

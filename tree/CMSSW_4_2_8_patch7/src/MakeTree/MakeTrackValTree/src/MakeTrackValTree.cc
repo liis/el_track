@@ -117,7 +117,7 @@ class MakeTrackValTree : public edm::EDAnalyzer {
   int gen_pdgId_[MAXPART], gen_nrSimHits_[MAXPART], gen_nrRecoHits_[MAXPART], reco_nrRecoHits_[MAXPART], reco_nrSimHits_[MAXPART];
   double reco_nrSharedHits_[MAXPART], gen_nrSharedHits_[MAXPART];
   
-  bool debug_;
+  bool debug_, is_gsf_;
 
 };
 
@@ -138,6 +138,8 @@ MakeTrackValTree::MakeTrackValTree(const edm::ParameterSet& iConfig)
    //now do what ever initialization is needed
   //--------------get cut thresholds for sim tracks----------------
   debug_ = iConfig.getParameter<bool>("debug");
+  is_gsf_ = iConfig.getParameter<bool>("isGSF");
+
   ptMinTP =   iConfig.getParameter<double>("ptMinTP");
   minRapidityTP = iConfig.getParameter<double>("minRapidityTP");
   maxRapidityTP = iConfig.getParameter<double>("maxRapidityTP");
@@ -313,21 +315,63 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     }
   }
 
-  edm::Handle<edm::View<reco::Track> >   trackCollection; //reconstructed tracks
-  iEvent.getByLabel("cutsRecoTracksHp", trackCollection);
-  //  iEvent.getByLabel("generalTracks", trackCollection);
+  edm::Handle<edm::View<reco::Track> > trackCollection; //reconstructed tracks
+  iEvent.getByLabel("electronGsfTracks", trackCollection);
+  
+  /*edm::Handle<edm::View<reco::Track> > trackCollectionUsual;
+  iEvent.getByLabel("generalTracks", trackCollectionUsual);
 
+  edm::Handle<edm::View<reco::GsfTrack> > trackCollectionFullElectron;
+  iEvent.getByLabel("electronGsfTracks", trackCollectionFullElectron);
+                     
+    for( edm::View<reco::Track>::size_type i=0; i<trackCollectionUsual->size(); i++){
+    edm::RefToBase<reco::Track> track(trackCollectionUsual, i);
+    std::cout<<"general track with pT = "<<track->pt()<<std::endl;
+  }
+
+  for( edm::View<reco::Track>::size_type i=0; i<trackCollection->size(); i++){
+    edm::RefToBase<reco::Track> track(trackCollection, i);
+    std::cout<<"track with el_label pT and presel = "<<track->pt()<<std::endl;
+  }
+
+  for( edm::View<reco::GsfTrack>::size_type i=0; i<trackCollectionFullElectron->size(); i++){
+    edm::RefToBase<reco::GsfTrack> track(trackCollectionFullElectron, i);
+    std::cout<<"GSF track with el_label pT = "<<track->pt()<<std::endl;
+    }
+  */
+  
   edm::Handle<TrackingParticleCollection>  TPCollectionHeff ; //simulated tracks
   iEvent.getByLabel("mergedtruth","MergedTrackTruth",TPCollectionHeff);
   const TrackingParticleCollection tPCeff = *(TPCollectionHeff.product());
   if(debug_)
     std::cout <<"Number of simulated tracks = "<<tPCeff.size() << std::endl;
 
-  edm::ESHandle<TrackAssociatorBase> theAssociator; //create track associators for MC truth matching
-  iSetup.get<TrackAssociatorRecord>().get("TrackAssociatorByHits" ,theAssociator);
+  TrackingParticleSelector tpSelector = TrackingParticleSelector(ptMinTP, minRapidityTP, maxRapidityTP,tipTP, lipTP, minHitTP,signalOnlyTP, chargedOnlyTP, stableOnlyTP,pdgIdTP,minAbsEtaTP,maxAbsEtaTP);
+       
+  //  Handle<reco::SimToRecoCollection> simtorecocollection;
+  // event.getByLabel
 
-  reco::SimToRecoCollection simRecColl = theAssociator->associateSimToReco(trackCollection, TPCollectionHeff, &iEvent);
-  reco::RecoToSimCollection recSimColl = theAssociator->associateRecoToSim(trackCollection, TPCollectionHeff, &iEvent);
+  reco::SimToRecoCollection simRecColl;
+  reco::RecoToSimCollection recSimColl;
+
+  //  edm::ESHandle<TrackAssociatorBase> theAssociator;
+  //iSetup.get<TrackAssociatorRecord>().get("trackAssociatorByHits", theAssociator);
+
+  edm::Handle<reco::SimToRecoCollection > simtorecoCollection;
+  iEvent.getByLabel("trackingParticleRecoTrackAsssociation", simtorecoCollection);
+  simRecColl = *(simtorecoCollection.product());
+
+  edm::Handle<reco::RecoToSimCollection > rectosimCollection;
+  iEvent.getByLabel("trackingParticleRecoTrackAsssociation",  rectosimCollection);
+  recSimColl = *(rectosimCollection.product());
+
+  //edm::ESHandle<TrackAssociatorBase> theAssociator; //create track associators for MC truth matching
+  //iSetup.get<TrackAssociatorRecord>().get("TrackAssociatorByHits" ,theAssociator);
+  
+  
+  //reco::SimToRecoCollection simRecColl = theAssociator->associateSimToReco(trackCollection, TPCollectionHeff, &iEvent);
+  //reco::RecoToSimCollection recSimColl = theAssociator->associateRecoToSim(trackCollection, TPCollectionHeff, &iEvent);
+
 
   edm::ESHandle<ParametersDefinerForTP> parametersDefinerTP; 
   iSetup.get<TrackAssociatorRecord>().get("LhcParametersDefinerForTP", parametersDefinerTP);   
@@ -336,10 +380,6 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   iSetup.get<TrackerDigiGeometryRecord>().get(tracker);
 
 
-  TrackingParticleSelector tpSelector = TrackingParticleSelector(ptMinTP, minRapidityTP, maxRapidityTP,tipTP, lipTP, minHitTP,               
-								 signalOnlyTP, chargedOnlyTP, stableOnlyTP,pdgIdTP,minAbsEtaTP,maxAbsEtaTP);  
-  
-  
   //----------------------Loop over sim tracks--------------------------------
   np_gen_ = 0;
   np_gen_toReco_ = 0;
@@ -361,7 +401,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     gen_pt_[np_gen_] = tp->pt();
     gen_pdgId_[np_gen_] = tp->pdgId();
 
-    bool hitdebug = true;
+    bool hitdebug = false;
 
 
     std::vector<PSimHit> simhits=tp->trackPSimHit(DetId::Tracker);
@@ -482,23 +522,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	
       np_fake_++;
     }
-    
-      //--------------------check the hit pattern-----------------
-      /*if(true){ //add condition for fake tracks later
-	const reco::HitPattern& p = track->hitPattern();
-	if(debug_)
-	  std::cout<<"-----------------trak hit pattern information for track nr "<<i<<"--------------"<<std::endl;      
-	for(int i=0; i<p.numberOfHits(); i++){
-	  int hit = p.getHitPattern(i);
-	  if(p.validHitFilter(hit) && p.pixelHitFilter(hit) ){
-	    if(debug_)
-	      std::cout<<"found hit in pixel detector layer "<<p.getLayer(hit)<<" from "<<hit<<std::endl;
-	  }
-	}
-	if(debug_)
-	  std::cout<<"-----------------------------------------------------"<<std::endl;
-      }*/
-
+ 
     np_reco_++;
   }
   //---------------------------------------------------------------------------

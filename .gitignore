@@ -13,9 +13,15 @@ CVS
 tree/CMSSW_4_2_8_patch7/*
 !tree/CMSSW_4_2_8_patch7/src
 tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/*.out
-#tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab/*.out
-#tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/output_crab
-#tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/.*
+tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/.*
+tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/*~
+tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/*.pyc
+tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/*#
+tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/python/__init__*
+
+tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab/*.out
+tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab/*.root
+tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/output_crab/*
 
 tree_to_histo/histograms
 tree_to_histo/input_trees

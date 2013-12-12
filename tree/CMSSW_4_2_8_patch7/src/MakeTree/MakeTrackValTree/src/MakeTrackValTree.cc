@@ -316,29 +316,31 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   }
 
   edm::Handle<edm::View<reco::Track> > trackCollection; //reconstructed tracks
-  iEvent.getByLabel("electronGsfTracks", trackCollection);
-  
-  /*edm::Handle<edm::View<reco::Track> > trackCollectionUsual;
-  iEvent.getByLabel("generalTracks", trackCollectionUsual);
+  //  iEvent.getByLabel("electronGsfTracks", trackCollection);
+  iEvent.getByLabel("elGsfTracksWithQuality", trackCollection);
+
+  edm::Handle<edm::View<reco::Track> > trackCollectionUsual;
+  //  iEvent.getByLabel("generalTracks", trackCollectionUsual);
+  iEvent.getByLabel("cutsRecoTracksHp", trackCollectionUsual);
 
   edm::Handle<edm::View<reco::GsfTrack> > trackCollectionFullElectron;
   iEvent.getByLabel("electronGsfTracks", trackCollectionFullElectron);
                      
     for( edm::View<reco::Track>::size_type i=0; i<trackCollectionUsual->size(); i++){
     edm::RefToBase<reco::Track> track(trackCollectionUsual, i);
-    std::cout<<"general track with pT = "<<track->pt()<<std::endl;
+    std::cout<<"general track with presel pT = "<<track->pt()<<std::endl;
   }
 
   for( edm::View<reco::Track>::size_type i=0; i<trackCollection->size(); i++){
     edm::RefToBase<reco::Track> track(trackCollection, i);
-    std::cout<<"track with el_label pT and presel = "<<track->pt()<<std::endl;
+    std::cout<<"track with el_label with presel pT = "<<track->pt()<<std::endl;
   }
 
   for( edm::View<reco::GsfTrack>::size_type i=0; i<trackCollectionFullElectron->size(); i++){
     edm::RefToBase<reco::GsfTrack> track(trackCollectionFullElectron, i);
-    std::cout<<"GSF track with el_label pT = "<<track->pt()<<std::endl;
-    }
-  */
+    std::cout<<"GSF track with no presel el_label pT = "<<track->pt()<<std::endl;
+  }
+  
   
   edm::Handle<TrackingParticleCollection>  TPCollectionHeff ; //simulated tracks
   iEvent.getByLabel("mergedtruth","MergedTrackTruth",TPCollectionHeff);
@@ -491,6 +493,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
   for( edm::View<reco::Track>::size_type i=0; i<trackCollection->size(); i++){
     edm::RefToBase<reco::Track> track(trackCollection, i);
+
     reco_pt_[np_reco_] = track->pt();
     reco_phi_[np_reco_] = track->phi();
     reco_eta_[np_reco_] = track->eta();

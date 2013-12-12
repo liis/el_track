@@ -22,13 +22,20 @@ tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/python/__init__*
 tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab/*.out
 tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab/*.root
 tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/output_crab/*
+tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab_0_*
 
 tree_to_histo/histograms
 tree_to_histo/input_trees
+tree_to_histo/*.pyc
+tree_to_histo/*~
+tree_to_histo/*.out
+tree_to_histo/*.root
 
 plot/out_plots
 plot/*.pyc
 plot/*~
+plot/*.out
+plot/*.root
 
 # Crab jobs
 crab_0*/

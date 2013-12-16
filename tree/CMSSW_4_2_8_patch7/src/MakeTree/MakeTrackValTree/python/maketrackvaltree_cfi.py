@@ -13,6 +13,10 @@ TrackingParticleSelectionForEfficiency.pdgIdTP = cms.vint32([-11, 11])
 TrackValTreeMaker = cms.EDAnalyzer('MakeTrackValTree',
                                    TrackingParticleSelectionForEfficiency,
                                    
-                                   isGSF = cms.bool(True),
-                                   debug = cms.bool(False)
-)
+                                   isGSF = cms.bool(False),
+                                   debug = cms.bool(False),
+                                   hitdebug = cms.bool(False),
+                                   trackLabelGSF = cms.InputTag("electronGsfTracks"),
+                                   trackLabel = cms.InputTag("generalTracks")
+                                   
+                                   )

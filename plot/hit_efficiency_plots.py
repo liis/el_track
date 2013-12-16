@@ -59,10 +59,20 @@ for quality, hist_dictionary in hist_hit_eff.iteritems():
 
         c_eff = ROOT.TCanvas("c_eff_" + region + "_" +quality + "_" + region, "")
         c_eff.SetGrid()
+        c_eff.SetRightMargin(0.25) #legend out of the plot area
+
         if region[:6] == "FlatPt":
             c_eff.SetLogx()
 
         draw_efficiency_histograms(hists,region = region, xtitle = "(quality = " + quality + ", pt = " + region + ")")
        
+        leg = ROOT.TLegend(0.76,0.27,0.93,0.90); #out of the box coordinates
+        leg.SetBorderSize(0)
+        leg.SetFillColor(0)
+
+        for ihit in range(0, len(hists) ):
+            leg.AddEntry(hists[ihit], "tr. hit " + str(ihit + 1) )
+        leg.Draw()
+
         c_eff.SaveAs("$WORKING_DIR/plot/out_plots/hiteff_" + quality + "_" + region + ".pdf")
         c_eff.SaveAs("$WORKING_DIR/plot/out_plots/hiteff_" + quality + "_" + region + ".png")

@@ -1,4 +1,4 @@
-// -*- C++ -*-
+ // -*- C++ -*-
 //
 // Package:    MakeTrackValTree
 // Class:      MakeTrackValTree
@@ -27,9 +27,7 @@
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
-
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
-
 
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
@@ -45,7 +43,6 @@
 #include "DataFormats/SiStripDetId/interface/TOBDetId.h" 
 #include "DataFormats/SiPixelDetId/interface/PXBDetId.h"
 #include "DataFormats/SiPixelDetId/interface/PXFDetId.h"
-
 
 #include "SimDataFormats/Vertex/interface/SimVertexContainer.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
@@ -114,13 +111,18 @@ class MakeTrackValTree : public edm::EDAnalyzer {
   float gen_hit_pt_[MAXPART][MAXHIT], gen_hit_eta_[MAXPART][MAXHIT], gen_hit_phi_[MAXPART][MAXHIT];
   int gen_hit_subdetector_[MAXPART][MAXHIT], gen_hit_layer_[MAXPART][MAXHIT];
 
-  double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_phi_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART];
+  double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_phi_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART], gen_ptAtLast_[MAXPART];
   double reco_pt_[MAXPART], reco_eta_[MAXPART], reco_phi_[MAXPART], fake_pt_[MAXPART], fake_eta_[MAXPART], fake_phi_[MAXPART];
-  int gen_pdgId_[MAXPART], gen_nrSimHits_[MAXPART], gen_nrRecoHits_[MAXPART], reco_nrRecoHits_[MAXPART], reco_nrSimHits_[MAXPART];
+  int gen_pdgId_[MAXPART], gen_nrSimHits_[MAXPART], gen_nrUniqueSimHits_[MAXPART], gen_nrRecoHits_[MAXPART], reco_nrRecoHits_[MAXPART], reco_nrSimHits_[MAXPART];
   double reco_nrSharedHits_[MAXPART], gen_nrSharedHits_[MAXPART];
   
   bool debug_, is_gsf_, hitdebug_;
   edm::InputTag track_label_gsf_, track_label_;
+
+  TrackerHitAssociator* hitAssociator;
+
+  const edm::ParameterSet& conf_;
+
 };
 
 //
@@ -134,11 +136,13 @@ class MakeTrackValTree : public edm::EDAnalyzer {
 //
 // constructors and destructor
 //
-MakeTrackValTree::MakeTrackValTree(const edm::ParameterSet& iConfig)
-
+MakeTrackValTree::MakeTrackValTree(const edm::ParameterSet& iConfig):
+  conf_(iConfig)
 {
    //now do what ever initialization is needed
   //--------------get cut thresholds for sim tracks----------------
+  //  conf_ = iConfig;
+
   debug_ = iConfig.getParameter<bool>("debug");
   hitdebug_ = iConfig.getParameter<bool>("hitdebug");
   is_gsf_ = iConfig.getParameter<bool>("isGSF");
@@ -159,7 +163,6 @@ MakeTrackValTree::MakeTrackValTree(const edm::ParameterSet& iConfig)
   minAbsEtaTP =  iConfig.getParameter<double>("minAbsEtaTP");
   maxAbsEtaTP =  iConfig.getParameter<double>("maxAbsEtaTP");
   //-----------------------------------------------------------
-
 }
 
 
@@ -170,7 +173,6 @@ MakeTrackValTree::~MakeTrackValTree()
    // (e.g. close files, deallocate resources etc.)
 
 }
-
 
 //
 // member functions
@@ -289,10 +291,12 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     gen_eta_[i] = -999;
     gen_phi_[i] = -999;
     gen_pt_[i] = -999;
+    gen_ptAtLast_[i] = -999;
     gen_pdgId_[i] = -999;
     gen_dxy_[i] = -10;
     gen_dz_[i] = -10;
     gen_nrSimHits_[i] = -10;
+    gen_nrUniqueSimHits_[i] = -10;
     gen_nrRecoHits_[i] = -10;
     gen_nrSharedHits_[i] = -10;
     
@@ -327,6 +331,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     track_label = track_label_gsf_;
   else
     track_label = track_label_;
+
 
   edm::Handle<edm::View<reco::Track> > trackCollection; //reconstructed tracks
   iEvent.getByLabel(track_label, trackCollection);
@@ -424,19 +429,21 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     gen_pt_[np_gen_] = tp->pt();
     gen_pdgId_[np_gen_] = tp->pdgId();
 
-
     std::vector<PSimHit> simhits=tp->trackPSimHit(DetId::Tracker);
-    double nr_simhits = simhits.size();
+    int nr_simhits = simhits.size();
 
-    if(hitdebug_){
-      std::cout<<"TRACKING PARTICLE with pt = "<<tp->pt()<<std::endl;
-      std::cout<<"Sim hits size = "<<simhits.size()<<std::endl;
-    }
+    std::vector<PSimHit> goodhits=getGoodHits(simhits, hitdebug_); //omit subsequent hits in the same subdetector layer  
+    int nr_goodhits = goodhits.size();
 
     gen_nrSimHits_[np_gen_] =  nr_simhits;
-    std::vector<PSimHit> goodhits=getGoodHits(simhits, hitdebug_); //omit subsequent hits in the same subdetector layer  
+    gen_nrUniqueSimHits_[np_gen_] = nr_goodhits;
+    
+    if(hitdebug_){
+      std::cout<<"TRACKING PARTICLE with pt = "<<tp->pt()<<std::endl;
+      std::cout<<"Sim hits size = "<<simhits.size()<<" and goodhits size = "<<nr_goodhits<<std::endl;
+    }
 
-    unsigned int hit_count = 0;
+    int hit_count = 0;
     for(std::vector<PSimHit>::const_iterator it_hit = goodhits.begin(); it_hit != goodhits.end(); it_hit++){
 
       GlobalVector global_p = getHitMomentum(it_hit,tracker, hitdebug_);      
@@ -458,15 +465,15 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       gen_hit_layer_[np_gen_][hit_count] = layerNumber;
       gen_hit_subdetector_[np_gen_][hit_count] = subdetector;        
       //---------------------------------------------------
-	   
+      if(hit_count+1 == nr_goodhits){
+	gen_ptAtLast_[np_gen_] = pt_at_entry;
+      }
+
       if(hitdebug_)
 	std::cout<<"hit efficiency at hit "<<hit_count<<" = "<<hit_pt_eff<<std::endl;
       
       hit_count++;
     }
-
-    if(hitdebug_)
-      std::cout<<"Nr hits counted = "<<hit_count<<std::endl;
 
     //--------check for matched reco tracks-----------
     const reco::Track* matchedTrackPointer=0;
@@ -478,16 +485,13 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       if ( rt.size()!=0 ) {	
 	matchedTrackPointer = rt.begin()->first.get(); //pointer to corresponding reco track                                                 
 	nSharedHits = rt.begin()->second;
-
 	nRecoTrackHits = matchedTrackPointer->numberOfValidHits();
 
-	//	if(debug_){
+	if(debug_){
 	std::cout<<"Found a simtrack with a matched reco track with:"<<"nr reco track hits = "<<nRecoTrackHits<<" quality = "<<nSharedHits<<", nr sim track hits = "<<simhits.size()<<", eta = "<<tp->eta()<<", phi = "<< tp->phi()<<std::endl;
-	  //	}
-
-	std::cout<<"Matched track pt = "<<matchedTrackPointer->pt()<<"pt at last hit = "<<matchedTrackPointer->outerPt()<<std::endl;
-
 	
+	std::cout<<"Matched track pt = "<<matchedTrackPointer->pt()<<"pt at last hit = "<<matchedTrackPointer->outerPt()<<std::endl;
+	}
 
 	is_reco_matched_[np_gen_] = 1;
 	gen_nrSharedHits_[np_gen_] = nSharedHits;
@@ -500,7 +504,26 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
         np_gen_toReco_++; //count the number of simTracks that have a recoTrack associated
       }
     }
-    
+    else{
+
+      /*      hitAssociator = new TrackerHitAssociator(iEvent);
+
+      for( edm::View<reco::Track>::size_type i=0; i != trackCollection->size(); i++){ // loop over reco tracks to check for matched hits
+	edm::RefToBase<reco::Track> track(trackCollection, i);
+	
+	for(trackingRecHit_iterator rechit_it = track->recHitsBegin(); rechit_it != track->recHitsEnd(); rechit_it++){ //loop over rec hits
+	  const TrackingRecHit* rechit = &**rechit_it;
+	  int detId = (int)(rechit->geographicalId().rawId());
+	  std::cout<<"detId = "<<detId<<std::endl;
+	  std::vector<SimHitIdpr> matchedSimIds = hitAssociator->associateHitId(**rechit_it);
+	  std::cout<<"Matched sim ids size = "<<matchedSimIds.size()<<std::endl;
+	  
+	}
+
+      }
+      */
+    }
+
     np_gen_++; //count selected sim tracks passing the selection (important to keep in the end of the loop for tree items)      
   }
   //--------------------Loop over reco tracks-----------------------------------
@@ -519,15 +542,39 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     reco_nrRecoHits_[np_reco_] = track->numberOfValidHits();
 
     //--------------check rec-hits one-by one--------------------------    
+
+    hitAssociator = new TrackerHitAssociator(iEvent, conf_);
+                                                                                       
     for(trackingRecHit_iterator rechit_it = track->recHitsBegin(); rechit_it != track->recHitsEnd(); rechit_it++){
       const TrackingRecHit* rechit = &**rechit_it; // def from /interface/TrackAssociatorByHits.h L97
 
       if(rechit->isValid()){
 	DetId dId_rec = rechit->geographicalId();
 	std::vector<int> rechit_pos = getHitPosition(dId_rec, false);
+
+	std::vector<SimHitIdpr> matchedSimIds = hitAssociator->associateHitId(**rechit_it);
+
+	for(unsigned int j=0; j < matchedSimIds.size(); j++){
+	  //std::cout<<"matched id = "<<matchedSimIds[j].first<<std::endl;
+	}
+
       }
     }
     
+
+                                                                                                                                                       
+    /*    for( edm::View<reco::Track>::size_type i=0; i != trackCollection->size(); i++){ // loop over reco tracks to check for matched hits               
+      edm::RefToBase<reco::Track> track(trackCollection, i);                                                                                         
+                                                                                                                                                       
+      for(trackingRecHit_iterator rechit_it = track->recHitsBegin(); rechit_it != track->recHitsEnd(); rechit_it++){ //loop over rec hits            
+	const TrackingRecHit* rechit = &**rechit_it;                                                                                                 
+	int detId = (int)(rechit->geographicalId().rawId());                                                                                         
+	std::cout<<"detId = "<<detId<<std::endl;                                                                                                     
+	std::vector<SimHitIdpr> matchedSimIds = hitAssociator->associateHitId(**rechit_it);                                                          
+	std::cout<<"Matched sim ids size = "<<matchedSimIds.size()<<std::endl;                                                                       
+                                                                                                                                                       
+      }      
+    */
     //---------------------check association maps to sim-tracks---------------------
     std::vector<std::pair<TrackingParticleRef, double> > tp;
     if(recSimColl.find(track) != recSimColl.end()){ // if matched
@@ -607,11 +654,13 @@ MakeTrackValTree::beginJob()
   trackValTree_->Branch("gen_reco_matched", is_reco_matched_, "gen_reco_matched[np_gen]/I");
   trackValTree_->Branch("gen_pdgId", gen_pdgId_, "gen_pdgId[np_gen]/I");
   trackValTree_->Branch("gen_pt", gen_pt_, "gen_pt[np_gen]/D");
+  trackValTree_->Branch("gen_ptAtLast", gen_ptAtLast_, "gen_ptAtLast[np_gen]/D");
   trackValTree_->Branch("gen_eta", gen_eta_, "gen_eta[np_gen]/D");
   trackValTree_->Branch("gen_phi", gen_phi_, "gen_phi[np_gen]/D");
   trackValTree_->Branch("gen_dxy", gen_dxy_, "gen_dxy[np_gen]/D");
   trackValTree_->Branch("gen_dz", gen_dz_, "gen_dz[np_gen]/D");
   trackValTree_->Branch("gen_nrSimHits", gen_nrSimHits_, "gen_nrSimHits[np_gen]/I");
+  trackValTree_->Branch("gen_nrUniqueSimHits", gen_nrUniqueSimHits_, "gen_nrUniqueSimHits[np_gen]/I");
   trackValTree_->Branch("gen_nrRecoHits", gen_nrRecoHits_, "gen_nrRecoHits[np_gen]/I");
   trackValTree_->Branch("gen_nrSharedHits", gen_nrSharedHits_, "gen_nrSharedHits[np_gen]/D");  
 

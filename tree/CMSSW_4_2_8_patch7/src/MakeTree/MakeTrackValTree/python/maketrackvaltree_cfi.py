@@ -15,7 +15,7 @@ TrackValTreeMaker = cms.EDAnalyzer('MakeTrackValTree',
                                    TrackingParticleSelectionForEfficiency,
 
                                    isGSF = cms.bool(True),
-                                   debug = cms.bool(False),
+                                   debug = cms.bool(True),
                                    hitdebug = cms.bool(False),
                                    trackLabelGSF = cms.InputTag("electronGsfTracks"),
                                    trackLabel = cms.InputTag("generalTracks"),

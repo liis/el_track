@@ -15,7 +15,7 @@ TrackValTreeMaker = cms.EDAnalyzer('MakeTrackValTree',
                                    TrackingParticleSelectionForEfficiency,
 
                                    isGSF = cms.bool(True),
-                                   debug = cms.bool(True),
+                                   debug = cms.bool(False),
                                    hitdebug = cms.bool(False),
                                    trackLabelGSF = cms.InputTag("electronGsfTracks"),
                                    trackLabel = cms.InputTag("generalTracks"),
@@ -45,23 +45,4 @@ TrackValTreeMaker = cms.EDAnalyzer('MakeTrackValTree',
                                    Purity_SimToReco = cms.double(0.75),
                                    Cut_RecoToSim = cms.double(0.75),
                                    SimToRecoDenominator = cms.string('sim') ##"reco"
-                                   
-                                   #associatePixel = cms.bool(False),
-                                   #ROUList = cms.vstring('TrackerHitsTIBLowTof',
-                                   #                      'TrackerHitsTIBHighTof',
-                                   #                      'TrackerHitsTIDLowTof',
-                                   #                      'TrackerHitsTIDHighTof',
-                                   #                      'TrackerHitsTOBLowTof',
-                                   #                      'TrackerHitsTOBHighTof',
-                                   #                      'TrackerHitsTECLowTof',
-                                   #                      'TrackerHitsTECHighTof',
-                                   #                      'TrackerHitsPixelBarrelLowTof',
-                                    #                     'TrackerHitsPixelBarrelHighTof',
-                                    #                     'TrackerHitsPixelEndcapLowTof',
-                                    #                     'TrackerHitsPixelEndcapHighTof'),
-                                   #trajectoryInput = cms.string('generalTracks'),
-                                   #associateRecoTracks = cms.bool(False),
-                                   #   string trajectoryInput = "rsWithMaterialTracks"
-                                   #associateStrip = cms.bool(True)
-                                   
                                    )

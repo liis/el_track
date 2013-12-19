@@ -109,7 +109,7 @@ class MakeTrackValTree : public edm::EDAnalyzer {
   int is_reco_matched_[MAXPART], is_gen_matched_[MAXPART];
   
   float gen_hit_pt_[MAXPART][MAXHIT], gen_hit_eta_[MAXPART][MAXHIT], gen_hit_phi_[MAXPART][MAXHIT];
-  int gen_hit_subdetector_[MAXPART][MAXHIT], gen_hit_layer_[MAXPART][MAXHIT];
+  int gen_hit_subdetector_[MAXPART][MAXHIT], gen_hit_layer_[MAXPART][MAXHIT], gen_matchedRecHit_subdetector_[MAXPART][MAXHIT], gen_matchedRecHit_layer_[MAXPART][MAXHIT], gen_badRecHit_subdetector_[MAXPART][MAXHIT], gen_badRecHit_layer_[MAXPART][MAXHIT];
   int rec_hit_isMatched_[MAXPART][MAXHIT], rec_hit_subdetector_[MAXPART][MAXHIT], rec_hit_layer_[MAXPART][MAXHIT];
 
 
@@ -328,6 +328,11 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       gen_hit_phi_[i][h] = -999;
       gen_hit_layer_[i][h] = -10;
       gen_hit_subdetector_[i][h] = -10;
+      gen_matchedRecHit_subdetector_[i][h] = -10;
+      gen_matchedRecHit_layer_[i][h] = -10;
+      gen_badRecHit_subdetector_[i][h] = -10;
+      gen_badRecHit_layer_[i][h] = -10;
+
       rec_hit_isMatched_[i][h] = -1;
       rec_hit_subdetector_[i][h] = -10;
       rec_hit_layer_[i][h] = -10;
@@ -397,13 +402,12 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   np_gen_ = 0;
   np_gen_toReco_ = 0;
 
-  //  int nr_good_hits_best = 0, nr_bad_hits_best = 0; //for reco track with a best match t
   for (TrackingParticleCollection::size_type i=0; i<tPCeff.size(); i++){ // get information from simulated  tracks   
     TrackingParticleRef tpr(TPCollectionHeff, i);
     TrackingParticle* tp=const_cast<TrackingParticle*>(tpr.get());
 
     if( !tpSelector(*tp) ) continue;
-    if( tp->pt() < 1 ) continue; // reduce noise. such tracks are irrelevant for electrons
+    if( tp->pt() < 1 ) continue; // such tracks are irrelevant for electrons
 
     ParticleBase::Point vertex = parametersDefinerTP->vertex(iEvent,iSetup,*tp);
     gen_dxy_[np_gen_] = -vertex.x()*sin(tp->phi())+vertex.y()*cos(tp->phi()); 
@@ -429,7 +433,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     if(debug_){
       std::cout<<"----------------------------------------"<<std::endl;
       std::cout<<"Found Tracking particle with pt = "<<tp->pt()<<std::endl;
-      std::cout<<"Sim hits size = "<<simhits.size()<<", goodhits size = "<<nr_goodhits<<", track ID-s size = "<<tpids.size()<<std::endl;
+      std::cout<<"Sim hits size = "<<simhits.size()<<", Nr unique hits = "<<nr_goodhits<<", track ID-s size = "<<tpids.size()<<std::endl;
     }
 
     int hit_count = 0;
@@ -467,56 +471,93 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
     std::vector<SimHitIdpr> matchedSimIds;
     std::vector<edm::RefToBase<reco::Track> > bestMatchRecoTrack;        
-    int nr_good_hits_best = 0; //hit count for the  best matched reco track
-    int nr_bad_hits_best = 0;
+ 
+    std::vector<const TrackingRecHit*> matchedRecHits_best;
+    std::vector<const TrackingRecHit*> badRecHits_best;
 
     for( edm::View<reco::Track>::size_type i=0; i != trackCollection->size(); i++){ // loop over reco tracks and check for matched hits
-      edm::RefToBase<reco::Track> track(trackCollection, i);
-      
+      edm::RefToBase<reco::Track> track(trackCollection, i);      
       int nr_invalid_hits = 0;
-      int nr_good_hits = 0;
-      int nr_bad_hits = 0;
+
+      std::vector<const TrackingRecHit*> matchedRecHits;
+      std::vector<const TrackingRecHit*> badRecHits;
+
       for(trackingRecHit_iterator rechit_it = track->recHitsBegin(); rechit_it != track->recHitsEnd(); rechit_it++){ //loop over rec hits	
-	matchedSimIds = hitAssociator->associateHitId(**rechit_it);
+	matchedSimIds = hitAssociator->associateHitId(**rechit_it); //??
 	
+	const TrackingRecHit* rechit = &**rechit_it;	
+
 	bool goodhit = false;
-	for( unsigned int iSimId = 0; iSimId < matchedSimIds.size(); iSimId++)
+	for( unsigned int iSimId = 0; iSimId < matchedSimIds.size(); iSimId++){
 	  for( unsigned int iTpId = 0; iTpId< tpids.size(); iTpId++){
-	
 	    if(matchedSimIds[iSimId].first == tpids[iTpId]){ 
 	      goodhit = true;
 	      break;
-	    }	    
+	    }
+	  }	    
 	}
 
 	if(matchedSimIds.size() == 0)
 	  nr_invalid_hits++;
 	else if(goodhit)
-	  nr_good_hits++;
+	  matchedRecHits.push_back(rechit);
 	else
-	  nr_bad_hits++;
+	  badRecHits.push_back(rechit);
       } // end for rechit
     
+      std::cout<<"Looking at track with pt = "<<track->pt()<<", nr_good_hits = "<<matchedRecHits.size()<<std::endl;
+
       if( bestMatchRecoTrack.size() == 0){ //choose the reco track with best match to tracking particle
+	std::cout<<"Saving best track with pt = "<<track->pt()<<", nr_good_hits = "<<matchedRecHits.size()<<std::endl;
         bestMatchRecoTrack.push_back(track);
-        nr_good_hits_best = nr_good_hits;
-        nr_bad_hits_best = nr_bad_hits;
+	
+	matchedRecHits_best = matchedRecHits;
+	badRecHits_best = badRecHits;
       }
-      else if( nr_good_hits > nr_good_hits_best ){
-        nr_good_hits_best = nr_good_hits;
-        nr_bad_hits_best = nr_bad_hits;
+      else if( matchedRecHits.size() > matchedRecHits_best.size() ){
+	std::cout<<"Overwrite with next track with nr_good_hits = "<<matchedRecHits.size()<<std::endl;
         bestMatchRecoTrack.pop_back();
         bestMatchRecoTrack.push_back( track );
+
+	matchedRecHits_best = matchedRecHits;
+	badRecHits_best = badRecHits;
       }
     } // end of reco tracks
-      
-    gen_nrMatchedRecHits_[np_gen_] = nr_good_hits_best;
-    gen_nrSpuriousRecHits_[np_gen_] = nr_bad_hits_best;
-
-    if(debug_ && bestMatchRecoTrack.size() )
-      std::cout<<"Best matched reco track with nr good hits = "<<nr_good_hits_best<<", nr bad hits = "<<nr_bad_hits_best<<", pt = "<<bestMatchRecoTrack.at(0)->pt()<<std::endl;
-
     
+    gen_nrMatchedRecHits_[np_gen_] = matchedRecHits_best.size();
+    gen_nrSpuriousRecHits_[np_gen_] = badRecHits_best.size();
+
+    for(std::vector<const TrackingRecHit*>::size_type ihit=0; ihit !=matchedRecHits_best.size(); ihit++){//write good rec hit parameters to the tree
+      DetId dId_rec = matchedRecHits_best.at(ihit)->geographicalId();
+      std::vector<int> matchedhit_pos = getHitPosition(dId_rec, false);
+      
+      if(matchedhit_pos.size()){
+	gen_matchedRecHit_subdetector_[np_gen_][ihit] = matchedhit_pos.at(0);
+	gen_matchedRecHit_layer_[np_gen_][ihit] = matchedhit_pos.at(1);
+      }
+      else
+	std::cout<<"Failed to get hit position information."<<std::endl;
+    }
+
+    for(std::vector<const TrackingRecHit*>::size_type ihit=0; ihit !=badRecHits_best.size(); ihit++){//write spurious rec hit parameters to the tree
+      DetId dId_rec = badRecHits_best.at(ihit)->geographicalId();
+      std::vector<int> badhit_pos = getHitPosition(dId_rec, false);
+
+      if(badhit_pos.size()){
+        gen_badRecHit_subdetector_[np_gen_][ihit] = badhit_pos.at(0);
+        gen_badRecHit_layer_[np_gen_][ihit] = badhit_pos.at(1);
+      } 
+      else
+	std::cout<<"Failed to get hit position information."<<std::endl;
+    }
+
+    if(debug_){
+      if(bestMatchRecoTrack.size() )
+	std::cout<<"Best matched reco track with nr good hits = "<<matchedRecHits_best.size()<<", nr bad hits = "<<badRecHits_best.size()<<", pt = "<<bestMatchRecoTrack.at(0)->pt()<<std::endl;
+      else
+	std::cout<<"No matching reco-track found"<<std::endl;
+    }
+        
     //--------check for matched reco track defined by AssociatorByHits (efficiency and fake-rate plots)-----------
     const reco::Track* matchedTrackPointer=0;
     std::vector<std::pair<edm::RefToBase<reco::Track>, double> > rt;
@@ -703,6 +744,10 @@ MakeTrackValTree::beginJob()
   trackValTree_->Branch("gen_hit_phi", gen_hit_phi_, "gen_hit_phi[np_gen][50]/F");
   trackValTree_->Branch("gen_hit_layer", gen_hit_layer_, "gen_hit_layer[np_gen][50]/I");
   trackValTree_->Branch("gen_hit_subdetector", gen_hit_subdetector_, "gen_hit_subdetector[np_gen][50]/I");
+  trackValTree_->Branch("gen_matchedRecHit_layer", gen_matchedRecHit_layer_, "gen_matchedRecHit_layer[np_gen][50]/I");
+  trackValTree_->Branch("gen_matchedRecHit_subdetector", gen_matchedRecHit_subdetector_, "gen_matchedRecHit_subdetector[np_gen][50]/I");
+  trackValTree_->Branch("gen_badRecHit_layer", gen_badRecHit_layer_, "gen_badRecHit_layer[np_gen][50]/I");
+  trackValTree_->Branch("gen_badRecHit_subdetector", gen_badRecHit_subdetector_, "gen_badRecHit_subdetector[np_gen][50]/I");
 }
 
 //--------------------------functions----------------------------------

@@ -1,4 +1,4 @@
- // -*- C++ -*-
+// -*- C++ -*-
 //
 // Package:    MakeTrackValTree
 // Class:      MakeTrackValTree
@@ -34,6 +34,9 @@
 #include "DataFormats/GsfTrackReco/interface/GsfTrack.h"
 #include "DataFormats/GsfTrackReco/interface/GsfTrackFwd.h"
 #include "DataFormats/TrackingRecHit/interface/TrackingRecHit.h"
+#include "DataFormats/TrajectorySeed/interface/TrajectorySeed.h"
+#include "DataFormats/EgammaReco/interface/ElectronSeed.h"
+#include "DataFormats/EgammaReco/interface/ElectronSeedFwd.h"
 
 #include "DataFormats/SiStripDetId/interface/StripSubdetector.h"
 #include "DataFormats/SiPixelDetId/interface/PixelSubdetector.h"
@@ -120,7 +123,7 @@ class MakeTrackValTree : public edm::EDAnalyzer {
   double reco_nrSharedHits_[MAXPART], gen_nrSharedHits_[MAXPART];
   
   bool debug_, is_gsf_, hitdebug_;
-  edm::InputTag track_label_gsf_, track_label_;
+  edm::InputTag track_label_gsf_, track_label_, el_seed_label_;
 
   TrackerHitAssociator* hitAssociator;
 
@@ -151,7 +154,7 @@ MakeTrackValTree::MakeTrackValTree(const edm::ParameterSet& iConfig):
   is_gsf_ = iConfig.getParameter<bool>("isGSF");
   track_label_gsf_ = iConfig.getParameter<edm::InputTag>("trackLabelGSF");
   track_label_ = iConfig.getParameter<edm::InputTag>("trackLabel");
-
+  el_seed_label_ = iConfig.getParameter<edm::InputTag>("elSeedLabel");
 
   ptMinTP =   iConfig.getParameter<double>("ptMinTP");
   minRapidityTP = iConfig.getParameter<double>("minRapidityTP");
@@ -351,54 +354,138 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   iEvent.getByLabel(track_label, trackCollection);
   //iEvent.getByLabel("elGsfTracksWithQuality", trackCollection); //produced collection in aod file -- find out the definition
 
-  if(debug_)
-    std::cout<<"Reco track label = "<<track_label<<std::endl;
+  edm::Handle<edm::View<reco::ElectronSeed> > elSeedCollection; //something missing from the build file
+  iEvent.getByLabel(el_seed_label_, elSeedCollection);
 
-  /* edm::Handle<edm::View<reco::Track> > trackCollectionUsual;
-  //  iEvent.getByLabel("generalTracks", trackCollectionUsual);
-  iEvent.getByLabel("cutsRecoTracksHp", trackCollectionUsual);
-
-  edm::Handle<edm::View<reco::GsfTrack> > trackCollectionFullElectron;
-  iEvent.getByLabel("electronGsfTracks", trackCollectionFullElectron);
-                     
-    for( edm::View<reco::Track>::size_type i=0; i<trackCollectionUsual->size(); i++){
-    edm::RefToBase<reco::Track> track(trackCollectionUsual, i);
-    std::cout<<"general track with presel pT = "<<track->pt()<<std::endl;
-  }
-
-  for( edm::View<reco::Track>::size_type i=0; i<trackCollection->size(); i++){
-    edm::RefToBase<reco::Track> track(trackCollection, i);
-    std::cout<<"track with el_label with presel pT = "<<track->pt()<<std::endl;
-  }
-
-  for( edm::View<reco::GsfTrack>::size_type i=0; i<trackCollectionFullElectron->size(); i++){
-    edm::RefToBase<reco::GsfTrack> track(trackCollectionFullElectron, i);
-    std::cout<<"GSF track with no presel el_label pT = "<<track->pt()<<std::endl;
-  }
-*/  
   
+  //edm::Handle<edm::View<TrajectorySeed> > seedCollection;
+  //iEvent.getByLabel("electronMergedSeeds", seedCollection);
+
+  //std::cout<<"seedsize = "<<seedCollection->size()<<std::endl;
+  //  for( edm::View<TrajectorySeed>::const_iterator it_seed = seedCollection->begin(); it_seed != seedCollection->end(); it_seed++){
+  //  std::cout<<"Nr hits of seed = "<<it_seed->nHits()<<std::endl;
+  //}
+
+  if(debug_)
+    std::cout<<"Reco track label = "<<track_label<<", electron seed label = "<<el_seed_label_<<std::endl;
+
   edm::Handle<TrackingParticleCollection>  TPCollectionHeff ; //simulated tracks
   iEvent.getByLabel("mergedtruth","MergedTrackTruth",TPCollectionHeff);
 
   const TrackingParticleCollection tPCeff = *(TPCollectionHeff.product());
   TrackingParticleSelector tpSelector = TrackingParticleSelector(ptMinTP, minRapidityTP, maxRapidityTP,tipTP, lipTP, minHitTP,signalOnlyTP, chargedOnlyTP, stableOnlyTP,pdgIdTP,minAbsEtaTP,maxAbsEtaTP);
        
-  reco::SimToRecoCollection simRecColl;
-  reco::RecoToSimCollection recSimColl;
 
+ //----------- method 1--------------------- 
+  /* //add trackingParticleRecoTrackAssociation to cfg file
+  reco::SimToRecoCollection simRecColl;
   edm::Handle<reco::SimToRecoCollection > simtorecoCollection;
   iEvent.getByLabel("trackingParticleRecoTrackAsssociation", simtorecoCollection);
   simRecColl = *(simtorecoCollection.product());
 
+ 
   edm::Handle<reco::RecoToSimCollection > rectosimCollection;
   iEvent.getByLabel("trackingParticleRecoTrackAsssociation",  rectosimCollection);
-  recSimColl = *(rectosimCollection.product());
+  reco::RecoToSimCollection recSimColl = *(rectosimCollection.product());
+
+  std::cout<<"recSimColl.size = "<<recSimColl.size()<<std::endl;
+  */
+  //------------ method 2 ----------------------
+  edm::ESHandle<TrackAssociatorBase> myAssociator;
+  iSetup.get<TrackAssociatorRecord>().get("TrackAssociatorByHits", myAssociator);
+
+  //  std::cout<<"Getting associateSimToReco directly: "<<std::endl;
+  reco::SimToRecoCollection simRecColl = myAssociator->associateSimToReco(trackCollection, TPCollectionHeff, &iEvent);
+
+  // std::cout<<"Getting associateRecoToSim directly: "<<std::endl;
+  reco::RecoToSimCollection recSimColl = myAssociator->associateRecoToSim(trackCollection, TPCollectionHeff, &iEvent);
+
+  hitAssociator = new TrackerHitAssociator(iEvent, conf_);
+
+  //--------------Seed association-----------------------
+  //  edm::Handle<reco::SimToRecoCollectionSeed > simtorecoseedCollection;
+  // iEvent.getByLabel("trackingParticleRecoTrackAssociation", simtorecoseedCollection);
+  //  std::cout<<"seed size = "<< seedCollection->size()<<std::endl;
+  //std::cout<<"tp size = "<< TPCollectionHeff->size()<<std::endl;
+
+
+  //  edm::ESHandle<TrackAssociatorBase> myAssociator;
+  //iSetup.get<TrackAssociatorRecord>().get("TrackAssociatorByHits", myAssociator);
+
+  /*  std::cout<<"Getting associateSimToReco for Seed"<<std::endl;
+  reco::SimToRecoCollectionSeed simRecCollSeed = myAssociator->associateSimToReco(seedCollection, TPCollectionHeff, &iEvent);
+  std::cout<<"simRecCollSeed.size() = "<<simRecCollSeed.size()<<std::endl;
+
+  std::cout<<"Getting associateRecoToSim for Seed"<<std::endl;
+  reco::RecoToSimCollectionSeed recSimCollSeed = myAssociator->associateRecoToSim(seedCollection, TPCollectionHeff, &iEvent);
+  std::cout<<"recSimCollSeed.size() = "<<recSimCollSeed.size()<<std::endl;
+  */
+
+  //------------------------------------------------------------
 
   edm::ESHandle<ParametersDefinerForTP> parametersDefinerTP; //?
   iSetup.get<TrackAssociatorRecord>().get("LhcParametersDefinerForTP", parametersDefinerTP);   
 
   edm::ESHandle<TrackerGeometry> tracker;
   iSetup.get<TrackerDigiGeometryRecord>().get(tracker);
+
+  //---------------------Loop over electron track seeds---------------
+
+  std::cout<<"Looping over electron seed collection of size "<<elSeedCollection->size()<<std::endl;
+   
+  for( edm::View<reco::ElectronSeed>::const_iterator it_seed = elSeedCollection->begin(); it_seed != elSeedCollection->end(); it_seed++){
+    std::cout<<"Electron seed with numbr of hits = "<<it_seed->nHits()<<std::endl;
+
+    TrajectorySeed::range rechits = it_seed->recHits();
+
+    std::vector<SimHitIdpr> matchedSimIds_s;
+
+    int ri = 0;
+
+    // loop over rec hits associated to the seed and return a vector of matched tracking particle IDs
+    std::vector<SimHitIdpr> matchedSimIdsTot;
+    matchedSimIdsTot.clear(); // clean up the matched Ids for each seed
+
+    for (edm::OwnVector<TrackingRecHit>::const_iterator it_rechit = rechits.first; it_rechit != rechits.second; it_rechit++, ri++){
+      std::vector<SimHitIdpr> matchedSimIds = hitAssociator->associateHitId(*it_rechit); //find the IDs of tracking particles associated to the rec hit
+
+      for( unsigned int i = 0; i < matchedSimIds.size(); i++ ) // save all matched IDs of a seed to a single vector                                              
+	matchedSimIdsTot.push_back(matchedSimIds[i]);
+
+      ///////////////// debug ////////////////
+      //      if( hitdebug_ ){
+	std::cout<<" Seed rec hit # " << ri << " valid=" << it_rechit->isValid() << " det id = " << it_rechit->geographicalId().rawId() << std::endl;
+	if(matchedSimIds.size()){
+	  for( unsigned int i = 0; i < matchedSimIds.size(); i++)      
+	    std::cout<< "Associated Sim Track Id " << matchedSimIds[i].first<<std::endl; 
+	}
+	else
+	  std::cout<<", No maatched tracking particle found"<<std::endl;
+	//      }
+    
+	/////////////////////////////////////
+    }
+
+    //    if( hitdebug_){
+    std::cout<<"Matched TP IDs for seed rec hits: ";
+    for(unsigned int i = 0; i < matchedSimIdsTot.size(); i++)
+      std::cout<<matchedSimIdsTot[i].first<<", ";
+    std::cout<<std::endl;
+    //}
+      
+  }
+
+    
+    //    TrackAssociatorByHits::getMatchedIds<edm::OwnVector<TrackingRecHit>::const_iterator>(matchedIds, SimTrackIds, ri, rechits.first, rechits.second, hitAssociator );
+
+
+    /*    for(TrajectorySeed::const_iterator rechit_it = rechits.first; rechit_it != rechits.second; rechit_it++){
+      std::cout<<"bla"<<std::endl;
+      
+      const TrackingRecHit *hit = getHitPtr(rechit_it);
+
+      //      matchedSimIds_s = hitAssociator->associateHitId(**rechit_it); // find simulated tracks causing the reconstructed hit by ID
+      }*/
 
   //----------------------Loop over tracking particles--------------------------------
   np_gen_ = 0;
@@ -468,7 +555,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     }
 
     //-------------manually look for a best matched reco track-----------------------
-    hitAssociator = new TrackerHitAssociator(iEvent, conf_);
+
 
     std::vector<SimHitIdpr> matchedSimIds;
     std::vector<edm::RefToBase<reco::Track> > bestMatchRecoTrack;        

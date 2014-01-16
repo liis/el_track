@@ -41,13 +41,17 @@ process.TFileService = cms.Service("TFileService",
 process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi")
 
 #--------------------Configure Track association-------------------------
-process.load("SimTracker.TrackAssociation.trackingParticleRecoTrackAsssociation_cfi")
-process.trackingParticleRecoTrackAsssociation.label_tr = cms.InputTag("electronGsfTracks")
+#process.load("SimTracker.TrackAssociation.trackingParticleRecoTrackAsssociation_cfi")
+#process.trackingParticleRecoTrackAsssociation.label_tr = cms.InputTag("electronGsfTracks")
 
 process.load("SimTracker.TrackAssociation.TrackAssociatorByHits_cfi")
 process.TrackAssociatorByHits.SimToRecoDenominator = cms.string("reco") #Quality_SimToReco = shared hits/#reco(or #sim)
 process.TrackAssociatorByHits.Quality_SimToReco = cms.double(0.75)
 #process.TrackAssociatorByHits.AbsoluteNumberOfHits = cms.bool(True)
+
+#process.trackingParticleSeedAssociation = process.trackingParticleRecoTrackAsssociation.clone()
+#process.trackingParticleSeedAssociation.label_tr = cms.InputTag("electronMergedSeeds") ##nice try
+
 
 #---------------- high purity selection of reco::Tracks---------------
 process.load("PhysicsTools.RecoAlgos.recoTrackSelector_cfi")
@@ -61,15 +65,15 @@ process.ValidationSelectors = cms.Sequence(
     process.cutsRecoTracksHp
     )
 
-process.AssociationMapProducers = cms.Sequence(
-    process.trackingParticleRecoTrackAsssociation
-    )
+#process.AssociationMapProducers = cms.Sequence(
+#    process.trackingParticleRecoTrackAsssociation
+#    )
 
 process.printEventContent = cms.EDAnalyzer("EventContentAnalyzer")
 
 process.p = cms.Path(
     process.ValidationSelectors *
-    process.AssociationMapProducers *
+#    process.AssociationMapProducers *
 
 #    process.printEventContent *    # dump of event content after PAT-tuple production
     process.TrackValTreeMaker

@@ -19,7 +19,8 @@ TrackValTreeMaker = cms.EDAnalyzer('MakeTrackValTree',
                                    hitdebug = cms.bool(False),
                                    trackLabelGSF = cms.InputTag("electronGsfTracks"),
                                    trackLabel = cms.InputTag("generalTracks"),
-
+                                   elSeedLabel = cms.InputTag("electronMergedSeeds"),
+                                   
                                    Quality_SimToReco = cms.double(0.5),
                                    associateRecoTracks = cms.bool(True),
                                    UseGrouped = cms.bool(True),

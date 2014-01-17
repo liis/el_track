@@ -100,7 +100,11 @@ class MakeTrackValTree : public edm::EDAnalyzer {
       std::vector<int> getHitPosition(DetId, bool);
       GlobalVector getHitMomentum(std::vector<PSimHit>::const_iterator, edm::ESHandle<TrackerGeometry>, bool);
       std::vector<PSimHit> getGoodHits(std::vector<PSimHit>, bool);
-    
+      template<typename iter> std::vector<SimHitIdpr> getMatchedTPIds( iter, iter, const edm::Event&, const edm::ParameterSet&, bool);
+      const TrackingRecHit* getHitPtr(edm::OwnVector<TrackingRecHit>::const_iterator);
+      const TrackingRecHit* getHitPtr(trackingRecHit_iterator);
+      int getNrSharedHits(std::vector<SimHitIdpr>&, TrackingParticle*);
+
   // ----------member data ---------------------------
   double ptMinTP, minRapidityTP, maxRapidityTP, tipTP, lipTP, signalOnlyTP, chargedOnlyTP, stableOnlyTP, minAbsEtaTP, maxAbsEtaTP;
   std::vector<int> pdgIdTP;
@@ -282,6 +286,67 @@ std::vector<PSimHit>  MakeTrackValTree::getGoodHits(std::vector<PSimHit> simhits
   return good_hits;
 }
 
+template<typename iter>
+std::vector<SimHitIdpr> MakeTrackValTree::getMatchedTPIds( iter begin, iter end, const edm::Event& iEvent, const edm::ParameterSet& conf, bool debug = false)
+// loop over rec hits between 'iter begin' and 'iter end' and return a vector of associated tracking particle IDs
+{
+  hitAssociator = new TrackerHitAssociator(iEvent, conf); // ?? not needed 
+
+  std::vector<SimHitIdpr> matchedSimIdsTot;
+  matchedSimIdsTot.clear(); // clean up the matched Ids for each seed
+
+  int ri = 1; // rec hit count
+  for( iter it = begin; it != end; it++, ri++){
+    const TrackingRecHit *hit = getHitPtr(it);
+
+    std::vector<SimHitIdpr> matchedSimIds = hitAssociator->associateHitId(*hit); //find the IDs of tracking particles associated to the rec hit
+
+    for( unsigned int i = 0; i < matchedSimIds.size(); i++ ) // save all matched IDs of a seed to a single vector
+      matchedSimIdsTot.push_back(matchedSimIds[i]);
+
+    //////////debug/////////////
+    if(debug){
+      std::cout<<" Seed rec hit # " << ri << " valid=" << it->isValid() << " det id = " << it->geographicalId().rawId() << std::endl;
+      if(matchedSimIds.size()){
+	for( unsigned int i = 0; i < matchedSimIds.size(); i++)      
+	  std::cout<< "Associated Sim Track Id " << matchedSimIds[i].first<<std::endl; 
+      }
+      else
+	std::cout<<", No maatched tracking particle found"<<std::endl;
+    }
+    /////////////////////////
+  }
+
+  return matchedSimIdsTot;
+}
+
+const TrackingRecHit* MakeTrackValTree::getHitPtr(edm::OwnVector<TrackingRecHit>::const_iterator iter) {return &*iter;}
+const TrackingRecHit* MakeTrackValTree::getHitPtr(trackingRecHit_iterator iter) {return &**iter;}
+
+int MakeTrackValTree::getNrSharedHits(std::vector<SimHitIdpr>& recHitMatchedTPIds, TrackingParticle* tp) {
+  int nshared = 0;  
+  std::vector<SimHitIdpr> checkedTPIds;
+  checkedTPIds.clear();
+
+  for( unsigned int i = 0; i<recHitMatchedTPIds.size(); i++){   
+    if( find(checkedTPIds.begin(), checkedTPIds.end(), recHitMatchedTPIds[i]) == checkedTPIds.end() )
+      // omit counting the same matched TP Id twice
+      {
+	checkedTPIds.push_back(recHitMatchedTPIds[i]);
+
+	for( TrackingParticle::g4t_iterator g4T = tp->g4Track_begin(); g4T != tp->g4Track_end(); g4T++){
+	  if( (*g4T).trackId() == recHitMatchedTPIds[i].first && tp->eventId() == recHitMatchedTPIds[i].second ){
+	    int countedhits = std::count(recHitMatchedTPIds.begin(), recHitMatchedTPIds.end(), recHitMatchedTPIds[i]);
+	    
+	    nshared += countedhits;
+	  }
+	}
+      }
+  }
+
+  return nshared;
+}
+
 // ------------ method called for each event  ------------
 void
 MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
@@ -354,17 +419,11 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   iEvent.getByLabel(track_label, trackCollection);
   //iEvent.getByLabel("elGsfTracksWithQuality", trackCollection); //produced collection in aod file -- find out the definition
 
-  edm::Handle<edm::View<reco::ElectronSeed> > elSeedCollection; //something missing from the build file
+  edm::Handle<edm::View<reco::ElectronSeed> > elSeedCollection; 
   iEvent.getByLabel(el_seed_label_, elSeedCollection);
 
-  
-  //edm::Handle<edm::View<TrajectorySeed> > seedCollection;
+  //edm::Handle<edm::View<TrajectorySeed> > seedCollection; // generic track seeds
   //iEvent.getByLabel("electronMergedSeeds", seedCollection);
-
-  //std::cout<<"seedsize = "<<seedCollection->size()<<std::endl;
-  //  for( edm::View<TrajectorySeed>::const_iterator it_seed = seedCollection->begin(); it_seed != seedCollection->end(); it_seed++){
-  //  std::cout<<"Nr hits of seed = "<<it_seed->nHits()<<std::endl;
-  //}
 
   if(debug_)
     std::cout<<"Reco track label = "<<track_label<<", electron seed label = "<<el_seed_label_<<std::endl;
@@ -375,22 +434,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   const TrackingParticleCollection tPCeff = *(TPCollectionHeff.product());
   TrackingParticleSelector tpSelector = TrackingParticleSelector(ptMinTP, minRapidityTP, maxRapidityTP,tipTP, lipTP, minHitTP,signalOnlyTP, chargedOnlyTP, stableOnlyTP,pdgIdTP,minAbsEtaTP,maxAbsEtaTP);
        
-
- //----------- method 1--------------------- 
-  /* //add trackingParticleRecoTrackAssociation to cfg file
-  reco::SimToRecoCollection simRecColl;
-  edm::Handle<reco::SimToRecoCollection > simtorecoCollection;
-  iEvent.getByLabel("trackingParticleRecoTrackAsssociation", simtorecoCollection);
-  simRecColl = *(simtorecoCollection.product());
-
- 
-  edm::Handle<reco::RecoToSimCollection > rectosimCollection;
-  iEvent.getByLabel("trackingParticleRecoTrackAsssociation",  rectosimCollection);
-  reco::RecoToSimCollection recSimColl = *(rectosimCollection.product());
-
-  std::cout<<"recSimColl.size = "<<recSimColl.size()<<std::endl;
-  */
-  //------------ method 2 ----------------------
+  //------------ get track associators ----------------------
   edm::ESHandle<TrackAssociatorBase> myAssociator;
   iSetup.get<TrackAssociatorRecord>().get("TrackAssociatorByHits", myAssociator);
 
@@ -402,25 +446,6 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
   hitAssociator = new TrackerHitAssociator(iEvent, conf_);
 
-  //--------------Seed association-----------------------
-  //  edm::Handle<reco::SimToRecoCollectionSeed > simtorecoseedCollection;
-  // iEvent.getByLabel("trackingParticleRecoTrackAssociation", simtorecoseedCollection);
-  //  std::cout<<"seed size = "<< seedCollection->size()<<std::endl;
-  //std::cout<<"tp size = "<< TPCollectionHeff->size()<<std::endl;
-
-
-  //  edm::ESHandle<TrackAssociatorBase> myAssociator;
-  //iSetup.get<TrackAssociatorRecord>().get("TrackAssociatorByHits", myAssociator);
-
-  /*  std::cout<<"Getting associateSimToReco for Seed"<<std::endl;
-  reco::SimToRecoCollectionSeed simRecCollSeed = myAssociator->associateSimToReco(seedCollection, TPCollectionHeff, &iEvent);
-  std::cout<<"simRecCollSeed.size() = "<<simRecCollSeed.size()<<std::endl;
-
-  std::cout<<"Getting associateRecoToSim for Seed"<<std::endl;
-  reco::RecoToSimCollectionSeed recSimCollSeed = myAssociator->associateRecoToSim(seedCollection, TPCollectionHeff, &iEvent);
-  std::cout<<"recSimCollSeed.size() = "<<recSimCollSeed.size()<<std::endl;
-  */
-
   //------------------------------------------------------------
 
   edm::ESHandle<ParametersDefinerForTP> parametersDefinerTP; //?
@@ -430,63 +455,28 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   iSetup.get<TrackerDigiGeometryRecord>().get(tracker);
 
   //---------------------Loop over electron track seeds---------------
-
+  /*
   std::cout<<"Looping over electron seed collection of size "<<elSeedCollection->size()<<std::endl;
    
   for( edm::View<reco::ElectronSeed>::const_iterator it_seed = elSeedCollection->begin(); it_seed != elSeedCollection->end(); it_seed++){
+
     std::cout<<"Electron seed with numbr of hits = "<<it_seed->nHits()<<std::endl;
+    TrajectorySeed::range rechits = it_seed->recHits(); //get recHits associated to the seed
 
-    TrajectorySeed::range rechits = it_seed->recHits();
+    std::vector<SimHitIdpr> matchedSimIdsTot = getMatchedTPIds<edm::OwnVector<TrackingRecHit>::const_iterator>(it_seed->recHits().first, it_seed->recHits().second, iEvent, conf_, false); //get a vector of TP IDs associated to the recHits of the seed
 
-    std::vector<SimHitIdpr> matchedSimIds_s;
 
-    int ri = 0;
-
-    // loop over rec hits associated to the seed and return a vector of matched tracking particle IDs
-    std::vector<SimHitIdpr> matchedSimIdsTot;
-    matchedSimIdsTot.clear(); // clean up the matched Ids for each seed
-
-    for (edm::OwnVector<TrackingRecHit>::const_iterator it_rechit = rechits.first; it_rechit != rechits.second; it_rechit++, ri++){
-      std::vector<SimHitIdpr> matchedSimIds = hitAssociator->associateHitId(*it_rechit); //find the IDs of tracking particles associated to the rec hit
-
-      for( unsigned int i = 0; i < matchedSimIds.size(); i++ ) // save all matched IDs of a seed to a single vector                                              
-	matchedSimIdsTot.push_back(matchedSimIds[i]);
-
-      ///////////////// debug ////////////////
-      //      if( hitdebug_ ){
-	std::cout<<" Seed rec hit # " << ri << " valid=" << it_rechit->isValid() << " det id = " << it_rechit->geographicalId().rawId() << std::endl;
-	if(matchedSimIds.size()){
-	  for( unsigned int i = 0; i < matchedSimIds.size(); i++)      
-	    std::cout<< "Associated Sim Track Id " << matchedSimIds[i].first<<std::endl; 
-	}
-	else
-	  std::cout<<", No maatched tracking particle found"<<std::endl;
-	//      }
-    
-	/////////////////////////////////////
+    std::cout<<"simIds.size = "<<matchedSimIdsTot.size()<<std::endl;
+    if( hitdebug_){
+      std::cout<<"Matched TP IDs for seed rec hits: ";
+      for(unsigned int i = 0; i < matchedSimIdsTot.size(); i++)
+	std::cout<<matchedSimIdsTot[i].first<<", ";
+      std::cout<<std::endl;
     }
-
-    //    if( hitdebug_){
-    std::cout<<"Matched TP IDs for seed rec hits: ";
-    for(unsigned int i = 0; i < matchedSimIdsTot.size(); i++)
-      std::cout<<matchedSimIdsTot[i].first<<", ";
-    std::cout<<std::endl;
-    //}
       
   }
-
-    
-    //    TrackAssociatorByHits::getMatchedIds<edm::OwnVector<TrackingRecHit>::const_iterator>(matchedIds, SimTrackIds, ri, rechits.first, rechits.second, hitAssociator );
-
-
-    /*    for(TrajectorySeed::const_iterator rechit_it = rechits.first; rechit_it != rechits.second; rechit_it++){
-      std::cout<<"bla"<<std::endl;
-      
-      const TrackingRecHit *hit = getHitPtr(rechit_it);
-
-      //      matchedSimIds_s = hitAssociator->associateHitId(**rechit_it); // find simulated tracks causing the reconstructed hit by ID
-      }*/
-
+  */
+  
   //----------------------Loop over tracking particles--------------------------------
   np_gen_ = 0;
   np_gen_toReco_ = 0;
@@ -509,20 +499,43 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
     std::vector<PSimHit> simhits=tp->trackPSimHit(DetId::Tracker);
     int nr_simhits = simhits.size();
-    std::vector<PSimHit> goodhits=getGoodHits(simhits, hitdebug_); //omit subsequent hits in the same subdetector layer  
+    std::vector<PSimHit> goodhits=getGoodHits(simhits, hitdebug_); //omit subsequent hits in the same subdetector layer
     int nr_goodhits = goodhits.size();
 
     gen_nrSimHits_[np_gen_] =  nr_simhits;
     gen_nrUniqueSimHits_[np_gen_] = nr_goodhits;
-    
+
     std::vector<unsigned int> tpids; //For each tracking particle save a vector of corresponding track ID-s
     for (TrackingParticle::g4t_iterator g4T=tp->g4Track_begin(); g4T!=tp->g4Track_end(); g4T++)
       tpids.push_back(g4T->trackId());
 
-    if(debug_){
+    //    if(debug_){
       std::cout<<"----------------------------------------"<<std::endl;
       std::cout<<"Found Tracking particle with pt = "<<tp->pt()<<", sim hits size = "<<simhits.size()<<", Nr unique hits = "<<nr_goodhits<<", track ID-s size = "<<tpids.size()<<std::endl;
+      //}
+    //---------------------- check mathed seeds ---------------------
+    std::cout<<"Looping over electron seed collection of size "<<elSeedCollection->size()<<std::endl;
+
+    for( edm::View<reco::ElectronSeed>::const_iterator it_seed = elSeedCollection->begin(); it_seed != elSeedCollection->end(); it_seed++){
+      
+      std::cout<<"Electron seed with numbr of hits = "<<it_seed->nHits()<<std::endl;
+      TrajectorySeed::range rechits = it_seed->recHits(); //get recHits associated to the seed
+      std::vector<SimHitIdpr> matchedSimIdsTot = getMatchedTPIds<edm::OwnVector<TrackingRecHit>::const_iterator>(it_seed->recHits().first, it_seed->recHits().second, iEvent, conf_, false); //get a vector of TP IDs associated to the recHits of the seed
+      
+      std::cout<<"simIds.size = "<<matchedSimIdsTot.size()<<std::endl;
+      
+      int nshared = getNrSharedHits(matchedSimIdsTot, tp);
+      std::cout<<"TP shared hits with a seed = "<<nshared<<std::endl;
+
+      if( hitdebug_){
+	std::cout<<"Matched TP IDs for seed rec hits: ";
+	for(unsigned int i = 0; i < matchedSimIdsTot.size(); i++)
+	  std::cout<<matchedSimIdsTot[i].first<<", ";
+	std::cout<<std::endl;
+      }
     }
+
+    //--------------------------------------------------------------------
 
     int hit_count = 0;
     for(std::vector<PSimHit>::const_iterator it_hit = goodhits.begin(); it_hit != goodhits.end(); it_hit++){
@@ -555,8 +568,6 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     }
 
     //-------------manually look for a best matched reco track-----------------------
-
-
     std::vector<SimHitIdpr> matchedSimIds;
     std::vector<edm::RefToBase<reco::Track> > bestMatchRecoTrack;        
  

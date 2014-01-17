@@ -120,9 +120,9 @@ class MakeTrackValTree : public edm::EDAnalyzer {
   int rec_hit_isMatched_[MAXPART][MAXHIT], rec_hit_subdetector_[MAXPART][MAXHIT], rec_hit_layer_[MAXPART][MAXHIT];
 
 
-  double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_phi_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART], gen_ptAtLast_[MAXPART];
+  double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_phi_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART], gen_ptAtLast_[MAXPART], gen_matched_seed_quality_[MAXPART];
   double reco_pt_[MAXPART], reco_eta_[MAXPART], reco_phi_[MAXPART], fake_pt_[MAXPART], fake_eta_[MAXPART], fake_phi_[MAXPART];
-  int gen_pdgId_[MAXPART], gen_nrSimHits_[MAXPART], gen_nrUniqueSimHits_[MAXPART], gen_nrRecoHits_[MAXPART], gen_nrMatchedRecHits_[MAXPART], gen_nrSpuriousRecHits_[MAXPART], gen_nrLostSimHits_[MAXPART];
+  int gen_pdgId_[MAXPART], gen_nrSimHits_[MAXPART], gen_nrUniqueSimHits_[MAXPART], gen_nrRecoHits_[MAXPART], gen_nrMatchedRecHits_[MAXPART], gen_nrSpuriousRecHits_[MAXPART], gen_nrLostSimHits_[MAXPART], gen_nr_matched_seed_hits_[MAXPART];
   int reco_nrRecoHits_[MAXPART], reco_nrSimHits_[MAXPART];
   double reco_nrSharedHits_[MAXPART], gen_nrSharedHits_[MAXPART];
   
@@ -305,15 +305,15 @@ std::vector<SimHitIdpr> MakeTrackValTree::getMatchedTPIds( iter begin, iter end,
       matchedSimIdsTot.push_back(matchedSimIds[i]);
 
     //////////debug/////////////
-    if(debug){
-      std::cout<<" Seed rec hit # " << ri << " valid=" << it->isValid() << " det id = " << it->geographicalId().rawId() << std::endl;
+    //if(debug){
+      std::cout<<" Seed rec hit # " << ri << " valid=" << it->isValid() << " det id = " << it->geographicalId().rawId();
       if(matchedSimIds.size()){
 	for( unsigned int i = 0; i < matchedSimIds.size(); i++)      
-	  std::cout<< "Associated Sim Track Id " << matchedSimIds[i].first<<std::endl; 
+	  std::cout<< ", associated Sim Track Id " << matchedSimIds[i].first<<std::endl; 
       }
       else
-	std::cout<<", No maatched tracking particle found"<<std::endl;
-    }
+	std::cout<<", No matched tracking particle found"<<std::endl;
+      //}
     /////////////////////////
   }
 
@@ -325,25 +325,14 @@ const TrackingRecHit* MakeTrackValTree::getHitPtr(trackingRecHit_iterator iter) 
 
 int MakeTrackValTree::getNrSharedHits(std::vector<SimHitIdpr>& recHitMatchedTPIds, TrackingParticle* tp) {
   int nshared = 0;  
-  std::vector<SimHitIdpr> checkedTPIds;
-  checkedTPIds.clear();
-
+  
   for( unsigned int i = 0; i<recHitMatchedTPIds.size(); i++){   
-    if( find(checkedTPIds.begin(), checkedTPIds.end(), recHitMatchedTPIds[i]) == checkedTPIds.end() )
-      // omit counting the same matched TP Id twice
-      {
-	checkedTPIds.push_back(recHitMatchedTPIds[i]);
-
-	for( TrackingParticle::g4t_iterator g4T = tp->g4Track_begin(); g4T != tp->g4Track_end(); g4T++){
-	  if( (*g4T).trackId() == recHitMatchedTPIds[i].first && tp->eventId() == recHitMatchedTPIds[i].second ){
-	    int countedhits = std::count(recHitMatchedTPIds.begin(), recHitMatchedTPIds.end(), recHitMatchedTPIds[i]);
-	    
-	    nshared += countedhits;
-	  }
-	}
-      }
+    for( TrackingParticle::g4t_iterator g4T = tp->g4Track_begin(); g4T != tp->g4Track_end(); g4T++){
+      if( (*g4T).trackId() == recHitMatchedTPIds[i].first && tp->eventId() == recHitMatchedTPIds[i].second )
+	nshared++;
+	  
+    }
   }
-
   return nshared;
 }
 
@@ -377,6 +366,9 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     gen_matched_eta_[i] = -999;
     gen_matched_pt_[i] = -999;
     gen_matched_phi_[i] = -999;
+
+    gen_nr_matched_seed_hits_[i] = -10;
+    gen_matched_seed_quality_[i] = -10;
 
     is_gen_matched_[i] = 0;
     reco_eta_[i] = -999;
@@ -510,31 +502,59 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       tpids.push_back(g4T->trackId());
 
     //    if(debug_){
-      std::cout<<"----------------------------------------"<<std::endl;
-      std::cout<<"Found Tracking particle with pt = "<<tp->pt()<<", sim hits size = "<<simhits.size()<<", Nr unique hits = "<<nr_goodhits<<", track ID-s size = "<<tpids.size()<<std::endl;
+    std::cout<<"----------------------------------------"<<std::endl;
+    std::cout<<"Found Tracking particle with pt = "<<tp->pt()<<", sim hits size = "<<simhits.size()<<", Nr unique hits = "<<nr_goodhits<<", track ID-s size = "<<tpids.size()<<std::endl;
       //}
     //---------------------- check mathed seeds ---------------------
     std::cout<<"Looping over electron seed collection of size "<<elSeedCollection->size()<<std::endl;
 
-    for( edm::View<reco::ElectronSeed>::const_iterator it_seed = elSeedCollection->begin(); it_seed != elSeedCollection->end(); it_seed++){
-      
-      std::cout<<"Electron seed with numbr of hits = "<<it_seed->nHits()<<std::endl;
+    int sn = 1;
+    std::vector<double> seedMatchQuality;
+    seedMatchQuality.clear();
+    std::vector<int> seedNrMatchedHits;
+    seedNrMatchedHits.clear();
+
+    for( edm::View<reco::ElectronSeed>::const_iterator it_seed = elSeedCollection->begin(); it_seed != elSeedCollection->end(); it_seed++, sn++){
+	
+
+      std::cout<<"Electron seed # "<<sn<<" with numbr of hits = "<<it_seed->nHits()<<std::endl;
       TrajectorySeed::range rechits = it_seed->recHits(); //get recHits associated to the seed
       std::vector<SimHitIdpr> matchedSimIdsTot = getMatchedTPIds<edm::OwnVector<TrackingRecHit>::const_iterator>(it_seed->recHits().first, it_seed->recHits().second, iEvent, conf_, false); //get a vector of TP IDs associated to the recHits of the seed
       
-      std::cout<<"simIds.size = "<<matchedSimIdsTot.size()<<std::endl;
-      
+      std::cout<<"simIds.size = "<<matchedSimIdsTot.size();
+      if(it_seed->isEcalDriven())
+	std::cout<<", IsEcalDriven";
+      if(it_seed->isTrackerDriven())
+	std::cout<<", IsTrackerDriven";
+      std::cout<<std::endl;
+
       int nshared = getNrSharedHits(matchedSimIdsTot, tp);
       std::cout<<"TP shared hits with a seed = "<<nshared<<std::endl;
-
+      
       if( hitdebug_){
 	std::cout<<"Matched TP IDs for seed rec hits: ";
 	for(unsigned int i = 0; i < matchedSimIdsTot.size(); i++)
 	  std::cout<<matchedSimIdsTot[i].first<<", ";
 	std::cout<<std::endl;
       }
+	
+      seedMatchQuality.push_back(nshared/it_seed->nHits());
+      seedNrMatchedHits.push_back(nshared);
     }
 
+    std::sort(seedMatchQuality.begin(), seedMatchQuality.end(), std::greater<double>() );
+    std::sort(seedNrMatchedHits.begin(), seedNrMatchedHits.end(), std::greater<int>() );
+    
+    if(seedMatchQuality.size() && seedNrMatchedHits.size()){
+      std::cout<<"Match quality with seed = "<< seedMatchQuality.at(0)<<std::endl;
+      std::cout<<"Nr matched seed hits = "<< seedNrMatchedHits.at(0)<<std::endl;
+    
+
+      gen_nr_matched_seed_hits_[np_gen_] = seedNrMatchedHits.at(0);
+      gen_matched_seed_quality_[np_gen_] = seedMatchQuality.at(0);
+    }
+    
+    
     //--------------------------------------------------------------------
 
     int hit_count = 0;
@@ -856,6 +876,8 @@ MakeTrackValTree::beginJob()
 
   trackValTree_->Branch("gen_nrRecoHits", gen_nrRecoHits_, "gen_nrRecoHits[np_gen]/I");
   trackValTree_->Branch("gen_nrSharedHits", gen_nrSharedHits_, "gen_nrSharedHits[np_gen]/D");  
+  trackValTree_->Branch("gen_nrMatchedSeedHits", gen_nr_matched_seed_hits_, "gen_nrMatchedSeedHits[np_gen]/I");
+  trackValTree_->Branch("gen_matchedSeedQuality", gen_matched_seed_quality_, "gen_matchedSeedQuality[np_gen]/D");
 
   trackValTree_->Branch("gen_matched_pt", gen_matched_pt_, "gen_matched_pt[np_gen]/D");
   trackValTree_->Branch("gen_matched_eta", gen_matched_eta_, "gen_matched_eta[np_gen]/D");

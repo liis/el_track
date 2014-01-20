@@ -15,6 +15,20 @@ def log_binning(nbin,xmin,xmax):
         xbins.append(xmin + ROOT.TMath.Power(10, logxmin + i*binwidth) )
     return xbins
 
+
+def fill_hists_by_eta_regions(var_eta, var_to_hist, hist_dict):
+    """
+    Fill histograms of var_to_hist for trans, endcap and barrel regions. pre-initialize three corresponding histograms in a dictionary
+    """
+    if abs(var_eta) < 0.9:
+        hist_dict["barrel"].Fill(var_to_hist)
+    elif abs(var_eta) < 1.4:
+        hist_dict["trans"].Fill(var_to_hist)
+    elif abs(var_eta) < 2.5:
+        hist_dict["endcap"].Fill(var_to_hist)
+    
+    return 0
+
 def fill_hist_ratio(h_numerator, h_denominator, outhistname, binning = "const"):
     """
     bin-by-bin division of the input histograms
@@ -34,10 +48,13 @@ def fill_hist_ratio(h_numerator, h_denominator, outhistname, binning = "const"):
         
 
     for i in range(1, nbin-1):
+#        print "numerator = " + str(h_numerator.GetBinContent(i)) + ", denominator = " + str(h_denominator.GetBinContent(i))
         if h_denominator.GetBinContent(i) == 0:
             h_ratio.SetBinContent(i,0)
         else:
             h_ratio.SetBinContent(i, h_numerator.GetBinContent(i)/h_denominator.GetBinContent(i) )
+
+#    h_ratio.Write()
 
     return h_ratio
 

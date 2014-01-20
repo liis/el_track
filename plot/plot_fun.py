@@ -130,7 +130,7 @@ def add_text_box(text=''):
     latex.SetTextAlign(11)
     return latex.DrawLatex(0.17, 0.96, text)
 
-def draw_and_save_eff(hists, var, eff_fake, is_gsf, leg_pos = "up_right"):
+def draw_and_save_eff(hists, var, eff_fake, is_gsf, leg_pos = "up_right", title = ""):
     """
     hists - dictionary of process names and histograms
     var - xaxis variable
@@ -146,13 +146,19 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, leg_pos = "up_right"):
         xtitle = "p_{T}"
     if var == "eta":
         xtitle = "#eta"
+    if var == "nrhits":
+        xtitle = "Number of sim. hits"
         
     ytitle = ""
     ymax = 1
-    if eff_fake == "eff" or eff_fake == "eff_seed":
-        ytitle = "efficiency"
-        ymax = 1
-    if eff_fake == "fake":
+    if eff_fake == "eff":
+        ytitle = "Efficiency"
+    if eff_fake == "eff_seed":
+        ytitle = "Seeding efficiency"
+    if eff_fake == "eff_wrt_seed":
+        ytitle = "Reco wrt seeding efficiency"
+    
+    if eff_fake[:4] == "fake":
         ytitle = "fake rate"
         ymax = 0.3
 
@@ -165,4 +171,5 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, leg_pos = "up_right"):
         GSFstr = "_GSF"
 
     c.SaveAs("$WORKING_DIR/plot/out_plots/" + eff_fake + "_" + var + GSFstr + ".pdf")
+    c.SaveAs("$WORKING_DIR/plot/out_plots/" + eff_fake + "_" + var + GSFstr + ".png")
     c.Close()

@@ -2,7 +2,7 @@ import sys, os
 import tdrstyle
 tdrstyle.tdrstyle()
 import ROOT
-from plot_fun import infilenames_eta, infilenames_pt, load_input_files, get_hit_efficiency_hist, draw_efficiency_histograms, draw_legend
+from plot_fun import infilenames_eta, infilenames_pt, load_input_files, get_hit_efficiency_hist, draw_efficiency_histograms, draw_legend, add_text_box
 
 indir = "$WORKING_DIR/tree_to_histo/histograms/"
 
@@ -32,8 +32,9 @@ for eta_region in eta_regions:
         print "loading histogram " + hist_name
         hit_hists[eta_region][quality_point] = infiles_pt["FlatPt"].Get(hist_name) 
         
-print hit_hists["barrel"]
+#print hit_hists["barrel"]
 
+#-----------hit-by-hit step plots--------------------
 for eta_region, hists_by_quality in hit_hists.iteritems():
     c_eff = ROOT.TCanvas("c_eff_" + eta_region, eta_region)
 
@@ -52,7 +53,7 @@ for eta_region, hists_by_quality in hit_hists.iteritems():
     c_eff.SaveAs("$WORKING_DIR/plot/out_plots/eff_by_hit_" + eta_region + ".png")
 
 
-#---------------plots--------------------
+#---------------pt and eta dependent plots--------------------
 for quality, hist_dictionary in hist_hit_eff.iteritems():
     for region, hists in hist_dictionary.iteritems():
         print "drawing histograms in region " + region
@@ -60,11 +61,12 @@ for quality, hist_dictionary in hist_hit_eff.iteritems():
         c_eff = ROOT.TCanvas("c_eff_" + region + "_" +quality + "_" + region, "")
         c_eff.SetGrid()
         c_eff.SetRightMargin(0.25) #legend out of the plot area
+        c_eff.SetTopMargin(0.07)
 
         if region[:6] == "FlatPt":
             c_eff.SetLogx()
 
-        draw_efficiency_histograms(hists,region = region, xtitle = "(quality = " + quality + ", pt = " + region + ")")
+        draw_efficiency_histograms(hists,region = region, ytitle = "Efficiency at sim. hit layer")
        
         leg = ROOT.TLegend(0.76,0.27,0.93,0.90); #out of the box coordinates
         leg.SetBorderSize(0)
@@ -73,6 +75,9 @@ for quality, hist_dictionary in hist_hit_eff.iteritems():
         for ihit in range(0, len(hists) ):
             leg.AddEntry(hists[ihit], "tr. hit " + str(ihit + 1) )
         leg.Draw()
+
+        textbox_input = "#varepsilon (p_{T}) > " + quality[-2:] + "%, sim el. " + region 
+        make_title_text = add_text_box(textbox_input)
 
         c_eff.SaveAs("$WORKING_DIR/plot/out_plots/hiteff_" + quality + "_" + region + ".pdf")
         c_eff.SaveAs("$WORKING_DIR/plot/out_plots/hiteff_" + quality + "_" + region + ".png")

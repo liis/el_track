@@ -6,8 +6,18 @@ infilenames_eta = {
     "Pt100": "trackValHistogramsPt100.root"
 }
 
+infilenames_eta_gsf = {
+#    "Pt1": "trackValHistogramsPt1.root",
+    "Pt10": "trackValHistogramsPt10GSF.root",
+    "Pt100": "trackValHistogramsPt100GSF.root"
+}
+
 infilenames_pt = {
     "FlatPt": "trackValHistogramsFlatPt.root"
+}
+
+infilenames_pt_gsf = {
+    "FlatPt": "trackValHistogramsFlatPtGSF.root"
 }
 
 def load_input_files(indir, infilenames):
@@ -65,7 +75,7 @@ def get_hit_efficiency_hist(infiles, var, quality, nrhits = 10):
 
 colors = [ROOT.kBlack, ROOT.kRed, ROOT.kYellow, ROOT.kYellow-3, ROOT.kGreen, ROOT.kGreen+3, ROOT.kCyan, ROOT.kCyan+1, ROOT.kCyan+2, ROOT.kCyan+3, ROOT.kCyan+4, ROOT.kBlue, ROOT.kViolet-3, ROOT.kViolet+3]
 
-def draw_efficiency_histograms(hists, xtitle = "none", region="none"):
+def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  1., region="none"):
     """
     plot a list of efficiency histogras
     """
@@ -73,27 +83,86 @@ def draw_efficiency_histograms(hists, xtitle = "none", region="none"):
     for hist in hists:
         hist.SetLineColor(colors[n])
         if n==0:
-            hist.SetMaximum(1.)
+            hist.SetMaximum(ymax)
             hist.SetMinimum(0.)
+            hist.GetXaxis().SetTitleOffset(1.3)
+            hist.GetYaxis().SetTitleOffset(1.4)
+            hist.SetTitle("blabla")
+
             if( region[:3]=="Pt1"):
                 hist.GetXaxis().SetTitle("#eta")
             elif( region[:6]=="FlatPt"):
                 hist.GetXaxis().SetTitle("p_{T}")
+
                 hist.SetAxisRange(1., 200, 'x')
             if not xtitle == "none":
                 hist.GetXaxis().SetTitle(xtitle)
+            if not ytitle == "none":
+                hist.GetYaxis().SetTitle(ytitle)
             hist.Draw()
         else:
             hist.Draw("same")
         n = n + 1
 
-def draw_legend(hists):
+def draw_legend(hists, pos = "down_right"):
     """
     hist - dictionary of process names and histograms
     """
-    leg = ROOT.TLegend(0.4,0.6,0.89,0.89);
+    if pos == "down_right":
+        leg = ROOT.TLegend(0.7,0.5,0.89,0.29);
+    
+    if pos == "up_right":
+        leg = ROOT.TLegend(0.7,0.7,0.89,0.89);
+
+    leg.SetBorderSize(0)
+    leg.SetFillColor(0)
     for process,hist in hists.iteritems():
         leg.AddEntry(hist, process)
+    
+    return leg
+
+def add_text_box(text=''):
+    """ Add a CMS blurb to a plot """
+    latex = ROOT.TLatex()
+    latex.SetNDC()
+    latex.SetTextSize(0.03)
+    latex.SetTextAlign(31)
+    latex.SetTextAlign(11)
+    return latex.DrawLatex(0.17, 0.96, text)
+
+def draw_and_save_eff(hists, var, eff_fake, is_gsf, leg_pos = "up_right"):
+    """
+    hists - dictionary of process names and histograms
+    var - xaxis variable
+    eff_fake - "eff", "eff_seed", "fake"
+    """
+
+    c = ROOT.TCanvas("c","c")
+    c.SetGrid()
+
+    xtitle = ""
+    if var == "pt":
+        c.SetLogx()
+        xtitle = "p_{T}"
+    if var == "eta":
+        xtitle = "#eta"
+        
+    ytitle = ""
+    ymax = 1
+    if eff_fake == "eff" or eff_fake == "eff_seed":
+        ytitle = "efficiency"
+        ymax = 1
+    if eff_fake == "fake":
+        ytitle = "fake rate"
+        ymax = 0.3
+
+    draw_efficiency_histograms(hists.values(), xtitle, ytitle, ymax)
+    leg = draw_legend(hists, pos = leg_pos)
     leg.Draw()
 
-#        eff_hist[region]
+    GSFstr = ""
+    if(is_gsf):
+        GSFstr = "_GSF"
+
+    c.SaveAs("$WORKING_DIR/plot/out_plots/" + eff_fake + "_" + var + GSFstr + ".pdf")
+    c.Close()

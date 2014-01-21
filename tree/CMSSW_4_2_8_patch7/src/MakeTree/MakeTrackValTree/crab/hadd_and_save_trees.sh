@@ -1,5 +1,5 @@
 #!/bin/bash                                                                                                                         
-INDIR=$1
+INDIR=$1 #directory, where the crab_dirs are
 OUTDIR=output_crab #specify directory, where to put the crab output *.root files
 if [ -z "$INDIR" ]; then echo "Usage: $0 INDIR"; exit 1; fi
 cd $INDIR
@@ -13,7 +13,7 @@ echo "Getting histograms from:" $CRABDIR
 CRABDIRNAME=`basename $CRABDIR`
 OUTFILENAME="trackValTree_"${CRABDIRNAME:7}".root" #omit the first part of the crabdir name
 OUTPATH=$OUTDIR"/"$OUTFILENAME
-hadd $OUTPATH $CRABDIR/res/*.root
+hadd -f $OUTPATH $CRABDIR/res/*.root
 echo "Wrote histograms to:"$OUTFILENAME
 done
 

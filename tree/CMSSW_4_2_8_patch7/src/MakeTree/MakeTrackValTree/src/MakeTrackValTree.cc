@@ -104,6 +104,10 @@ class MakeTrackValTree : public edm::EDAnalyzer {
       const TrackingRecHit* getHitPtr(edm::OwnVector<TrackingRecHit>::const_iterator);
       const TrackingRecHit* getHitPtr(trackingRecHit_iterator);
       int getNrSharedHits(std::vector<SimHitIdpr>&, TrackingParticle*);
+    
+  //---failed try to implement object sort-----
+  //bool cmp(const edm::View<reco::ElectronSeed>::const_iterator, const edm::View<reco::ElectronSeed>::const_iterator);
+  //     bool test_cmp(int, int);
 
   // ----------member data ---------------------------
   double ptMinTP, minRapidityTP, maxRapidityTP, tipTP, lipTP, signalOnlyTP, chargedOnlyTP, stableOnlyTP, minAbsEtaTP, maxAbsEtaTP;
@@ -113,14 +117,14 @@ class MakeTrackValTree : public edm::EDAnalyzer {
   TTree *trackValTree_;
 
   int np_gen_, np_gen_toReco_, np_reco_, np_reco_toGen_, np_fake_, run_nr_, evt_nr_, lumi_nr_;
-  int is_reco_matched_[MAXPART], is_gen_matched_[MAXPART];
+  int is_reco_matched_[MAXPART], is_gen_matched_[MAXPART], is_ecalDrivenSeed_[MAXPART], is_trackerDrivenSeed_[MAXPART];
   
   float gen_hit_pt_[MAXPART][MAXHIT], gen_hit_eta_[MAXPART][MAXHIT], gen_hit_phi_[MAXPART][MAXHIT];
   int gen_hit_subdetector_[MAXPART][MAXHIT], gen_hit_layer_[MAXPART][MAXHIT], gen_matchedRecHit_subdetector_[MAXPART][MAXHIT], gen_matchedRecHit_layer_[MAXPART][MAXHIT], gen_badRecHit_subdetector_[MAXPART][MAXHIT], gen_badRecHit_layer_[MAXPART][MAXHIT], gen_missedRecHit_subdetector_[MAXPART][MAXHIT], gen_missedRecHit_layer_[MAXPART][MAXHIT];
   int rec_hit_isMatched_[MAXPART][MAXHIT], rec_hit_subdetector_[MAXPART][MAXHIT], rec_hit_layer_[MAXPART][MAXHIT];
 
 
-  double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_phi_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART], gen_ptAtLast_[MAXPART], gen_matched_seed_quality_[MAXPART];
+  double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_phi_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART], gen_ptAtLast_[MAXPART], gen_bremFraction_[MAXPART], gen_matched_seed_quality_[MAXPART];
   double reco_pt_[MAXPART], reco_eta_[MAXPART], reco_phi_[MAXPART], fake_pt_[MAXPART], fake_eta_[MAXPART], fake_phi_[MAXPART];
   int gen_pdgId_[MAXPART], gen_nrSimHits_[MAXPART], gen_nrUniqueSimHits_[MAXPART], gen_nrRecoHits_[MAXPART], gen_nrMatchedRecHits_[MAXPART], gen_nrSpuriousRecHits_[MAXPART], gen_nrLostSimHits_[MAXPART], gen_nr_matched_seed_hits_[MAXPART];
   int reco_nrRecoHits_[MAXPART], reco_nrSimHits_[MAXPART];
@@ -305,7 +309,7 @@ std::vector<SimHitIdpr> MakeTrackValTree::getMatchedTPIds( iter begin, iter end,
       matchedSimIdsTot.push_back(matchedSimIds[i]);
 
     //////////debug/////////////
-    //if(debug){
+    if(debug){
       std::cout<<" Seed rec hit # " << ri << " valid=" << it->isValid() << " det id = " << it->geographicalId().rawId();
       if(matchedSimIds.size()){
 	for( unsigned int i = 0; i < matchedSimIds.size(); i++)      
@@ -313,7 +317,7 @@ std::vector<SimHitIdpr> MakeTrackValTree::getMatchedTPIds( iter begin, iter end,
       }
       else
 	std::cout<<", No matched tracking particle found"<<std::endl;
-      //}
+    }
     /////////////////////////
   }
 
@@ -336,6 +340,15 @@ int MakeTrackValTree::getNrSharedHits(std::vector<SimHitIdpr>& recHitMatchedTPId
   return nshared;
 }
 
+/* //failed try to implement object sort
+bool MakeTrackValTree::cmp(const edm::View<reco::ElectronSeed>::const_iterator it_s1,  const edm::View<reco::ElectronSeed>::const_iterator it_s2){
+  return it_s1->nHits() < it_s2->nHits() ;
+}
+
+bool MakeTrackValTree::test_cmp(int i, int j) {
+  return (i < j);
+}
+*/
 // ------------ method called for each event  ------------
 void
 MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
@@ -346,11 +359,14 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
   //reinitialize at each event
   for (unsigned int i = 0; i < MAXPART; i++){
-    is_reco_matched_[i] = 0;
+    is_reco_matched_[i] = -10;
+    is_ecalDrivenSeed_[i] = -10;
+    is_trackerDrivenSeed_[i] = -10;
     gen_eta_[i] = -999;
     gen_phi_[i] = -999;
     gen_pt_[i] = -999;
     gen_ptAtLast_[i] = -999;
+    gen_bremFraction_[i] = -10;
     gen_pdgId_[i] = -999;
     gen_dxy_[i] = -10;
     gen_dz_[i] = -10;
@@ -501,36 +517,42 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     for (TrackingParticle::g4t_iterator g4T=tp->g4Track_begin(); g4T!=tp->g4Track_end(); g4T++)
       tpids.push_back(g4T->trackId());
 
-    //    if(debug_){
-    std::cout<<"----------------------------------------"<<std::endl;
-    std::cout<<"Found Tracking particle with pt = "<<tp->pt()<<", sim hits size = "<<simhits.size()<<", Nr unique hits = "<<nr_goodhits<<", track ID-s size = "<<tpids.size()<<std::endl;
-      //}
+    if(debug_){
+      std::cout<<"----------------------------------------"<<std::endl;
+      std::cout<<"Found Tracking particle with pt = "<<tp->pt()<<", sim hits size = "<<simhits.size()<<", Nr unique hits = "<<nr_goodhits<<", track ID-s size = "<<tpids.size()<<std::endl;
+    }
     //---------------------- check mathed seeds ---------------------
-    std::cout<<"Looping over electron seed collection of size "<<elSeedCollection->size()<<std::endl;
+    if(debug_)
+      std::cout<<"Looping over electron seed collection of size "<<elSeedCollection->size()<<std::endl;
 
     int sn = 1;
     std::vector<double> seedMatchQuality;
     seedMatchQuality.clear();
     std::vector<int> seedNrMatchedHits;
     seedNrMatchedHits.clear();
+    std::vector<edm::View<reco::ElectronSeed>::const_iterator> bestSeed;
+    bestSeed.clear();
 
     for( edm::View<reco::ElectronSeed>::const_iterator it_seed = elSeedCollection->begin(); it_seed != elSeedCollection->end(); it_seed++, sn++){
-	
+      
+      if(debug_)
+	std::cout<<"Electron seed # "<<sn<<" with numbr of hits = "<<it_seed->nHits()<<std::endl;
 
-      std::cout<<"Electron seed # "<<sn<<" with numbr of hits = "<<it_seed->nHits()<<std::endl;
       TrajectorySeed::range rechits = it_seed->recHits(); //get recHits associated to the seed
       std::vector<SimHitIdpr> matchedSimIdsTot = getMatchedTPIds<edm::OwnVector<TrackingRecHit>::const_iterator>(it_seed->recHits().first, it_seed->recHits().second, iEvent, conf_, false); //get a vector of TP IDs associated to the recHits of the seed
-      
-      std::cout<<"simIds.size = "<<matchedSimIdsTot.size();
-      if(it_seed->isEcalDriven())
-	std::cout<<", IsEcalDriven";
-      if(it_seed->isTrackerDriven())
-	std::cout<<", IsTrackerDriven";
-      std::cout<<std::endl;
-
       int nshared = getNrSharedHits(matchedSimIdsTot, tp);
-      std::cout<<"TP shared hits with a seed = "<<nshared<<std::endl;
-      
+
+      if(debug_){
+	std::cout<<"simIds.size = "<<matchedSimIdsTot.size();
+	if(it_seed->isEcalDriven())
+	  std::cout<<", IsEcalDriven";
+	if(it_seed->isTrackerDriven())
+	  std::cout<<", IsTrackerDriven";
+	std::cout<<std::endl;
+	
+	std::cout<<"TP shared hits with a seed = "<<nshared<<std::endl;
+      }
+
       if( hitdebug_){
 	std::cout<<"Matched TP IDs for seed rec hits: ";
 	for(unsigned int i = 0; i < matchedSimIdsTot.size(); i++)
@@ -538,20 +560,50 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	std::cout<<std::endl;
       }
 	
-      seedMatchQuality.push_back(nshared/it_seed->nHits());
-      seedNrMatchedHits.push_back(nshared);
-    }
+      double match_quality = (double)nshared/(double)(it_seed->nHits());
 
-    std::sort(seedMatchQuality.begin(), seedMatchQuality.end(), std::greater<double>() );
-    std::sort(seedNrMatchedHits.begin(), seedNrMatchedHits.end(), std::greater<int>() );
+      if(seedMatchQuality.size() == 0)
+	bestSeed.push_back(it_seed); //fill the first seed to the vector
+      else{
+	if( match_quality > seedMatchQuality.at(0) ){ // compare to the best quality existing seed, if better replace
+	  bestSeed.pop_back(); 
+	  bestSeed.push_back(it_seed);
+	}
+      }
+
+      seedNrMatchedHits.push_back(nshared);
+      if(nshared > 1)
+	seedMatchQuality.push_back( match_quality );
+      else
+	seedMatchQuality.push_back(0);
+
+      seedMatchQuality.push_back( match_quality );
+      seedNrMatchedHits.push_back(nshared);
+
+      std::sort(seedMatchQuality.begin(), seedMatchQuality.end(), std::greater<double>() );
+      std::sort(seedNrMatchedHits.begin(), seedNrMatchedHits.end(), std::greater<double>() );
+    }
+      
+
+    if( bestSeed.size() ){ //save ecalDriven/tracker driven information for the best matched seed
+      if( bestSeed.at(0)->isEcalDriven() )
+	is_ecalDrivenSeed_[np_gen_] = 1;
+      else
+	is_ecalDrivenSeed_[np_gen_] = 0;
+    
+      if(bestSeed.at(0)->isTrackerDriven())
+	is_trackerDrivenSeed_[np_gen_] = 1;
+      else
+	is_trackerDrivenSeed_[np_gen_] = 0;
+    }
     
     if(seedMatchQuality.size() && seedNrMatchedHits.size()){
-      std::cout<<"Match quality with seed = "<< seedMatchQuality.at(0)<<std::endl;
-      std::cout<<"Nr matched seed hits = "<< seedNrMatchedHits.at(0)<<std::endl;
-    
-
       gen_nr_matched_seed_hits_[np_gen_] = seedNrMatchedHits.at(0);
       gen_matched_seed_quality_[np_gen_] = seedMatchQuality.at(0);
+      if(debug_){
+	std::cout<<"Match quality with seed = "<< seedMatchQuality.at(0)<<std::endl;
+	std::cout<<"Nr matched seed hits = "<< seedNrMatchedHits.at(0)<<std::endl;
+      }
     }
     
     
@@ -578,9 +630,13 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       gen_hit_layer_[np_gen_][hit_count] = layerNumber;
       gen_hit_subdetector_[np_gen_][hit_count] = subdetector;        
       //---------------------------------------------------
-      if(hit_count+1 == nr_goodhits)
+      if(hit_count+1 == nr_goodhits){
 	gen_ptAtLast_[np_gen_] = pt_at_entry;
-      
+	gen_bremFraction_[np_gen_] = 1 - pt_at_entry/tp->pt(); //fraction of pT lost via brehmstrahlung
+	if(debug_)
+	  std::cout<<"pt at last hit = "<<pt_at_entry<<", brem fraction = "<<gen_bremFraction_[np_gen_]<<std::endl;
+      }
+
       if(hitdebug_)
 	std::cout<<"hit efficiency at hit "<<hit_count<<" = "<<hit_pt_eff<<std::endl;
       
@@ -726,6 +782,8 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
         np_gen_toReco_++; //count the number of simTracks that have a recoTrack associated
       }
     }
+    else
+      is_reco_matched_[np_gen_] = 0;
 
     np_gen_++; //count selected sim tracks passing the selection (important to keep in the end of the loop for tree items)      
   }
@@ -861,9 +919,12 @@ MakeTrackValTree::beginJob()
   trackValTree_->Branch("np_gen_toReco", &np_gen_toReco_, "np_gen_ToReco/I");
 
   trackValTree_->Branch("gen_reco_matched", is_reco_matched_, "gen_reco_matched[np_gen]/I");
+  trackValTree_->Branch("is_ecalDrivenSeed", is_ecalDrivenSeed_, "is_ecalDrivenSeed[np_gen]/I");
+  trackValTree_->Branch("is_trackerDrivenSeed", is_trackerDrivenSeed_, "is_trackerDrivenSeed[np_gen]/I");
   trackValTree_->Branch("gen_pdgId", gen_pdgId_, "gen_pdgId[np_gen]/I");
   trackValTree_->Branch("gen_pt", gen_pt_, "gen_pt[np_gen]/D");
   trackValTree_->Branch("gen_ptAtLast", gen_ptAtLast_, "gen_ptAtLast[np_gen]/D");
+  trackValTree_->Branch("gen_bremFraction", gen_bremFraction_, "gen_bremFraction[np_gen]/D");
   trackValTree_->Branch("gen_eta", gen_eta_, "gen_eta[np_gen]/D");
   trackValTree_->Branch("gen_phi", gen_phi_, "gen_phi[np_gen]/D");
   trackValTree_->Branch("gen_dxy", gen_dxy_, "gen_dxy[np_gen]/D");

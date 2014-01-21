@@ -48,22 +48,22 @@ npt = 50
 minpt = 0.1
 maxpt = 200
 
-nsimhits = 40
+nsimhits = 25
 minsimhit = 0
-maxsimhit = 40
+maxsimhit = 25
 
 xbinspt = log_binning(npt,minpt,maxpt) #log binning for pt histograms  
 
 h_reco_eta = ROOT.TH1F("reco_eta","nrReco vs eta", neta, mineta, maxeta)
 h_fake_eta = ROOT.TH1F("fake_eta","nrFake vs eta", neta, mineta, maxeta)
 h_sim_eta = ROOT.TH1F("sim_eta", "nrSim vs eta", neta, mineta, maxeta)
-h_sim_nrhits = ROOT.TH1I("sim_nrhits","nrSimHits", 40, 0, 40)
+h_sim_nrhits = ROOT.TH1I("sim_nrhits","nrSimHits", nsimhits, 0, maxsimhit)
 
 h_sim_to_reco_match_eta = ROOT.TH1F("nsimtoreco_eta", "nr sim to reco matched vs eta", neta,mineta,maxeta)
-h_sim_to_reco_match_nrhits = ROOT.TH1I("nsimtoreco_nrhits","nrSimHits", 40, 0, 40)
+h_sim_to_reco_match_nrhits = ROOT.TH1I("nsimtoreco_nrhits","nrSimHits", nsimhits, 0, maxsimhit)
 
 h_sim_eta_matchedSeed = ROOT.TH1F("sim_eta_matchedSeed", "nrSim vs eta", neta, mineta, maxeta)
-h_sim_nrhits_matchedSeed = ROOT.TH1I("sim_nrhits_matchedSeed","nrSimHits", 40, 0, 40)
+h_sim_nrhits_matchedSeed = ROOT.TH1I("sim_nrhits_matchedSeed","nrSimHits", nsimhits, 0, maxsimhit)
 
 
 h_reco_pt_barrel = ROOT.TH1F("nreco_pt_barrel","nrReco vs pt barrel", npt, array('d',xbinspt) )
@@ -174,7 +174,7 @@ for i in range(nEvt):
 
     for it_p in range( vt['np_gen'][0]): #loop over simulated tracks
 
-        gen_track_nrSimHits = vt['gen_nrSimHits'][it_p]        
+        gen_track_nrSimHits = vt['gen_nrUniqueSimHits'][it_p]        
         gen_track_pt = vt['gen_pt'][it_p]
         gen_track_eta = vt['gen_eta'][it_p]
 
@@ -182,7 +182,7 @@ for i in range(nEvt):
 
         h_sim_eta.Fill(gen_track_eta)
         fill_hists_by_eta_regions(vt['gen_eta'][it_p], vt['gen_pt'][it_p], h_sim_pt) # sim pt histograms in 3 eta regions
-        fill_hists_by_eta_regions(vt['gen_eta'][it_p], vt['gen_nrSimHits'][it_p], h_sim_nhits_byetareg)
+        fill_hists_by_eta_regions(vt['gen_eta'][it_p], vt['gen_nrUniqueSimHits'][it_p], h_sim_nhits_byetareg)
 
 #        if vt[][it_p]: ##implement here the recomatch to nrSimHits
 #            h_sim_to_reco_match_nrhits.Fill(vt['gen_nrSimHits'][it_pm])        
@@ -191,8 +191,8 @@ for i in range(nEvt):
             h_sim_eta_matchedSeed.Fill(vt['gen_eta'][it_p])
             fill_hists_by_eta_regions(vt['gen_eta'][it_p], vt['gen_pt'][it_p], h_sim_pt_matchedSeed)
 
-            h_sim_nrhits_matchedSeed.Fill(vt['gen_nrSimHits'][it_p])
-            fill_hists_by_eta_regions(vt['gen_eta'][it_p], vt['gen_nrSimHits'][it_p], h_sim_nhits_byetareg_matchedSeed)
+            h_sim_nrhits_matchedSeed.Fill(vt['gen_nrUniqueSimHits'][it_p])
+            fill_hists_by_eta_regions(vt['gen_eta'][it_p], vt['gen_nrUniqueSimHits'][it_p], h_sim_nhits_byetareg_matchedSeed)
 
 ################### Analyze sim hits ##############################
         for nrhit in range(0,maxhit):

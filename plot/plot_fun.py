@@ -137,7 +137,7 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, leg_pos = "up_right", title 
     eff_fake - "eff", "eff_seed", "fake"
     """
 
-    c = ROOT.TCanvas("c","c")
+    c = ROOT.TCanvas("c","c", 600, 600)
     c.SetGrid()
 
     xtitle = ""

@@ -1,7 +1,7 @@
 import ROOT
 from array import array
 from tree_variables import var_list, var_type, maxhit
-from histlib import fill_hist_ratio, log_binning, fill_hists_by_eta_regions
+from histlib import fill_hist_ratio, log_binning, fill_hists_by_eta_regions, initialize_hist_byEtaReg
 
 debug = False
 
@@ -57,14 +57,22 @@ xbinspt = log_binning(npt,minpt,maxpt) #log binning for pt histograms
 h_reco_eta = ROOT.TH1F("reco_eta","nrReco vs eta", neta, mineta, maxeta)
 h_fake_eta = ROOT.TH1F("fake_eta","nrFake vs eta", neta, mineta, maxeta)
 h_sim_eta = ROOT.TH1F("sim_eta", "nrSim vs eta", neta, mineta, maxeta)
-h_sim_nrhits = ROOT.TH1I("sim_nrhits","nrSimHits", nsimhits, 0, maxsimhit)
 
 h_sim_to_reco_match_eta = ROOT.TH1F("nsimtoreco_eta", "nr sim to reco matched vs eta", neta,mineta,maxeta)
-h_sim_to_reco_match_nrhits = ROOT.TH1I("nsimtoreco_nrhits","nrSimHits", nsimhits, 0, maxsimhit)
-
 h_sim_eta_matchedSeed = ROOT.TH1F("sim_eta_matchedSeed", "nrSim vs eta", neta, mineta, maxeta)
-h_sim_nrhits_matchedSeed = ROOT.TH1I("sim_nrhits_matchedSeed","nrSimHits", nsimhits, 0, maxsimhit)
 
+h_sim_nrhits = ROOT.TH1I("sim_nrhits","nrSimHits", nsimhits, 0, maxsimhit)
+h_sim_nrhits_matchedTrack = ROOT.TH1I("sim_nrhits_matchedTrack","nrSimHits", nsimhits, 0, maxsimhit)
+h_sim_nrhits_matchedSeed = ROOT.TH1I("sim_nrhits_matchedSeed","nrSimHits", nsimhits, 0, maxsimhit)
+h_sim_nrhits_smallBrem = ROOT.TH1I("sim_nrhits_smallBrem","nrSimHits", nsimhits, 0, maxsimhit)
+h_sim_nrhits_matchedTrack_smallBrem = ROOT.TH1I("sim_nrhits_matchedTrack_smallBrem","nrSimHits", nsimhits, 0, maxsimhit)
+h_sim_nrhits_matchedSeed_smallBrem = ROOT.TH1I("sim_nrhits_matchedSeed_smallBrem","nrSimHits", nsimhits, 0, maxsimhit)
+
+h_sim_nrhits_matchedSeed_smallBrem_trackerOnly = ROOT.TH1I("sim_nrhits_matchedSeed_smallBrem_trackerOnly","nrSimHits", nsimhits, 0, maxsimhit)
+h_sim_nrhits_matchedSeed_trackerOnly = ROOT.TH1I("sim_nrhits_matchedSeed_trackerOnly","nrSimHits", nsimhits, 0, maxsimhit)
+
+h_sim_nrhits_matchedSeed_smallBrem_ecalOnly = ROOT.TH1I("sim_nrhits_matchedSeed_smallBrem_ecalOnly","nrSimHits", nsimhits, 0, maxsimhit)
+h_sim_nrhits_matchedSeed_ecalOnly = ROOT.TH1I("sim_nrhits_matchedSeed_ecalOnly","nrSimHits", nsimhits, 0, maxsimhit)
 
 h_reco_pt_barrel = ROOT.TH1F("nreco_pt_barrel","nrReco vs pt barrel", npt, array('d',xbinspt) )
 h_reco_pt_endcap = ROOT.TH1F("nreco_pt_endcap","nrReco vs pt endcap", npt, array('d',xbinspt) )
@@ -73,10 +81,6 @@ h_reco_pt_trans = ROOT.TH1F("nreco_pt_trans","nrReco vs pt trans", npt, array('d
 h_fake_pt_barrel = ROOT.TH1F("nfake_pt_barrel","nrFake vs pt barrel", npt, array('d', xbinspt) )
 h_fake_pt_endcap = ROOT.TH1F("nfake_pt_endcap","nrFake vs pt endcap", npt, array('d', xbinspt) )
 h_fake_pt_trans = ROOT.TH1F("nfake_pt_trans","nrFake vs pt trans", npt, array('d',xbinspt) )
-
-#h_sim_pt_barrel = ROOT.TH1F("sim_pt_b", "nrSim vs pt", npt, array('d',xbinspt))
-#h_sim_pt_endcap = ROOT.TH1F("sim_pt_e", "nrSim vs pt", npt, array('d',xbinspt))
-#h_sim_pt_trans = ROOT.TH1F("sim_pt_t", "nrSim vs pt", npt, array('d', xbinspt))
 
 h_sim_pt = {}
 h_sim_pt["barrel"] = ROOT.TH1F("sim_pt_barrel", "nrSim vs pt", npt, array('d',xbinspt))
@@ -93,20 +97,29 @@ h_sim_to_reco_match_pt["barrel"] = ROOT.TH1F("nsimtoreco_pt_barrel", "nr sim to 
 h_sim_to_reco_match_pt["endcap"] = ROOT.TH1F("nsimtoreco_pt_endcap", "nr sim to reco matched vs pt", npt, array('d',xbinspt))
 h_sim_to_reco_match_pt["trans"] = ROOT.TH1F("nsimtoreco_pt_trans", "nr sim to reco matched vs pt", npt, array('d', xbinspt))
 
-h_sim_nhits_byetareg = {}
-h_sim_nhits_byetareg["barrel"] = ROOT.TH1I("sim_nhits_barrel", "nr sim hits", nsimhits, minsimhit, maxsimhit)
-h_sim_nhits_byetareg["endcap"] = ROOT.TH1I("sim_nhits_endcap", "nr sim hits", nsimhits, minsimhit, maxsimhit)
-h_sim_nhits_byetareg["trans"] = ROOT.TH1I("sim_nhits_trans", "nr sim hits", nsimhits, minsimhit, maxsimhit)
+h_sim_nrhits_byetareg = {}
+h_sim_nrhits_byetareg["barrel"] = ROOT.TH1I("sim_nhits_barrel", "nr sim hits", nsimhits, minsimhit, maxsimhit)
+h_sim_nrhits_byetareg["endcap"] = ROOT.TH1I("sim_nhits_endcap", "nr sim hits", nsimhits, minsimhit, maxsimhit)
+h_sim_nrhits_byetareg["trans"] = ROOT.TH1I("sim_nhits_trans", "nr sim hits", nsimhits, minsimhit, maxsimhit)
 
-h_sim_nhits_byetareg_matchedSeed = {}
-h_sim_nhits_byetareg_matchedSeed["barrel"] = ROOT.TH1I("sim_nhits_matchedSeed_barrel", "nr sim hits reco matched", nsimhits, minsimhit, maxsimhit)
-h_sim_nhits_byetareg_matchedSeed["endcap"] = ROOT.TH1I("sim_nhits_matchedSeed_endcap", "nr sim hits", nsimhits, minsimhit, maxsimhit)
-h_sim_nhits_byetareg_matchedSeed["trans"] = ROOT.TH1I("sim_nhits_matchedSeed_trans", "nr sim hits", nsimhits, minsimhit, maxsimhit)
+h_sim_nrhits_byetareg_matchedSeed = {}
+h_sim_nrhits_byetareg_matchedSeed["barrel"] = ROOT.TH1I("sim_nhits_matchedSeed_barrel", "nr sim hits reco matched", nsimhits, minsimhit, maxsimhit)
+h_sim_nrhits_byetareg_matchedSeed["endcap"] = ROOT.TH1I("sim_nhits_matchedSeed_endcap", "nr sim hits", nsimhits, minsimhit, maxsimhit)
+h_sim_nrhits_byetareg_matchedSeed["trans"] = ROOT.TH1I("sim_nhits_matchedSeed_trans", "nr sim hits", nsimhits, minsimhit, maxsimhit)
 
-h_sim_to_reco_match_nhits_byetareg = {}
-h_sim_to_reco_match_nhits_byetareg["barrel"] = ROOT.TH1I("nsimtoreco_nhits_barrel", "nr sim hits reco matched", nsimhits, minsimhit, maxsimhit)
-h_sim_to_reco_match_nhits_byetareg["endcap"] = ROOT.TH1I("nsimtoreco_nhits_endcap", "nr sim hits", nsimhits, minsimhit, maxsimhit)
-h_sim_to_reco_match_nhits_byetareg["trans"] = ROOT.TH1I("nsimtoreco_nhits_trans", "nr sim hits", nsimhits, minsimhit, maxsimhit)
+h_sim_nrhits_byetareg_matchedTrack = {}
+h_sim_nrhits_byetareg_matchedTrack["barrel"] = ROOT.TH1I("nsimtoreco_nhits_barrel", "nr sim hits reco matched", nsimhits, minsimhit, maxsimhit)
+h_sim_nrhits_byetareg_matchedTrack["endcap"] = ROOT.TH1I("nsimtoreco_nhits_endcap", "nr sim hits", nsimhits, minsimhit, maxsimhit)
+h_sim_nrhits_byetareg_matchedTrack["trans"] = ROOT.TH1I("nsimtoreco_nhits_trans", "nr sim hits", nsimhits, minsimhit, maxsimhit)
+
+h_sim_nrhits_byetareg_matchedSeed_trackerOnly = initialize_hist_byEtaReg("sim_nhits_matchedSeed_trackerOnly", nsimhits, minsimhit, maxsimhit)
+h_sim_nrhits_byetareg_matchedSeed_smallBrem_trackerOnly = initialize_hist_byEtaReg("sim_nhits_matchedSeed_smallBrem_trackerOnly", nsimhits, minsimhit, maxsimhit)
+h_sim_nrhits_byetareg_matchedSeed_ecalOnly = initialize_hist_byEtaReg("sim_nhits_matchedSeed_ecalOnly", nsimhits, minsimhit, maxsimhit)
+h_sim_nrhits_byetareg_matchedSeed_smallBrem_ecalOnly = initialize_hist_byEtaReg("sim_nhits_matchedSeed_smallBrem_ecalOly", nsimhits, minsimhit, maxsimhit)
+
+h_sim_nrhits_byetareg_smallBrem = initialize_hist_byEtaReg("sim_nhits_smallBrem", nsimhits, minsimhit, maxsimhit)
+h_sim_nrhits_byetareg_matchedSeed_smallBrem = initialize_hist_byEtaReg("sim_nhits_matchedSeed_smallBrem", nsimhits, minsimhit, maxsimhit)
+h_sim_nrhits_byetareg_matchedTrack_smallBrem = initialize_hist_byEtaReg("sim_nhits_matchedTrack_smallBrem", nsimhits, minsimhit, maxsimhit)
 
 sim_hit_quality_flags = {"quality065": 0.65,"quality075": 0.75,"quality085": 0.85, "quality095": 0.95}
 
@@ -178,22 +191,43 @@ for i in range(nEvt):
         gen_track_pt = vt['gen_pt'][it_p]
         gen_track_eta = vt['gen_eta'][it_p]
 
-        h_sim_nrhits.Fill(gen_track_nrSimHits)
+
 
         h_sim_eta.Fill(gen_track_eta)
         fill_hists_by_eta_regions(vt['gen_eta'][it_p], vt['gen_pt'][it_p], h_sim_pt) # sim pt histograms in 3 eta regions
-        fill_hists_by_eta_regions(vt['gen_eta'][it_p], vt['gen_nrUniqueSimHits'][it_p], h_sim_nhits_byetareg)
 
-#        if vt[][it_p]: ##implement here the recomatch to nrSimHits
-#            h_sim_to_reco_match_nrhits.Fill(vt['gen_nrSimHits'][it_pm])        
+        h_sim_nrhits.Fill(gen_track_nrSimHits)        
+        fill_hists_by_eta_regions(gen_track_eta, gen_track_nrSimHits, h_sim_nrhits_byetareg)
 
-        if vt['gen_nrMatchedSeedHits'][it_p] > 1:
+        if vt['gen_bremFraction'][it_p] < 0.2: # with reasonable brem
+            h_sim_nrhits_smallBrem.Fill(gen_track_nrSimHits)
+            fill_hists_by_eta_regions(gen_track_eta, gen_track_nrSimHits, h_sim_nrhits_byetareg_smallBrem)
+
+        if vt["gen_reco_matched"][it_p]: # if matched to reco tracks
+            h_sim_nrhits_matchedTrack.Fill(gen_track_nrSimHits)        
+            fill_hists_by_eta_regions(gen_track_eta, gen_track_nrSimHits, h_sim_nrhits_byetareg_matchedTrack)
+            if vt['gen_bremFraction'][it_p] < 0.2: 
+                h_sim_nrhits_matchedTrack_smallBrem.Fill(gen_track_nrSimHits)
+                fill_hists_by_eta_regions(gen_track_eta, gen_track_nrSimHits, h_sim_nrhits_byetareg_matchedTrack_smallBrem)
+
+        if vt['gen_nrMatchedSeedHits'][it_p] > 1: # if matched to seed
             h_sim_eta_matchedSeed.Fill(vt['gen_eta'][it_p])
             fill_hists_by_eta_regions(vt['gen_eta'][it_p], vt['gen_pt'][it_p], h_sim_pt_matchedSeed)
 
             h_sim_nrhits_matchedSeed.Fill(vt['gen_nrUniqueSimHits'][it_p])
-            fill_hists_by_eta_regions(vt['gen_eta'][it_p], vt['gen_nrUniqueSimHits'][it_p], h_sim_nhits_byetareg_matchedSeed)
+            fill_hists_by_eta_regions(vt['gen_eta'][it_p], vt['gen_nrUniqueSimHits'][it_p], h_sim_nrhits_byetareg_matchedSeed)
+            if vt['gen_bremFraction'][it_p] < 0.2:
+                h_sim_nrhits_matchedSeed_smallBrem.Fill(gen_track_nrSimHits)
+                fill_hists_by_eta_regions(gen_track_eta, gen_track_nrSimHits, h_sim_nrhits_byetareg_matchedSeed_smallBrem)
+                if vt['is_ecalDrivenSeed'][it_p] == 1 and vt["is_trackerDrivenSeed"][it_p]== 0:
+                    h_sim_nrhits_matchedSeed_smallBrem_ecalOnly.Fill(gen_track_nrSimHits)
+                elif vt['is_ecalDrivenSeed'][it_p] == 0 and vt["is_trackerDrivenSeed"][it_p] == 1:
+                    h_sim_nrhits_matchedSeed_smallBrem_trackerOnly.Fill(gen_track_nrSimHits)
 
+            if vt['is_ecalDrivenSeed'][it_p] == 1 and vt["is_trackerDrivenSeed"][it_p] == 0:
+                h_sim_nrhits_matchedSeed_ecalOnly.Fill(gen_track_nrSimHits)
+            elif vt['is_ecalDrivenSeed'][it_p] == 0 and vt["is_trackerDrivenSeed"][it_p] == 1:
+                h_sim_nrhits_matchedSeed_trackerOnly.Fill(gen_track_nrSimHits)
 ################### Analyze sim hits ##############################
         for nrhit in range(0,maxhit):
             pt_at_entry = vt["gen_hit_pt"][it_p][nrhit]
@@ -278,8 +312,11 @@ h_eff_eta = fill_hist_ratio(h_sim_to_reco_match_eta, h_sim_eta, "eff_eta")
 h_eff_seed_eta = fill_hist_ratio(h_sim_eta_matchedSeed, h_sim_eta, "eff_seed_eta")
 h_eff_wrt_seed_eta = fill_hist_ratio(h_sim_to_reco_match_eta, h_sim_eta_matchedSeed, "eff_wrt_seed_eta")
 
-h_eff_nrhits = fill_hist_ratio(h_sim_to_reco_match_nrhits, h_sim_nrhits, "eff_nrhits")
+h_eff_nrhits = fill_hist_ratio(h_sim_nrhits_matchedTrack, h_sim_nrhits, "eff_nrhits")
 h_eff_seed_nrhits = fill_hist_ratio(h_sim_nrhits_matchedSeed, h_sim_nrhits, "eff_seed_nrhits")
+
+h_eff_nrhits_smallBrem = fill_hist_ratio(h_sim_nrhits_matchedTrack_smallBrem, h_sim_nrhits_smallBrem, "eff_nrhits_smallBrem")
+h_eff_seed_nrhits_smallBrem = fill_hist_ratio(h_sim_nrhits_matchedSeed_smallBrem, h_sim_nrhits_smallBrem, "eff_seed_nrhits_smallBrem")
 
 h_eff_pt = {}
 h_eff_seed_pt = {}
@@ -287,13 +324,23 @@ h_eff_wrt_seed_pt = {}
 
 h_eff_nrhits_byetaregion = {}
 h_eff_seed_nrhits_byetaregion = {}
+
+h_eff_nrhits_byetaregion_smallBrem = {}
+h_eff_seed_nrhits_byetaregion_smallBrem = {}
 for region in eta_regions:
     h_eff_pt[region] = fill_hist_ratio(h_sim_to_reco_match_pt[region], h_sim_pt[region], "eff_pt_" + region, binning="log")
     h_eff_seed_pt[region] = fill_hist_ratio(h_sim_pt_matchedSeed[region], h_sim_pt[region], "eff_Seed_pt_" + region, binning="log")
     h_eff_wrt_seed_pt[region] = fill_hist_ratio(h_sim_to_reco_match_pt[region], h_sim_pt_matchedSeed[region], "eff_wrt_seed_pt_" + region, binning = "log")
 
-    h_eff_nrhits_byetaregion[region] = fill_hist_ratio(h_sim_to_reco_match_nhits_byetareg[region], h_sim_nhits_byetareg[region], "eff_nhits_" + region)
-    h_eff_seed_nrhits_byetaregion[region] = fill_hist_ratio(h_sim_nhits_byetareg_matchedSeed[region], h_sim_nhits_byetareg[region], "eff_Seed_nhits_" + region)
+    h_eff_nrhits_byetaregion[region] = fill_hist_ratio(h_sim_nrhits_byetareg_matchedTrack[region], h_sim_nrhits_byetareg[region], "eff_nhits_" + region)
+
+    h_eff_seed_nrhits_byetaregion[region] = fill_hist_ratio(h_sim_nrhits_byetareg_matchedSeed[region], h_sim_nrhits_byetareg[region], "eff_Seed_nhits_" + region)
+
+    h_eff_nrhits_byetaregion_smallBrem[region] = fill_hist_ratio(h_sim_nrhits_byetareg_matchedTrack_smallBrem[region], h_sim_nrhits_byetareg_smallBrem[region], "eff_nhits_smallBrem" + region)
+
+    h_eff_seed_nrhits_byetaregion_smallBrem[region] = fill_hist_ratio(h_sim_nrhits_byetareg_matchedSeed_smallBrem[region], h_sim_nrhits_byetareg_smallBrem[region], "eff_Seed_nhits_smallBrem" + region)
+    
+
 
 # -------------------- fake rates ---------------------------------
 h_fakerate_eta = fill_hist_ratio(h_fake_eta, h_reco_eta,"fake_rate_eta")
@@ -313,13 +360,21 @@ o = ROOT.TFile(outfile,"recreate")
 h_reco_eta.Write()
 h_fake_eta.Write()
 h_sim_eta.Write()
-h_sim_nrhits.Write()
+
 
 h_sim_to_reco_match_eta.Write()
-h_sim_to_reco_match_nrhits.Write()
-
 h_sim_eta_matchedSeed.Write()
+
+h_sim_nrhits.Write()
+h_sim_nrhits_matchedTrack.Write()
 h_sim_nrhits_matchedSeed.Write()
+h_sim_nrhits_matchedSeed_trackerOnly.Write()
+h_sim_nrhits_matchedSeed_ecalOnly.Write()
+h_sim_nrhits_smallBrem.Write()
+h_sim_nrhits_matchedTrack_smallBrem.Write()
+h_sim_nrhits_matchedSeed_smallBrem.Write()
+h_sim_nrhits_matchedSeed_smallBrem_trackerOnly.Write()
+h_sim_nrhits_matchedSeed_smallBrem_ecalOnly.Write()
 
 h_reco_pt_barrel.Write()
 h_reco_pt_endcap.Write()
@@ -335,15 +390,19 @@ for eta_region in eta_regions:
     h_eff_seed_pt[eta_region].Write()
     h_eff_wrt_seed_pt[eta_region].Write()
 
-    h_eff_nrhits_byetaregion[eta_region].Write()
-    h_eff_seed_nrhits_byetaregion[eta_region].Write()
-
     h_sim_pt_matchedSeed[eta_region].Write()
     h_sim_to_reco_match_pt[eta_region].Write()
     h_sim_pt[eta_region].Write()
 
-    h_sim_nhits_byetareg[region].Write()
-    h_sim_to_reco_match_nhits_byetareg[region].Write()
+    h_eff_nrhits_byetaregion[eta_region].Write()
+    h_eff_seed_nrhits_byetaregion[eta_region].Write()
+
+    h_eff_nrhits_byetaregion_smallBrem[eta_region].Write()
+    h_eff_seed_nrhits_byetaregion_smallBrem[eta_region].Write()
+
+    h_sim_nrhits_byetareg[eta_region].Write()
+    h_sim_nrhits_byetareg_matchedSeed[eta_region].Write()
+    h_sim_nrhits_byetareg_matchedTrack[eta_region].Write()
 
 h_fakerate_pt_barrel.Write()
 h_fakerate_pt_endcap.Write()
@@ -356,7 +415,9 @@ h_eff_seed_eta.Write()
 h_eff_wrt_seed_eta.Write()
 
 h_eff_nrhits.Write()
+h_eff_nrhits_smallBrem.Write()
 h_eff_seed_nrhits.Write()
+h_eff_seed_nrhits_smallBrem.Write()
 
 #------------hit-by-hit comparison------------
 dir = o.mkdir("VariablesBySimhit")

@@ -58,11 +58,12 @@ def fill_hist_ratio(h_numerator, h_denominator, outhistname, binning = "const"):
 
     return h_ratio
 
-#def filter_unique_hits(nhits):
-#    """
-#    loop over all hits in the event and omit subsequent hit in the same subdetector layer
-#    """
-#    good_hits = []
-#    for it_hit in range(0,nhits):
-#        good_hits.append()
-#    return good_hits
+eta_regions = ["barrel", "trans", "endcap"]
+
+def initialize_hist_byEtaReg(histname, nbin, minbin, maxbin):
+    hist_dict = {}
+    for eta_region in eta_regions:
+        hist_dict[eta_region] = ROOT.TH1I(histname + "_" + eta_region, histname + "_" + eta_region, nbin, minbin, maxbin)
+
+    return hist_dict
+

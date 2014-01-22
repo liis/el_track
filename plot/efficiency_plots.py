@@ -24,6 +24,9 @@ eff_wrt_seed_hists_eta = {} #nr matched to reco track/nr matched to reco seed
 eff_hists_nrhits = {}
 eff_seed_hists_nrhits = {}
 
+eff_hists_nrhits_smallBrem = {}
+eff_seed_hists_nrhits_smallBrem = {}
+
 fake_hists_eta = {}
 for ptregion, infile_eta in infiles_eta.iteritems():
     histname_eff_eta = "eff_eta"
@@ -32,6 +35,8 @@ for ptregion, infile_eta in infiles_eta.iteritems():
 
     histname_eff_nrhits = "eff_nrhits"
     histname_eff_seed_nrhits = "eff_seed_nrhits"
+    histname_eff_nrhits_smallBrem = "eff_nrhits_smallBrem"
+    histname_eff_seed_nrhits_smallBrem = "eff_seed_nrhits_smallBrem"
 
     histname_fake_eta = "fake_rate_eta"
 
@@ -41,6 +46,9 @@ for ptregion, infile_eta in infiles_eta.iteritems():
 
     eff_hists_nrhits[ptregion] = infile_eta.Get(histname_eff_nrhits)
     eff_seed_hists_nrhits[ptregion] = infile_eta.Get(histname_eff_seed_nrhits)
+
+    eff_hists_nrhits_smallBrem[ptregion] = infile_eta.Get(histname_eff_nrhits_smallBrem)
+    eff_seed_hists_nrhits_smallBrem[ptregion] = infile_eta.Get(histname_eff_seed_nrhits_smallBrem)
 
     fake_hists_eta[ptregion] = infile_eta.Get(histname_fake_eta)
 
@@ -80,6 +88,9 @@ draw_and_save_eff(eff_wrt_seed_hists_pt, "pt", "eff_wrt_seed", is_gsf = is_gsf, 
 
 draw_and_save_eff(eff_hists_nrhits, "nrhits", "eff", is_gsf = is_gsf, leg_pos="down_right")
 draw_and_save_eff(eff_seed_hists_nrhits, "nrhits", "eff_seed", is_gsf = is_gsf, leg_pos="down_right")
+
+draw_and_save_eff(eff_hists_nrhits_smallBrem, "nrhits", "eff_smallBrem", is_gsf = is_gsf, leg_pos="down_right")
+draw_and_save_eff(eff_seed_hists_nrhits_smallBrem, "nrhits", "eff_seed_smallBrem", is_gsf = is_gsf, leg_pos="down_right")
 
 draw_and_save_eff(fake_hists_eta, "eta", "fake", is_gsf = is_gsf, leg_pos = "up_right")
 draw_and_save_eff(fake_hists_pt, "pt", "fake", is_gsf = is_gsf, leg_pos = "up_right")

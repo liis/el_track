@@ -151,13 +151,13 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, leg_pos = "up_right", title 
         
     ytitle = ""
     ymax = 1
-    if eff_fake == "eff":
+    if eff_fake == "eff" or eff_fake == "eff_smallBrem":
         ytitle = "Efficiency"
-    if eff_fake == "eff_seed":
+    if eff_fake == "eff_seed" or eff_fake == "eff_seed_smallBrem":
         ytitle = "Seeding efficiency"
     if eff_fake == "eff_wrt_seed":
         ytitle = "Reco wrt seeding efficiency"
-    
+   
     if eff_fake[:4] == "fake":
         ytitle = "fake rate"
         ymax = 0.3

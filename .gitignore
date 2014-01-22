@@ -26,6 +26,7 @@ tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab_0_*
 
 tree_to_histo/histograms
 tree_to_histo/input_trees
+tree_to_histo/input_trees/backup
 tree_to_histo/*.pyc
 tree_to_histo/*~
 tree_to_histo/*.out

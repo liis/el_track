@@ -3,14 +3,14 @@ import numpy as np
 maxpart = 100
 maxhit = 30
 
-int_list = ["np_reco", "np_gen", "np_fake", "np_gen_toReco"]
-int_array_list = ["gen_nrMatchedSeedHits", "gen_nrUniqueSimHits"] 
+int_list = ["np_reco", "np_gen", "np_fake", "np_gen_toReco",]
+int_array_list = ["gen_nrMatchedSeedHits", "gen_nrUniqueSimHits", "gen_reco_matched", "is_ecalDrivenSeed", "is_trackerDrivenSeed"] 
 double_list = []
 int_2D_array_list = ["gen_hit_subdetector", "gen_hit_layer"]
 float_2D_array_list = ["gen_hit_pt"]
 
 double_array_list_hits = []
-double_array_list = ["reco_pt", "reco_eta", "reco_phi", "gen_pt", "gen_eta", "gen_phi", "fake_pt", "fake_eta", "fake_phi", "gen_matched_eta", "gen_matched_phi", "gen_matched_pt", "gen_dxy", "gen_dz"] + double_array_list_hits
+double_array_list = ["reco_pt", "reco_eta", "reco_phi", "gen_pt", "gen_eta", "gen_phi", "fake_pt", "fake_eta", "fake_phi", "gen_matched_eta", "gen_matched_phi", "gen_matched_pt", "gen_dxy", "gen_dz", "gen_bremFraction"] + double_array_list_hits
 
 var_list = int_list + int_array_list + double_list + double_array_list + int_2D_array_list + float_2D_array_list
 

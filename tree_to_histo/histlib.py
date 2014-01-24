@@ -16,16 +16,16 @@ def log_binning(nbin,xmin,xmax):
     return xbins
 
 
-def fill_hists_by_eta_regions(var_eta, var_to_hist, hist_dict):
+def fill_hists_by_eta_regions(var_eta, var_to_hist, varname, hist_dict):
     """
     Fill histograms of var_to_hist for trans, endcap and barrel regions. pre-initialize three corresponding histograms in a dictionary
     """
     if abs(var_eta) < 0.9:
-        hist_dict["barrel"].Fill(var_to_hist)
+        hist_dict[varname + "_barrel"].Fill(var_to_hist)
     elif abs(var_eta) < 1.4:
-        hist_dict["trans"].Fill(var_to_hist)
+        hist_dict[varname + "_trans"].Fill(var_to_hist)
     elif abs(var_eta) < 2.5:
-        hist_dict["endcap"].Fill(var_to_hist)
+        hist_dict[varname + "_endcap"].Fill(var_to_hist)
     
     return 0
 
@@ -59,6 +59,37 @@ def fill_hist_ratio(h_numerator, h_denominator, outhistname, binning = "const"):
     return h_ratio
 
 eta_regions = ["barrel", "trans", "endcap"]
+
+def initialize_histogram(var, bin_reg ):
+    if len(bin_reg) == 3: # assume const. binning
+        hist = ROOT.TH1F(var, var, bin_reg[0], bin_reg[1], bin_reg[2])
+    elif len(bin_reg) == 2 and len(bin_reg[1]) > 2: # assume varying bin size
+        hist = ROOT.TH1F(var, var, bin_reg[0], bin_reg[1])
+    else:
+        "Wrongly initialized histograms, please fix bin_reg and bin_type to allowed values"
+        sys.exit()
+    return hist
+
+
+def initialize_histograms(vars, bin_reg, hist_in_regions = []):
+    """
+    Initialize histograms for a set of variables
+    var -- list of histogram variables [var1, var2, ...]
+    bin_reg -- (nbin, minbin, maxbin) for const or (nbin, xbinspt) for varying (e.g log)
+    hist_in_regions -- define multiple histograms in different regions for the same variable [reg1, reg2, reg3]
+    """
+
+    histograms = {}
+    for var in vars:
+        if len(hist_in_regions) != 0:
+            for region in hist_in_regions:
+                histograms[var + "_" + region] = initialize_histogram(var + "_" + region, bin_reg)
+
+        else:
+            histograms[var] = initialize_histogram(var, bin_reg)
+    return histograms
+
+
 
 def initialize_hist_byEtaReg(histname, nbin, minbin, maxbin):
     hist_dict = {}

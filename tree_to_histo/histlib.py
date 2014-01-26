@@ -52,9 +52,9 @@ def fill_hist_ratio(h_numerator, h_denominator, outhistname, binning = "const"):
         if h_denominator.GetBinContent(i) == 0:
             h_ratio.SetBinContent(i,0)
         else:
-            h_ratio.SetBinContent(i, h_numerator.GetBinContent(i)/h_denominator.GetBinContent(i) )
-
-#    h_ratio.Write()
+            eff = h_numerator.GetBinContent(i)/h_denominator.GetBinContent(i)
+            h_ratio.SetBinContent(i, eff )
+            h_ratio.SetBinError(i, ROOT.sqrt( eff*(1-eff)/h_denominator.GetBinContent(i) ) ) # uncertainty on efficiency
 
     return h_ratio
 
@@ -89,12 +89,4 @@ def initialize_histograms(vars, bin_reg, hist_in_regions = []):
             histograms[var] = initialize_histogram(var, bin_reg)
     return histograms
 
-
-
-def initialize_hist_byEtaReg(histname, nbin, minbin, maxbin):
-    hist_dict = {}
-    for eta_region in eta_regions:
-        hist_dict[eta_region] = ROOT.TH1I(histname + "_" + eta_region, histname + "_" + eta_region, nbin, minbin, maxbin)
-
-    return hist_dict
 

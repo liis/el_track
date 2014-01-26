@@ -82,6 +82,9 @@ def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  
     n = 0
     for hist in hists:
         hist.SetLineColor(colors[n])
+        hist.SetMarkerColor(colors[n])
+        hist.SetMarkerStyle(20);
+        hist.SetMarkerSize(1);
         if n==0:
             hist.SetMaximum(ymax)
             hist.SetMinimum(0.)
@@ -99,9 +102,9 @@ def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  
                 hist.GetXaxis().SetTitle(xtitle)
             if not ytitle == "none":
                 hist.GetYaxis().SetTitle(ytitle)
-            hist.Draw()
+            hist.Draw("ep")
         else:
-            hist.Draw("same")
+            hist.Draw("epsame")
         n = n + 1
 
 def draw_legend(hists, pos = "down_right"):

@@ -99,7 +99,8 @@ class MakeTrackValTree : public edm::EDAnalyzer {
       //------functions----------
       std::vector<int> getHitPosition(DetId, bool);
       GlobalVector getHitMomentum(std::vector<PSimHit>::const_iterator, edm::ESHandle<TrackerGeometry>, bool);
-      std::vector<PSimHit> getGoodHits(std::vector<PSimHit>, bool);
+      double getHitDistance(std::vector<PSimHit>::const_iterator, edm::ESHandle<TrackerGeometry>, bool);
+      std::vector<PSimHit> getGoodHits(std::vector<PSimHit>, edm::ESHandle<TrackerGeometry>, bool);
       template<typename iter> std::vector<SimHitIdpr> getMatchedTPIds( iter, iter, const edm::Event&, const edm::ParameterSet&, bool);
       const TrackingRecHit* getHitPtr(edm::OwnVector<TrackingRecHit>::const_iterator);
       const TrackingRecHit* getHitPtr(trackingRecHit_iterator);
@@ -192,6 +193,18 @@ MakeTrackValTree::~MakeTrackValTree()
 // member functions
 //
 
+double MakeTrackValTree::getHitDistance(std::vector<PSimHit>::const_iterator it_hit, edm::ESHandle<TrackerGeometry> tracker, bool hitdebug = false){
+  DetId dId = DetId(it_hit->detUnitId() );
+  Local3DPoint local_p = it_hit->localPosition();
+  const GeomDetUnit* detunit = tracker->idToDetUnit(dId.rawId());
+  GlobalPoint global_p = detunit->toGlobal(local_p);
+  if(hitdebug)
+    std::cout<<"Hit global position x = "<<global_p.x()<<", y = "<<global_p.y()<<", z = "<<global_p.z()<<", r = "<<global_p.mag()<<std::endl;
+  
+  double distance = static_cast<double>(global_p.mag());
+  return distance;
+}
+
 GlobalVector MakeTrackValTree::getHitMomentum(std::vector<PSimHit>::const_iterator it_hit, edm::ESHandle<TrackerGeometry> tracker, bool hitdebug = false){
   DetId dId = DetId(it_hit->detUnitId() );
   LocalVector local_p = it_hit->momentumAtEntry();
@@ -211,58 +224,59 @@ std::vector<int> MakeTrackValTree::getHitPosition(DetId dId, bool hitdebug = fal
 
   if(subdetId == PixelSubdetector::PixelBarrel){
     PXBDetId pxbid(dId.rawId());
-    layerNumber = pxbid.layer();
+    layerNumber = static_cast<int>(pxbid.layer());
     if(hitdebug)
       std::cout<<"Hit at pixel barrel layer = "<<layerNumber<<", corresponding to subdetId = "<<subdetId<<std::endl;
   }
 
   else if(subdetId == PixelSubdetector::PixelEndcap){
     PXFDetId pxfid(dId.rawId());
-    layerNumber = pxfid.disk();
+    layerNumber = static_cast<int>(pxfid.disk());
     if(hitdebug)
    std::cout<<"Hit at pixel endcap layer = "<<layerNumber<<", corresponding to subdetId = "<<subdetId<<std::endl;
   }
       
   else if( subdetId == StripSubdetector::TIB){
     TIBDetId tibid(dId.rawId());
-    layerNumber = tibid.layer();
+    layerNumber = static_cast<int>(tibid.layer());
     if(hitdebug)
       std::cout<<"Hit at TIB layer = "<<layerNumber<<", corresponding to subdetId = "<<subdetId<<std::endl;
   }
     
   else if( subdetId == StripSubdetector::TOB){
     TOBDetId tobid(dId.rawId());
-    layerNumber = tobid.layer();
+    layerNumber = static_cast<int>(tobid.layer());
     if(hitdebug)
       std::cout<<"Hit at TOB layer = "<<layerNumber<<", corresponding to subdetId = "<<subdetId<<std::endl;
   }
   else if( subdetId == StripSubdetector::TID){
     TIDDetId tidid(dId.rawId());
-    layerNumber = tidid.wheel();
+    layerNumber = static_cast<int>(tidid.wheel());
     if(hitdebug)
       std::cout<<"Hit at TID layer = "<<layerNumber<<", corresponding to subdetId = "<<subdetId<<std::endl;
   }
   else if( subdetId == StripSubdetector::TEC ){
     TECDetId tecid(dId.rawId());
-    layerNumber = tecid.wheel();
+    layerNumber = static_cast<int>(tecid.wheel());
     if(hitdebug)
       std::cout<<"Hit at TEC layer = "<<layerNumber<<", corresponding to subdetId = "<<subdetId<<std::endl;
   }
 
   std::vector<int> hit_position;
   hit_position.push_back(subdetId);
-  hit_position.push_back(layerNumber);
+  hit_position.push_back(static_cast<int>(layerNumber) );
 
   return hit_position;
 }
 
-std::vector<PSimHit>  MakeTrackValTree::getGoodHits(std::vector<PSimHit> simhits, bool hitdebug = false) 
+std::vector<PSimHit>  MakeTrackValTree::getGoodHits(std::vector<PSimHit> simhits, edm::ESHandle<TrackerGeometry> tracker, bool hitdebug = false) 
 //loop over all hits in the event and omit subsequent hit in the same subdetector layer 
 {  
   std::vector<PSimHit> good_hits;
   for(std::vector<PSimHit>::const_iterator it_hit = simhits.begin(); it_hit != simhits.end(); it_hit++ ){
     DetId dId = DetId(it_hit->detUnitId() ); 
     std::vector<int> hitposition = getHitPosition(dId, hitdebug);
+    double distance = getHitDistance(it_hit, tracker, hitdebug_);
 
     int hit_subdetector = hitposition.at(0);
     int hit_layer = hitposition.at(1);
@@ -274,16 +288,23 @@ std::vector<PSimHit>  MakeTrackValTree::getGoodHits(std::vector<PSimHit> simhits
 
       int good_hit_subdetector = (getHitPosition(dId_good)).at(0);
       int good_hit_layer = (getHitPosition(dId_good)).at(1);
-
+      std::vector<PSimHit>::const_iterator last_good_hit = good_hits.end();
+      --last_good_hit;
+      
+      //---check whether the distance from the primary vertex increases------
+      if( distance < getHitDistance(last_good_hit, tracker, hitdebug_) )
+      	break;
+      // ---- check for the same subdetector hits in the same layer--------
       if( hit_subdetector == good_hit_subdetector && hit_layer == good_hit_layer){
 	good_hits.pop_back(); //replace the previous hit with a later one
 	good_hits.push_back(*it_hit);
       }
       else
 	good_hits.push_back(*it_hit);
+      
     }
-  }
- 
+  } // end loop over simhits
+  
   if(hitdebug)
     std::cout<<"good hits size = "<<good_hits.size()<<std::endl;
   
@@ -507,7 +528,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
     std::vector<PSimHit> simhits=tp->trackPSimHit(DetId::Tracker);
     int nr_simhits = simhits.size();
-    std::vector<PSimHit> goodhits=getGoodHits(simhits, hitdebug_); //omit subsequent hits in the same subdetector layer
+    std::vector<PSimHit> goodhits=getGoodHits(simhits, tracker, false); //hitdebug_); //omit subsequent hits in the same subdetector layer
     int nr_goodhits = goodhits.size();
 
     gen_nrSimHits_[np_gen_] =  nr_simhits;
@@ -619,8 +640,12 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       float hit_pt_eff = pt_at_entry/tp->pt();
       DetId dId = DetId(it_hit->detUnitId() ); 
       std::vector<int> hit_position= getHitPosition(dId, hitdebug_); // (subdetector, layer)
+      //      double r = getHitDistance(it_hit, tracker, hitdebug_);
+
       int subdetector = hit_position.at(0);
       int layerNumber = hit_position.at(1);
+
+
 
       //-----------fill tree entries for each hit----------
       gen_hit_pt_[np_gen_][hit_count] = pt_at_entry;

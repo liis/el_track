@@ -115,7 +115,10 @@ def draw_legend(hists, pos = "down_right"):
         leg = ROOT.TLegend(0.7,0.5,0.89,0.29);
     
     if pos == "up_right":
-        leg = ROOT.TLegend(0.7,0.7,0.89,0.89);
+        leg = ROOT.TLegend(0.7, 0.7, 0.89, 0.89);
+
+    if pos == "up_left":
+        leg = ROOT.TLegend(0.2, 0.7, 0.45, 0.89);
 
     leg.SetBorderSize(0)
     leg.SetFillColor(0)
@@ -133,11 +136,12 @@ def add_text_box(text=''):
     latex.SetTextAlign(11)
     return latex.DrawLatex(0.17, 0.96, text)
 
-def draw_and_save_eff(hists, var, eff_fake, is_gsf, leg_pos = "up_right", title = ""):
+def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_right", title = ""):
     """
     hists - dictionary of process names and histograms
     var - xaxis variable
-    eff_fake - "eff", "eff_seed", "fake"
+    eff_fake - "eff", "eff_seed", "eff_wrt_seed", "fake"
+    label - "extra label"
     """
 
     c = ROOT.TCanvas("c","c", 600, 600)
@@ -149,21 +153,23 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, leg_pos = "up_right", title 
         xtitle = "p_{T}"
     if var == "eta":
         xtitle = "#eta"
-    if var == "nrhits":
+    if var[:6] == "nrhits":
         xtitle = "Number of sim. hits"
         
     ytitle = ""
     ymax = 1
-    if eff_fake == "eff" or eff_fake == "eff_smallBrem":
-        ytitle = "Efficiency"
-    if eff_fake == "eff_seed" or eff_fake == "eff_seed_smallBrem":
-        ytitle = "Seeding efficiency"
+    if eff_fake == "eff":
+        ytitle = "Efficiency" 
+    if eff_fake == "eff_seed":
+        ytitle = "Seeding efficiency" 
     if eff_fake == "eff_wrt_seed":
         ytitle = "Reco wrt seeding efficiency"
-   
     if eff_fake[:4] == "fake":
-        ytitle = "fake rate"
+        ytitle = "Fake rate"
         ymax = 0.3
+    if len(label) > 0:
+        ytitle = ytitle + " (" + label + ")"
+
 
     draw_efficiency_histograms(hists.values(), xtitle, ytitle, ymax)
     leg = draw_legend(hists, pos = leg_pos)
@@ -173,6 +179,6 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, leg_pos = "up_right", title 
     if(is_gsf):
         GSFstr = "_GSF"
 
-    c.SaveAs("$WORKING_DIR/plot/out_plots/" + eff_fake + "_" + var + GSFstr + ".pdf")
-    c.SaveAs("$WORKING_DIR/plot/out_plots/" + eff_fake + "_" + var + GSFstr + ".png")
+    c.SaveAs("$WORKING_DIR/plot/out_plots/" + eff_fake + "_" + var + "_" + label + GSFstr + ".pdf")
+    c.SaveAs("$WORKING_DIR/plot/out_plots/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
     c.Close()

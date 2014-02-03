@@ -46,6 +46,7 @@ class TrackAssociatorByHits : public TrackAssociatorBase {
 					       edm::Handle<TrackingParticleCollection>& tPCH, 
 					       const edm::Event * event = 0,
                                                const edm::EventSetup * setup = 0) const {
+    //std::cout<<"TrackAssociatorByHits.h: makeRecoToSimCollection"<<std::endl;
     return TrackAssociatorBase::associateRecoToSim(tCH,tPCH,event,setup);
   }
   
@@ -54,6 +55,7 @@ class TrackAssociatorByHits : public TrackAssociatorBase {
 					       edm::Handle<TrackingParticleCollection>& tPCH,
 					       const edm::Event * event = 0,
                                                const edm::EventSetup * setup = 0) const {
+    //  std::cout<<"TrackAssociatorByHits.h: makeSimToRecoCollection"<<std::endl;
     return TrackAssociatorBase::associateSimToReco(tCH,tPCH,event,setup);
   }  
 
@@ -61,7 +63,7 @@ class TrackAssociatorByHits : public TrackAssociatorBase {
   reco::RecoToSimCollectionSeed associateRecoToSim(edm::Handle<edm::View<TrajectorySeed> >&, 
 						   edm::Handle<TrackingParticleCollection>&, 
 						   const edm::Event * event = 0,
-                                                   const edm::EventSetup * setup = 0) const;
+                                                   const edm::EventSetup * setup = 0) const ;
   
   reco::SimToRecoCollectionSeed associateSimToReco(edm::Handle<edm::View<TrajectorySeed> >&, 
 						   edm::Handle<TrackingParticleCollection>&, 

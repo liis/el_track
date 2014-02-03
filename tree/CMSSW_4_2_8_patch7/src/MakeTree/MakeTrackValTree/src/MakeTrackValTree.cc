@@ -631,6 +631,9 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     //--------------------------------------------------------------------
 
     int hit_count = 0;
+    if(nr_goodhits > 13 && abs(tp->eta()) < 0.9)
+      std::cout<<"Found track with nr hits = "<<nr_goodhits<<", pt = "<<tp->pt()<<", eta = "<<tp->eta()<<", ecalDriven = "<<is_ecalDrivenSeed_[np_gen_]<<", trackerDriven = "<<is_trackerDrivenSeed_[np_gen_]<<std::endl;
+
     for(std::vector<PSimHit>::const_iterator it_hit = goodhits.begin(); it_hit != goodhits.end(); it_hit++){
 
       GlobalVector global_p = getHitMomentum(it_hit,tracker, hitdebug_);      
@@ -640,12 +643,16 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       float hit_pt_eff = pt_at_entry/tp->pt();
       DetId dId = DetId(it_hit->detUnitId() ); 
       std::vector<int> hit_position= getHitPosition(dId, hitdebug_); // (subdetector, layer)
-      //      double r = getHitDistance(it_hit, tracker, hitdebug_);
-
+        
       int subdetector = hit_position.at(0);
       int layerNumber = hit_position.at(1);
 
 
+      if(nr_goodhits > 13 && abs(tp->eta()) < 0.9){
+	std::cout<<" subdetector = "<<hit_position.at(0)<<std::endl;
+	std::cout<<"layernumber = "<<hit_position.at(1)<<std::endl;
+	std::cout<<" distance = "<< getHitDistance(it_hit, tracker, hitdebug_)<<std::endl;
+      }
 
       //-----------fill tree entries for each hit----------
       gen_hit_pt_[np_gen_][hit_count] = pt_at_entry;
@@ -658,7 +665,8 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       if(hit_count+1 == nr_goodhits){
 	gen_ptAtLast_[np_gen_] = pt_at_entry;
 	gen_bremFraction_[np_gen_] = 1 - pt_at_entry/tp->pt(); //fraction of pT lost via brehmstrahlung
-	if(debug_)
+	//	if(debug_)
+	if(nr_goodhits > 15 && tp->eta() < 0.9)
 	  std::cout<<"pt at last hit = "<<pt_at_entry<<", brem fraction = "<<gen_bremFraction_[np_gen_]<<std::endl;
       }
 
@@ -722,7 +730,6 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	badRecHits_best = badRecHits;
       }
     } // end of reco tracks
-    
     gen_nrMatchedRecHits_[np_gen_] = matchedRecHits_best.size();
     gen_nrSpuriousRecHits_[np_gen_] = badRecHits_best.size();
 
@@ -750,6 +757,9 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	std::cout<<"Failed to get hit position information."<<std::endl;
     }
 
+    if(nr_goodhits > 15 && abs(tp->eta()) < 0.9)
+      std::cout<<"nr matched rec hits = "<<matchedRecHits_best.size()<<std::endl;
+  
     if(debug_){
       if(bestMatchRecoTrack.size() )
 	std::cout<<"Best matched reco track with nr good hits = "<<matchedRecHits_best.size()<<", nr bad hits = "<<badRecHits_best.size()<<", pt = "<<bestMatchRecoTrack.at(0)->pt()<<std::endl;

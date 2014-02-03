@@ -78,7 +78,6 @@ TrackAssociatorByHits::associateRecoToSim(const edm::RefToBaseVector<reco::Track
 					  const edm::Event * e,
                                           const edm::EventSetup *setup ) const{
 
-  //  std::cout<<"TrackAssociatorByHits: Getting RecoToSimCollection"<<std::endl;
   //edm::LogVerbatim("TrackAssociator") << "Starting TrackAssociatorByHits::associateRecoToSim - #tracks="<<tC.size()<<" #TPs="<<TPCollectionH.size();
   int nshared = 0;
   float quality=0;//fraction or absolute number of shared hits
@@ -165,8 +164,6 @@ TrackAssociatorByHits::associateSimToReco(const edm::RefToBaseVector<reco::Track
 					  const edm::Event * e,
                                           const edm::EventSetup *setup ) const{
 //  edm::LogVerbatim("TrackAssociator") << "Starting TrackAssociatorByHits::associateSimToReco - #tracks="<<tC.size()<<" #TPs="<<TPCollectionH.size();
-
-//  std::cout<<"TrackAssociatorByHits: getting SimToRecoCollection"<<std::endl;
   float quality=0;//fraction or absolute number of shared hits
   int nshared = 0;
   std::vector< SimHitIdpr> SimTrackIds;
@@ -360,7 +357,6 @@ TrackAssociatorByHits::associateRecoToSim(edm::Handle<edm::View<TrajectorySeed> 
 					  const edm::Event * e,
                                           const edm::EventSetup *setup ) const{
 
-  std::cout<<"TrackAssociatorByHits: getting RecoToSimCollectionSeed"<<std::endl;
   edm::LogVerbatim("TrackAssociator") << "Starting TrackAssociatorByHits::associateRecoToSim - #seeds="
 				      <<seedCollectionH->size()<<" #TPs="<<TPCollectionH->size();
   int nshared = 0;
@@ -429,10 +425,7 @@ TrackAssociatorByHits::associateSimToReco(edm::Handle<edm::View<TrajectorySeed> 
 					  edm::Handle<TrackingParticleCollection>& TPCollectionH, 
 					  const edm::Event * e,
                                           const edm::EventSetup *setup ) const{
- 
-  std::cout<<"TrackAssociatorByHits: getting SimToRecoCollectionSeed"<<std::endl;
-  //  std::cout<<"Starting TrackAssociatorByHits::associateSimToReco - #seeds="<<seedCollectionH->size()<<" #TPs="<<TPCollectionH->size()<<std::endl;
-
+  
   edm::LogVerbatim("TrackAssociator") << "Starting TrackAssociatorByHits::associateSimToReco - #seeds="
 				      <<seedCollectionH->size()<<" #TPs="<<TPCollectionH->size();
   float quality=0;//fraction or absolute number of shared hits

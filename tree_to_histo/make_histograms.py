@@ -9,6 +9,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--ptmode', dest='ptmode', choices=["Pt1","Pt10","Pt100","FlatPt"], required=True, help= "pt cut in analyzed dataset")
 parser.add_argument('--isGSF', dest='is_gsf',  action="store_true")
+parser.add_argument('--testRun', dest='is_test_run', action="store_true", default=False, required=False)
 args = parser.parse_args()
 
 indir = "$WORKING_DIR/tree_to_histo/input_trees/"
@@ -24,7 +25,11 @@ f = ROOT.TFile(indir + infile)
 t = f.Get("TrackValTreeMaker/trackValTree")
 
 report_every = 100
-max_event = 10000
+
+if args.is_test_run:
+    max_event=10000
+else:
+    max_event = -1
 nEvt = t.GetEntries()
 
 print "Analyzing dataset for " + args.ptmode + " with " + str(nEvt) + " events"
@@ -58,15 +63,17 @@ eta_regions = ["barrel", "trans", "endcap"]
 
 #------------------- initialize histograms--------------------------------------------
 
-simeta_vars = ["sim_eta", "sim_eta_matchedTrack", "sim_eta_matchedSeed", "sim_eta_matchedSeed_smallBrem", 
-               "sim_eta_matchedSeed_trackerOnly", "sim_eta_matchedSeed_ecalOnly", "sim_eta_matchedSeed_tracker", 
-               "sim_eta_matchedSeed_ecal"]
+simeta_vars = ["sim_eta", "sim_eta_smallBrem", "sim_eta_matchedTrack", "sim_eta_matchedTrack_smallBrem", 
+               "sim_eta_matchedTrack_tracker", "sim_eta_matchedTrack_ecal", 
+               "sim_eta_matchedSeed", "sim_eta_matchedSeed_smallBrem", "sim_eta_matchedSeed_trackerOnly", 
+               "sim_eta_matchedSeed_ecalOnly", "sim_eta_matchedSeed_tracker", "sim_eta_matchedSeed_ecal"]
 simhit_vars = ["sim_nrhits", "sim_nrhits_matchedSeed", "sim_nrhits_matchedTrack", "sim_nrhits_smallBrem", 
                "sim_nrhits_matchedTrack_smallBrem", "sim_nrhits_matchedSeed_smallBrem", "sim_nrhits_matchedSeed_trackerOnly", 
                "sim_nrhits_matchedSeed_trackerOnly_smallBrem", "sim_nrhits_matchedSeed_ecalOnly", "sim_nrhits_matchedSeed_ecalOnly_smallBrem", 
                "sim_nrhits_matchedSeed_ecal", "sim_nrhits_matchedSeed_tracker"]
-simpt_vars = ["sim_pt", "sim_pt_matchedTrack", "sim_pt_matchedTrack_smallBrem", "sim_pt_matchedSeed", "sim_pt_matchedSeed_tracker", 
-              "sim_pt_matchedSeed_ecal","sim_pt_matchedSeed_smallBrem"]
+simpt_vars = ["sim_pt", "sim_pt_smallBrem", "sim_pt_matchedTrack", "sim_pt_matchedTrack_tracker", "sim_pt_matchedTrack_ecal", 
+              "sim_pt_matchedTrack_smallBrem", "sim_pt_matchedSeed", "sim_pt_matchedSeed_tracker", "sim_pt_matchedSeed_trackerOnly",
+              "sim_pt_matchedSeed_ecalOnly", "sim_pt_matchedSeed_ecal","sim_pt_matchedSeed_smallBrem"]
 recpt_vars = ["reco_pt", "fake_pt"]
 receta_vars = ["reco_eta", "fake_eta"]
 
@@ -152,6 +159,9 @@ for i in range(nEvt):
         fill_hists_by_eta_regions(gen_track_eta, gen_track_nrSimHits, "sim_nrhits", simhit_byetaregion_hists)
 
         if vt['gen_bremFraction'][it_p] < 0.2: # with reasonable brem
+            simeta_hists["sim_eta_smallBrem"].Fill(gen_track_eta)
+            fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_smallBrem", simpt_hists)
+            
             simhit_hists["sim_nrhits_smallBrem"].Fill(gen_track_nrSimHits)
             fill_hists_by_eta_regions(gen_track_eta, gen_track_nrSimHits, "sim_nrhits_smallBrem", simhit_byetaregion_hists)
 
@@ -161,9 +171,17 @@ for i in range(nEvt):
 
             simeta_hists["sim_eta_matchedTrack"].Fill(gen_track_eta)
             fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedTrack", simpt_hists)
+            if vt["is_ecalDrivenSeed"][it_p] == 1:
+                simeta_hists["sim_eta_matchedTrack_ecal"].Fill(gen_track_eta)
+                fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedTrack_ecal", simpt_hists)
+            if vt["is_trackerDrivenSeed"][it_p] == 1:
+                simeta_hists["sim_eta_matchedTrack_tracker"].Fill(gen_track_eta)
+                fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedTrack_tracker", simpt_hists)
 
             if vt['gen_bremFraction'][it_p] < 0.2: 
                 simhit_hists["sim_nrhits_matchedTrack_smallBrem"].Fill(gen_track_nrSimHits)
+                simeta_hists["sim_eta_matchedTrack_smallBrem"].Fill(gen_track_eta)
+
                 fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedTrack_smallBrem", simpt_hists)
                 fill_hists_by_eta_regions(gen_track_eta, gen_track_nrSimHits, "sim_nrhits_matchedTrack_smallBrem", simhit_byetaregion_hists)
 
@@ -198,16 +216,18 @@ for i in range(nEvt):
                 if vt["is_trackerDrivenSeed"][it_p] == 0:
                     simhit_hists["sim_nrhits_matchedSeed_ecalOnly"].Fill(gen_track_nrSimHits)
                     simeta_hists["sim_eta_matchedSeed_ecalOnly"].Fill(gen_track_eta)
+                    fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedSeed_ecalOnly", simpt_hists)
                     fill_hists_by_eta_regions(gen_track_eta, gen_track_nrSimHits, "sim_nrhits_matchedSeed_ecalOnly", simhit_byetaregion_hists) 
-            elif vt['is_ecalDrivenSeed'][it_p] == 0:
+            if vt['is_trackerDrivenSeed'][it_p] == 1:
                 simhit_hists["sim_nrhits_matchedSeed_tracker"].Fill(gen_track_nrSimHits)
                 fill_hists_by_eta_regions(gen_track_eta,gen_track_nrSimHits, "sim_nrhits_matchedSeed_tracker", simhit_byetaregion_hists)
                 simeta_hists["sim_eta_matchedSeed_tracker"].Fill(gen_track_eta)
                 fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedSeed_tracker", simpt_hists)
 
-                if vt["is_trackerDrivenSeed"][it_p] == 1:
+                if vt["is_ecalDrivenSeed"][it_p] == 0:
                     simhit_hists["sim_nrhits_matchedSeed_trackerOnly"].Fill(gen_track_nrSimHits)
                     simeta_hists["sim_eta_matchedSeed_trackerOnly"].Fill(gen_track_eta)
+                    fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedSeed_trackerOnly", simpt_hists)
                     fill_hists_by_eta_regions(gen_track_eta, gen_track_nrSimHits, "sim_nrhits_matchedSeed_trackerOnly", simhit_byetaregion_hists)
 ################### Analyze sim hits ##############################
         for nrhit in range(0,maxhit):
@@ -236,14 +256,6 @@ for i in range(nEvt):
                             h_sim_pt_byhit_quality_trans[quality_flag][nrhit].Fill(gen_track_pt) 
                         elif abs(vt['gen_eta'][it_p]) < 2.5:
                             h_sim_pt_byhit_quality_endcap[quality_flag][nrhit].Fill(gen_track_pt) 
-
-#############################################################
-                
-###--> cleanup
-#    for it_pm in range( vt['np_gen_toReco'][0]): # loop over matched simulated tracks
-#        h_sim_to_reco_match_eta.Fill(vt['gen_matched_eta'][it_pm]) 
- #       fill_hists_by_eta_regions(vt['gen_eta'][it_pm], vt['gen_pt'][it_pm], h_sim_to_reco_match_pt) # sim pt histograms in 3 eta regions
-
 
 #----------------------------------hit-by-hit efficiencies---------------------------------
 h_eff_hit_eta = {}
@@ -281,88 +293,76 @@ for quality_flag in sim_hit_quality_flags:
 
 eta_regions = ["barrel", "trans", "endcap"]
 
-# --------------------------- efficiencies ------------------------
 print "Processing total Sim-to-Reco efficiencies:"
-h_eff_eta = fill_hist_ratio(simeta_hists["sim_eta_matchedTrack"], simeta_hists["sim_eta"], "eff_eta")
-h_eff_seed_eta = fill_hist_ratio(simeta_hists["sim_eta_matchedSeed"], simeta_hists["sim_eta"], "eff_seed_eta")
-h_eff_seed_eta_ecalOnly = fill_hist_ratio(simeta_hists["sim_eta_matchedSeed_ecalOnly"], simeta_hists["sim_eta"], "eff_seed_eta_ecalOnly")
-h_eff_seed_eta_trackerOnly = fill_hist_ratio(simeta_hists["sim_eta_matchedSeed_trackerOnly"], simeta_hists["sim_eta"], "eff_seed_eta_trackerOnly")
+efficiency_histograms={}
 
-h_eff_wrt_seed_eta = fill_hist_ratio(simeta_hists["sim_eta_matchedTrack"], simeta_hists["sim_eta_matchedSeed"], "eff_wrt_seed_eta")
+efficiency_histograms["h_eff_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrack"], simeta_hists["sim_eta"], "eff_eta")
+efficiency_histograms["h_eff_eta_smallBrem"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrack_smallBrem"], simeta_hists["sim_eta_smallBrem"], "eff_eta_smallBrem")
 
-h_eff_nrhits = fill_hist_ratio(simhit_hists["sim_nrhits_matchedTrack"], simhit_hists["sim_nrhits"], "eff_nrhits")
-h_eff_seed_nrhits = fill_hist_ratio(simhit_hists["sim_nrhits_matchedSeed"], simhit_hists["sim_nrhits"], "eff_seed_nrhits")
+efficiency_histograms["h_eff_seed_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedSeed"], simeta_hists["sim_eta"], "eff_seed_eta")
+efficiency_histograms["h_eff_seed_eta_smallBrem"] = fill_hist_ratio(simeta_hists["sim_eta_matchedSeed_smallBrem"], simeta_hists["sim_eta_smallBrem"], "eff_seed_eta_smallBrem")
+efficiency_histograms["h_eff_seed_eta_tracker"] = fill_hist_ratio(simeta_hists["sim_eta_matchedSeed_tracker"], simeta_hists["sim_eta"], "eff_seed_eta_tracker")
+efficiency_histograms["h_eff_seed_eta_ecal"] =  fill_hist_ratio(simeta_hists["sim_eta_matchedSeed_ecal"], simeta_hists["sim_eta"], "eff_seed_eta_ecal")
 
-h_eff_nrhits_smallBrem = fill_hist_ratio(simhit_hists["sim_nrhits_matchedTrack_smallBrem"], simhit_hists["sim_nrhits_smallBrem"], "eff_nrhits_smallBrem")
-h_eff_seed_nrhits_smallBrem = fill_hist_ratio(simhit_hists["sim_nrhits_matchedSeed_smallBrem"], simhit_hists["sim_nrhits_smallBrem"], "eff_seed_nrhits_smallBrem")
+efficiency_histograms["h_eff_wrt_seed_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrack"], simeta_hists["sim_eta_matchedSeed"], "eff_wrt_seed_eta")
+efficiency_histograms["h_eff_wrt_seed_eta_smallBrem"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrack_smallBrem"], simeta_hists["sim_eta_matchedSeed_smallBrem"], "eff_wrt_seed_eta_smallBrem")
+efficiency_histograms["h_eff_wrt_seed_eta_tracker"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrack_tracker"], simeta_hists["sim_eta_matchedSeed_tracker"], "eff_wrt_seed_eta_tracker")
+efficiency_histograms["h_eff_wrt_seed_eta_ecal"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrack_ecal"], simeta_hists["sim_eta_matchedSeed"], "eff_wrt_seed_eta_ecal")
 
-h_eff_pt = {}
-h_eff_seed_pt = {}
-h_eff_wrt_seed_pt = {}
+efficiency_histograms["h_eff_nrhits"] = fill_hist_ratio(simhit_hists["sim_nrhits_matchedTrack"], simhit_hists["sim_nrhits"], "eff_nrhits")
+efficiency_histograms["h_eff_wrt_seed_nrhits"] = fill_hist_ratio(simhit_hists["sim_nrhits_matchedTrack"], simhit_hists["sim_nrhits_matchedSeed"], "eff_wrt_seed_nrhits")
+efficiency_histograms["h_eff_seed_nrhits"] = fill_hist_ratio(simhit_hists["sim_nrhits_matchedSeed"], simhit_hists["sim_nrhits"], "eff_seed_nrhits")
 
-h_eff_nrhits_byetaregion = {}
-h_eff_seed_nrhits_byetaregion = {}
+efficiency_histograms["h_eff_nrhits_smallBrem"] = fill_hist_ratio(simhit_hists["sim_nrhits_matchedTrack_smallBrem"], simhit_hists["sim_nrhits_smallBrem"], "eff_nrhits_smallBrem")
+efficiency_histograms["h_eff_wrt_seed_nrhits_smallBrem"] = fill_hist_ratio(simhit_hists["sim_nrhits_matchedTrack_smallBrem"], simhit_hists["sim_nrhits_matchedSeed_smallBrem"], "eff_wrt_seed_nrhits_smallBrem")
+efficiency_histograms["h_eff_seed_nrhits_smallBrem"] = fill_hist_ratio(simhit_hists["sim_nrhits_matchedSeed_smallBrem"], simhit_hists["sim_nrhits_smallBrem"], "eff_seed_nrhits_smallBrem")
 
-h_eff_nrhits_byetaregion_smallBrem = {}
-h_eff_seed_nrhits_byetaregion_smallBrem = {}
 for region in eta_regions:
-    h_eff_pt[region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrack_" + region], simpt_hists["sim_pt_" + region], "eff_pt_" + region, binning="log")
-    h_eff_seed_pt[region] = fill_hist_ratio(simpt_hists["sim_pt_matchedSeed_"+ region], simpt_hists["sim_pt_" + region], "eff_Seed_pt_" + region, binning="log")
-    h_eff_wrt_seed_pt[region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrack_" + region], simpt_hists["sim_pt_matchedSeed_" + region], "eff_wrt_seed_pt_" + region, binning = "log")
-    h_eff_nrhits_byetaregion[region] = fill_hist_ratio(simhit_byetaregion_hists["sim_nrhits_matchedTrack_" + region], simhit_byetaregion_hists["sim_nrhits_" + region], "eff_nhits_" + region)
-    h_eff_seed_nrhits_byetaregion[region] = fill_hist_ratio(simhit_byetaregion_hists["sim_nrhits_matchedSeed_" + region], simhit_byetaregion_hists["sim_nrhits_" + region], "eff_Seed_nhits_" + region)
-    h_eff_nrhits_byetaregion_smallBrem[region] = fill_hist_ratio(simhit_byetaregion_hists["sim_nrhits_matchedTrack_smallBrem_" + region], simhit_byetaregion_hists["sim_nrhits_smallBrem_" + region], "eff_nhits_smallBrem_" + region)
-    h_eff_seed_nrhits_byetaregion_smallBrem[region] = fill_hist_ratio(simhit_byetaregion_hists["sim_nrhits_matchedSeed_smallBrem_" + region], simhit_byetaregion_hists["sim_nrhits_smallBrem_" + region], "eff_Seed_nhits_smallBrem_" + region)
-    
+    efficiency_histograms["h_eff_pt" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrack_" + region], simpt_hists["sim_pt_" + region], "eff_pt_" + region, binning="log")
+    efficiency_histograms["h_eff_pt_smallBrem" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrack_smallBrem_" + region], simpt_hists["sim_pt_smallBrem_" + region], "eff_pt_smallBrem_" + region, binning="log")
 
+    efficiency_histograms["h_eff_seed_pt" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedSeed_"+ region], simpt_hists["sim_pt_" + region], "eff_seed_pt_" + region, binning="log")
+    efficiency_histograms["h_eff_seed_pt_smallBrem"+ region] = fill_hist_ratio(simpt_hists["sim_pt_matchedSeed_smallBrem_" + region], simpt_hists["sim_pt_smallBrem_" + region], "eff_seed_pt_smallBrem_" + region, binning="log")
+    efficiency_histograms["h_eff_seed_pt_ecal" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedSeed_ecal_"+ region], simpt_hists["sim_pt_" + region], "eff_seed_pt_ecal_" + region, binning="log")
+    efficiency_histograms["h_eff_seed_pt_tracker" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedSeed_tracker_"+ region], simpt_hists["sim_pt_" + region], "eff_seed_pt_tracker_" + region, binning="log")
+
+    efficiency_histograms["h_eff_wrt_seed_pt_tracker" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrack_tracker_"+ region], simpt_hists["sim_pt_matchedSeed_tracker_" + region], "eff_wrt_seed_pt_tracker_" + region, binning="log")
+
+    efficiency_histograms["h_eff_wrt_seed_pt_ecal" + region] =fill_hist_ratio(simpt_hists["sim_pt_matchedTrack_ecal_"+ region], simpt_hists["sim_pt_matchedSeed_ecal_" + region], "eff_wrt_seed_pt_ecal_" + region, binning="log")
+
+    efficiency_histograms["h_eff_wrt_seed_pt" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrack_" + region], simpt_hists["sim_pt_matchedSeed_" + region], "eff_wrt_seed_pt_" + region, binning = "log")
+    efficiency_histograms["h_eff_wrt_seed_pt_smallBrem" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrack_smallBrem_" + region], simpt_hists["sim_pt_matchedSeed_smallBrem_" + region], "eff_wrt_seed_pt_smallBrem_" + region, binning="log")
+
+    efficiency_histograms["h_eff_nrhits_byetaregion" + region] = fill_hist_ratio(simhit_byetaregion_hists["sim_nrhits_matchedTrack_" + region], simhit_byetaregion_hists["sim_nrhits_" + region], "eff_nhits_" + region)
+    efficiency_histograms["h_eff_seed_nrhits_byetaregion" + region] = fill_hist_ratio(simhit_byetaregion_hists["sim_nrhits_matchedSeed_" + region], simhit_byetaregion_hists["sim_nrhits_" + region], "eff_seed_nhits_" + region)
+    efficiency_histograms["h_eff_wrt_seed_nrhits_byetaregion" + region] = fill_hist_ratio(simhit_byetaregion_hists["sim_nrhits_matchedTrack_" + region], simhit_byetaregion_hists["sim_nrhits_matchedSeed_" + region], "eff_wrt_seed_nhits_" + region)
+  
+    efficiency_histograms["h_eff_nrhits_byetaregion_smallBrem" + region] = fill_hist_ratio(simhit_byetaregion_hists["sim_nrhits_matchedTrack_smallBrem_" + region], simhit_byetaregion_hists["sim_nrhits_smallBrem_" + region], "eff_nhits_smallBrem_" + region)
+    efficiency_histograms["h_eff_seed_nrhits_byetaregion_smallBrem" + region] = fill_hist_ratio(simhit_byetaregion_hists["sim_nrhits_matchedSeed_smallBrem_" + region], simhit_byetaregion_hists["sim_nrhits_smallBrem_" + region], "eff_seed_nhits_smallBrem_" + region)
+    efficiency_histograms["h_eff_wrt_seed_nrhits_byetaregion_smallBrem" + region] = fill_hist_ratio(simhit_byetaregion_hists["sim_nrhits_matchedTrack_smallBrem_" + region], simhit_byetaregion_hists["sim_nrhits_matchedSeed_smallBrem_" + region], "eff_wrt_seed_nhits_smallBrem_" + region)    
 
 # -------------------- fake rates ---------------------------------
-h_fakerate_eta = fill_hist_ratio(receta_hists["fake_eta"], receta_hists["reco_eta"],"fake_rate_eta")
+efficiency_histograms["h_fakerate_eta"] = fill_hist_ratio(receta_hists["fake_eta"], receta_hists["reco_eta"],"fake_rate_eta")
 h_fakerate_pt = {}
 for region in eta_regions:
-    h_fakerate_pt[region] = fill_hist_ratio(recpt_hists["fake_pt_" + region], recpt_hists["reco_pt_" + region], "fake_rate_pt_" + region, binning = "log")
+    efficiency_histograms["h_fakerate_pt_" + region] = fill_hist_ratio(recpt_hists["fake_pt_" + region], recpt_hists["reco_pt_" + region], "fake_rate_pt_" + region, binning = "log")
 
-
+#---------------------create outfile------------------------
 if args.is_gsf:
     outfile = "histograms/trackValHistograms" + args.ptmode + "GSF.root"
 else:
-    outfile = "histograms/trackValHistograms" + args.ptmode  + ".root"    
-
+    outfile = "histograms/trackValHistograms" + args.ptmode  + ".root"
 
 o = ROOT.TFile(outfile,"recreate")
+
 #-----------------write histograms to file----------------
 for histos in all_hists: # loop over histogram dictionaries
     for hist in histos: # loop over individual histograms
         histos[hist].Write()
 
-#------------efficiencies and fake rates wrt pt------
-for eta_region in eta_regions:
-    h_eff_pt[eta_region].Write()
-    h_eff_seed_pt[eta_region].Write()
-    h_eff_wrt_seed_pt[eta_region].Write()
-
-
-    h_eff_nrhits_byetaregion[eta_region].Write()
-    h_eff_seed_nrhits_byetaregion[eta_region].Write()
-
-    h_eff_nrhits_byetaregion_smallBrem[eta_region].Write()
-    h_eff_seed_nrhits_byetaregion_smallBrem[eta_region].Write()
-
-    h_fakerate_pt[region].Write() 
-
-#-----efficiencies and fake rates wrt eta-----------
-
-h_fakerate_eta.Write()
-h_eff_eta.Write()
-h_eff_seed_eta.Write()
-h_eff_seed_eta_trackerOnly.Write()
-h_eff_seed_eta_ecalOnly.Write()
-h_eff_wrt_seed_eta.Write()
-
-h_eff_nrhits.Write()
-h_eff_nrhits_smallBrem.Write()
-h_eff_seed_nrhits.Write()
-h_eff_seed_nrhits_smallBrem.Write()
+#------------ write efficiencies and fake rates-----------
+for histogram in efficiency_histograms.values():
+    histogram.Write()
 
 #------------hit-by-hit comparison------------
 dir = o.mkdir("VariablesBySimhit")

@@ -4,8 +4,8 @@ from odict import OrderedDict as dict
 tracking_cfg_parameters = dict()
 
 tracking_cfg_parameters["maxCand"] = [5 ]
-tracking_cfg_parameters["maxChi2"] = [100 ]
-tracking_cfg_parameters["nSigma"] = [4 ]
+tracking_cfg_parameters["maxChi2"] = [2000 ]
+tracking_cfg_parameters["nSigma"] = [3 ]
 
 datasetnames = {"FlatPt": "/SingleElMinusFlatLogPt_CMSSW_4_2_8-START42_V12_GEN-SIM-DIGI-RAW-HLTDEBUG/mangano-CMSSW_4_2_8-START42_V12_GEN-SIM-RECO-v3-8de1ffbdb519f9edbafc5606a1926f13/USER",
                 "Pt10": "/SingleElMinusPt10_CMSSW_4_2_8-START42_V12_GEN-SIM-DIGI-RAW-HLTDEBUG-v2/mangano-CMSSW_4_2_8-START42_V12_GEN-SIM-RECO-v3-7bc796286602c18e9ed77a7f93a692b8/USER",
@@ -36,7 +36,7 @@ def create_crab_cfg_from_template(template, varstr, dataset, outdir = ""):
     if len(outdir):
         outdir = outdir + "/"
 
-    out_name = outdir + "crab_" + varstr + ".cfg"
+    out_name = outdir + "crab_" + varstr + "_" + dataset + ".cfg"
     write_outfile(input, out_name)
 
 def create_cmssw_cfg_from_template(template, varstr, outdir = ""):
@@ -53,7 +53,7 @@ def create_cmssw_cfg_from_template(template, varstr, outdir = ""):
 
     if len(outdir):
         outdir = outdir + "/"
-    out_name = outdir + "reTracking_" + varstr + ".py"
+    out_name = outdir + "makeTrackValTree_reTrk_" + varstr + ".py"
     write_outfile(input, out_name)
 
 #def make_varstrings( cfg_params ):
@@ -65,7 +65,8 @@ for varname, varvalue in tracking_cfg_parameters.iteritems():
     varstr = varstr + varname + "_" + str(varvalue[0]) + "_"
 varstr = varstr[:-1]
 
+for datasetname in datasetnames:
+    create_crab_cfg_from_template("./templates/crab_template.cfg", varstr, dataset = datasetname, outdir = "input_crab")
 
-create_crab_cfg_from_template("./templates/crab_template.cfg", varstr, dataset = "Pt100", outdir = "input_crab")
-create_cmssw_cfg_from_template("./templates/reTracking_template.py", varstr, outdir = "input_crab")
-
+create_cmssw_cfg_from_template("./templates/makeTrackValTree_reTrk_template.py", varstr, outdir = "input_crab") # run both retracking and tree production
+    #create_cmssw_cfg_from_template("./templates/reTracking_template.py", varstr, outdir = "input_crab") # run retracking, write out aod

@@ -1,5 +1,6 @@
 #!/bin/sh
-if [ "x$1" != "x" ]; then fl=$1; else fl=`ls -d crab_0*|grep -v lumi`; fi
+INDIR=input_crab
+if [ "x$1" != "x" ]; then fl=$1; else fl=`ls -d $INDIR/crab_0*|grep -v lumi`; fi
 celist="kbfi"
 local=1
 for i in $fl; do 

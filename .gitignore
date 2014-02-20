@@ -24,6 +24,17 @@ tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab/*.root
 tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/output_crab/*
 tree/CMSSW_4_2_8_patch7/src/MakeTree/MakeTrackValTree/crab_0_*
 
+tree/CMSSW_4_2_8_patch7/src/TrackReReco/*~
+tree/CMSSW_4_2_8_patch7/src/TrackReReco/*.pyc
+tree/CMSSW_4_2_8_patch7/src/TrackReReco/.*
+tree/CMSSW_4_2_8_patch7/src/TrackReReco/.#
+tree/CMSSW_4_2_8_patch7/src/TrackReReco/*.root
+tree/CMSSW_4_2_8_patch7/src/TrackReReco/__init__*
+tree/CMSSW_4_2_8_patch7/src/TrackReReco/out_tests/*
+tree/CMSSW_4_2_8_patch7/src/TrackReReco/crab/output_crab/*
+tree/CMSSW_4_2_8_patch7/src/TrackReReco/crab/input_crab/*
+tree/CMSSW_4_2_8_patch7/src/TrackReReco/crab/*.root
+
 tree_to_histo/histograms
 tree_to_histo/input_trees
 tree_to_histo/input_trees/backup

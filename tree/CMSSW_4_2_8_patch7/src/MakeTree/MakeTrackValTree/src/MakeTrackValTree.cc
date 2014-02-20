@@ -130,8 +130,8 @@ class MakeTrackValTree : public edm::EDAnalyzer {
   int rec_hit_isMatched_[MAXPART][MAXHIT], rec_hit_subdetector_[MAXPART][MAXHIT], rec_hit_layer_[MAXPART][MAXHIT];
 
 
-  double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_cotth_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_phi_[MAXPART], gen_matched_z0_[MAXPART], gen_matched_d0_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART], gen_ptAtLast_[MAXPART], gen_bremFraction_[MAXPART], gen_matched_seed_quality_[MAXPART];
-  double gen_matched_rec_pt_[MAXPART], gen_matched_rec_cotth_[MAXPART], gen_matched_rec_phi_[MAXPART], gen_matched_rec_d0_[MAXPART], gen_matched_rec_z0_[MAXPART], pt_pull_[MAXPART], theta_pull_[MAXPART], phi_pull_[MAXPART], d0_pull_[MAXPART], z0_pull_[MAXPART];
+  double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_qoverp_[MAXPART], gen_matched_cotth_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_phi_[MAXPART], gen_matched_z0_[MAXPART], gen_matched_d0_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART], gen_ptAtLast_[MAXPART], gen_bremFraction_[MAXPART], gen_matched_seed_quality_[MAXPART];
+  double gen_matched_rec_pt_[MAXPART], gen_matched_rec_qoverp_[MAXPART], gen_matched_rec_cotth_[MAXPART], gen_matched_rec_phi_[MAXPART], gen_matched_rec_d0_[MAXPART], gen_matched_rec_z0_[MAXPART], pt_pull_[MAXPART], theta_pull_[MAXPART], phi_pull_[MAXPART], d0_pull_[MAXPART], z0_pull_[MAXPART], qoverp_pull_[MAXPART];
 
   double reco_pt_[MAXPART], reco_eta_[MAXPART], reco_phi_[MAXPART], fake_pt_[MAXPART], fake_eta_[MAXPART], fake_phi_[MAXPART];
   int gen_pdgId_[MAXPART], gen_nrSimHits_[MAXPART], gen_nrUniqueSimHits_[MAXPART], gen_nrRecoHits_[MAXPART], gen_nrMatchedRecHits_[MAXPART], gen_nrSpuriousRecHits_[MAXPART], gen_nrLostSimHits_[MAXPART], gen_matched_seed_nshared_[MAXPART];
@@ -473,6 +473,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     gen_nrSharedHits_[i] = -10;
     
     gen_matched_pt_[i] = -999;
+    gen_matched_qoverp_[i] = -999;
     gen_matched_phi_[i] = -999;
     gen_matched_eta_[i] = -999;
     gen_matched_cotth_[i] = -999;
@@ -480,12 +481,14 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     gen_matched_z0_[i] = -999;
 
     gen_matched_rec_pt_[i] = -999;
+    gen_matched_rec_qoverp_[i] = -999;
     gen_matched_rec_cotth_[i] = -999;
     gen_matched_rec_phi_[i] = -999;
     gen_matched_rec_d0_[i] = -999;
     gen_matched_rec_z0_[i] = -999;
 
     pt_pull_[i] = -999;
+    qoverp_pull_[i] = -999;
     theta_pull_[i] = -999;
     phi_pull_[i] = -999;
     d0_pull_[i] = -999;
@@ -834,6 +837,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
 	//------------------- resolution and pullres --------------------
 	gen_matched_pt_[np_gen_] = tp->pt();
+	gen_matched_qoverp_[np_gen_] = tp->charge()/(tp->px()*tp->px() + tp->py()*tp->py() + tp->pz()*tp->pz());
 	gen_matched_eta_[np_gen_] = tp->eta();
 	gen_matched_cotth_[np_gen_] = 1./tan(tp->theta());
 	gen_matched_phi_[np_gen_] = tp->phi();
@@ -841,12 +845,14 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	gen_matched_d0_[np_gen_] =  gen_dxy_[np_gen_];
 	
 	gen_matched_rec_pt_[np_gen_] = matchedTrackPointer->pt();
+	gen_matched_rec_qoverp_[np_gen_] = matchedTrackPointer->qoverp();
 	gen_matched_rec_cotth_[np_gen_] = 1./(tan(matchedTrackPointer->theta()) );
         gen_matched_rec_phi_[np_gen_] = matchedTrackPointer->phi();
         gen_matched_rec_z0_[np_gen_] = matchedTrackPointer->dz(bsPosition);
         gen_matched_rec_d0_[np_gen_] = matchedTrackPointer->dxy(bsPosition);
 
 	pt_pull_[np_gen_] = (matchedTrackPointer->pt() - tp->pt())/matchedTrackPointer->ptError();
+	qoverp_pull_[np_gen_] = (matchedTrackPointer->qoverp() - gen_matched_qoverp_[np_gen_])/matchedTrackPointer->qoverpError();
 	theta_pull_[np_gen_] = (matchedTrackPointer->theta() - tp->theta())/matchedTrackPointer->thetaError();
         phi_pull_[np_gen_] = (matchedTrackPointer->phi() - tp->phi())/matchedTrackPointer->phiError();
 	z0_pull_[np_gen_] = (matchedTrackPointer->dz(bsPosition) - gen_dz_[np_gen_])/matchedTrackPointer->dzError();
@@ -979,6 +985,7 @@ MakeTrackValTree::beginJob()
   trackValTree_->Branch("gen_matchedSeedQuality", gen_matched_seed_quality_, "gen_matchedSeedQuality[np_gen]/D");
 
   trackValTree_->Branch("gen_matched_pt", gen_matched_pt_, "gen_matched_pt[np_gen]/D");
+  trackValTree_->Branch("gen_matched_qoverp", gen_matched_qoverp_, "gen_matched_qoverp[np_gen]/D");
   trackValTree_->Branch("gen_matched_eta", gen_matched_eta_, "gen_matched_eta[np_gen]/D");
   trackValTree_->Branch("gen_matched_cotth", gen_matched_cotth_, "gen_matched_cotth[np_gen]/D");
   trackValTree_->Branch("gen_matched_phi", gen_matched_phi_, "gen_matched_phi[np_gen]/D");
@@ -986,22 +993,18 @@ MakeTrackValTree::beginJob()
   trackValTree_->Branch("gen_matched_z0", gen_matched_z0_, "gen_matched_z0[np_gen]/D");
 
   trackValTree_->Branch("gen_matched_rec_pt", gen_matched_rec_pt_, "gen_matched_rec_pt[np_gen]/D");
+  trackValTree_->Branch("gen_matched_rec_qoverp", gen_matched_rec_qoverp_, "gen_matched_rec_qoverp[np_gen]/D");
   trackValTree_->Branch("gen_matched_rec_cotth", gen_matched_rec_cotth_, "gen_matched_rec_cotth[np_gen]/D");
   trackValTree_->Branch("gen_matched_rec_phi", gen_matched_rec_phi_, "gen_matched_rec_phi[np_gen]/D");
   trackValTree_->Branch("gen_matched_rec_d0", gen_matched_rec_d0_, "gen_matched_rec_d0[np_gen]/D");
   trackValTree_->Branch("gen_matched_rec_z0", gen_matched_rec_z0_, "gen_matched_rec_z0[np_gen]/D");
 
-  trackValTree_->Branch("gen_matched_rec_pt", gen_matched_rec_pt_, "gen_matched_rec_pt[np_gen]/D");
-  trackValTree_->Branch("gen_matched_rec_cotth", gen_matched_rec_cotth_, "gen_matched_rec_cotth[np_gen]/D");
-  trackValTree_->Branch("gen_matched_rec_phi", gen_matched_rec_phi_, "gen_matched_rec_phi[np_gen]/D");
-  trackValTree_->Branch("gen_matched_rec_d0", gen_matched_rec_d0_, "gen_matched_rec_d0[np_gen]/D");
-  trackValTree_->Branch("gen_matched_rec_z0", gen_matched_rec_z0_, "gen_matched_rec_z0[np_gen]/D");
-
-  trackValTree_->Branch("pt_pull_", pt_pull_, "pt_pull[np_gen]/D");
-  trackValTree_->Branch("theta_pull_", theta_pull_, "theta_pull[np_gen]/D");
-  trackValTree_->Branch("phi_pull_", phi_pull_, "phi_pull[np_gen]/D");
-  trackValTree_->Branch("d0_pull_", d0_pull_, "d0_pull[np_gen]/D");
-  trackValTree_->Branch("z0_pull_", z0_pull_, "z0_pull[np_gen]/D");
+  trackValTree_->Branch("pt_pull", pt_pull_, "pt_pull[np_gen]/D");
+  trackValTree_->Branch("qoverp_pull", qoverp_pull_, "qoverp_pull[np_gen]/D");
+  trackValTree_->Branch("theta_pull", theta_pull_, "theta_pull[np_gen]/D");
+  trackValTree_->Branch("phi_pull", phi_pull_, "phi_pull[np_gen]/D");
+  trackValTree_->Branch("d0_pull", d0_pull_, "d0_pull[np_gen]/D");
+  trackValTree_->Branch("z0_pull", z0_pull_, "z0_pull[np_gen]/D");
 
   trackValTree_->Branch("gen_hit_pt", gen_hit_pt_, "gen_hit_pt[np_gen][50]/F");
   trackValTree_->Branch("gen_hit_eta", gen_hit_eta_, "gen_hit_eta[np_gen][50]/F");

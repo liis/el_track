@@ -11,7 +11,7 @@ process.MessageLogger = cms.Service("MessageLogger",
 readFiles = cms.untracked.vstring()
 secFiles = cms.untracked.vstring() 
 source = cms.Source ("PoolSource",fileNames = readFiles)
-readFiles.extend( ['file:./aod.root'])
+readFiles.extend( ['file:/hdfs/cms/store/user/liis/El_GSF_studies/Pt10/step2_9_1_DD1.root'])
 
 process.source = source
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )

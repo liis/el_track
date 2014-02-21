@@ -10,14 +10,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--ptmode', dest='ptmode', choices=["Pt1","Pt10","Pt100","FlatPt"], required=True, help= "pt cut in analyzed dataset")
 parser.add_argument('--isGSF', dest='is_gsf',  action="store_true")
 parser.add_argument('--testRun', dest='is_test_run', action="store_true", default=False, required=False)
+parser.add_argument('--cutstr', dest='cutstring', required=True, help="specify the list of cfg parameters as a string in input file name")
 args = parser.parse_args()
+cutstring = args.cutstring
 
-indir = "$WORKING_DIR/tree_to_histo/input_trees/"
+indir = "$WORKING_DIR/tree_to_histo/input_trees/rereco_trees/"
 
 if args.is_gsf:
-    infile = "trackValTree_el" + args.ptmode + "_GSF.root"
+    infile = "trackValTree_" + args.ptmode + "_" + cutstring +  ".root" # add GSF flag later for GSF KF comparisons
 else:
-    infile = "trackValTree_el" + args.ptmode + ".root"
+    infile = "trackValTree_" + args.ptmode + "_" + cutstring + ".root"
 
 if args.is_test_run:
     infile = "test_tree_200214.root"
@@ -213,15 +215,18 @@ for i in range(nEvt):
                 fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedTrack_smallBrem", simpt_hists)
                 fill_hists_by_eta_regions(gen_track_eta, gen_track_nrSimHits, "sim_nrhits_matchedTrack_smallBrem", simhit_byetaregion_hists)
 
-        
-
+#        print len(vt["gen_matchedSeedOkCharge"])      
+#        print "seed charge match = " + str(vt["gen_matchedSeedOkCharge"][it_p]) 
         if vt['gen_nrMatchedSeedHits'][it_p] > 1: # if matched to seed
             simeta_hists["sim_eta_matchedSeed"].Fill(vt['gen_eta'][it_p])
             fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedSeed", simpt_hists)
-
-            if vt["gen_matchedSeedOkCharge"][it_p] > 0:
-                simeta_hists["sim_eta_matchedSeed_matchedCharge"].Fill(gen_track_eta)
-                fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedSeed_matchedCharge", simpt_hists)
+            
+            try:
+                if vt["gen_matchedSeedOkCharge"][it_p] > 0:
+                    simeta_hists["sim_eta_matchedSeed_matchedCharge"].Fill(gen_track_eta)
+                    fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedSeed_matchedCharge", simpt_hists)
+            except IndexError:
+                print "Skip filling seed charge efficiency --> FIX BUG!"
 
             simhit_hists["sim_nrhits_matchedSeed"].Fill(vt['gen_nrUniqueSimHits'][it_p])
             fill_hists_by_eta_regions(gen_track_eta, gen_track_nrSimHits, "sim_nrhits_matchedSeed", simhit_byetaregion_hists)
@@ -383,9 +388,9 @@ for region in eta_regions:
 
 #---------------------create outfile------------------------
 if args.is_gsf:
-    outfile = "histograms/trackValHistograms" + args.ptmode + "GSF.root"
+    outfile = "histograms/trackValHistograms" + args.ptmode + "_" + cutstring + "_GSF.root"
 else:
-    outfile = "histograms/trackValHistograms" + args.ptmode  + ".root"
+    outfile = "histograms/trackValHistograms" + args.ptmode  + "_" + cutstring +  ".root"
 
 print "Writing histograms to file: " + outfile
 o = ROOT.TFile(outfile,"recreate")

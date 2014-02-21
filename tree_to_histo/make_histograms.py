@@ -7,22 +7,23 @@ debug = False
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--ptmode', dest='ptmode', choices=["Pt1","Pt10","Pt100","FlatPt"], required=True, help= "pt cut in analyzed dataset")
+parser.add_argument('--ptmode', dest='ptmode', choices=["Pt1","Pt10","Pt100","FlatPt"], required=False, help= "pt cut in analyzed dataset")
 parser.add_argument('--isGSF', dest='is_gsf',  action="store_true")
 parser.add_argument('--testRun', dest='is_test_run', action="store_true", default=False, required=False)
-parser.add_argument('--cutstr', dest='cutstring', required=True, help="specify the list of cfg parameters as a string in input file name")
+parser.add_argument('--cutstr', dest='cutstring', required=False, help="specify the list of cfg parameters as a string in input file name")
+parser.add_argument('--infile', dest='infile')
 args = parser.parse_args()
 cutstring = args.cutstring
 
 indir = "$WORKING_DIR/tree_to_histo/input_trees/rereco_trees/"
 
-if args.is_gsf:
-    infile = "trackValTree_" + args.ptmode + "_" + cutstring +  ".root" # add GSF flag later for GSF KF comparisons
-else:
-    infile = "trackValTree_" + args.ptmode + "_" + cutstring + ".root"
+#if args.is_gsf:
+#    infile = "trackValTree_" + args.ptmode + "_" + cutstring +  ".root" # add GSF flag later for GSF KF comparisons
+#else:
+#    infile = "trackValTree_" + args.ptmode + "_" + cutstring + ".root"
 
-if args.is_test_run:
-    infile = "test_tree_200214.root"
+if args.infile:
+    infile = args.infile
 
 print "Opening input file: " + infile
 
@@ -37,7 +38,7 @@ else:
     max_event = -1
 nEvt = t.GetEntries()
 
-print "Analyzing dataset for " + args.ptmode + " with " + str(nEvt) + " events"
+print "Analyzing dataset with " + str(nEvt) + " events"
 
 #### initialize tree #######
 vt = dict([ (v, var_type(v)) for v in var_list ]) #associate proper data type for variables in the tree
@@ -387,7 +388,9 @@ for region in eta_regions:
     efficiency_histograms["h_fakerate_pt_" + region] = fill_hist_ratio(recpt_hists["fake_pt_" + region], recpt_hists["reco_pt_" + region], "fake_rate_pt_" + region, binning = "log")
 
 #---------------------create outfile------------------------
-if args.is_gsf:
+if args.infile:
+    outfile = "histograms/trackValHistograms_" + args.infile
+elif args.is_gsf:
     outfile = "histograms/trackValHistograms" + args.ptmode + "_" + cutstring + "_GSF.root"
 else:
     outfile = "histograms/trackValHistograms" + args.ptmode  + "_" + cutstring +  ".root"

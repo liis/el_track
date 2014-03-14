@@ -1,23 +1,26 @@
 import ROOT
 
 infilenames_eta = {
-#    "Pt1": "trackValHistogramsPt1.root",
-    "Pt10": "trackValHistogramsPt10.root",
-    "Pt100": "trackValHistogramsPt100.root"
+    "Pt100": "trackValHistograms_trackValTree_Pt100_maxCand_5_maxChi2_2000_nSigma_3.root",
+    "Pt10":  "trackValHistograms_trackValTree_Pt10_maxCand_5_maxChi2_2000_nSigma_3.root",
+#    "Pt100": "trackValHistogramsPt100.root"
 }
 
 infilenames_eta_gsf = {
-#    "Pt1": "trackValHistogramsPt1.root",
-    "Pt10": "trackValHistogramsPt10GSF.root",
-    "Pt100": "trackValHistogramsPt100GSF.root"
+    "Pt100":   "trackValHistograms_trackValTree_Pt100_maxCand_5_maxChi2_2000_nSigma_3.root",
+    "Pt10" :   "trackValHistograms_trackValTree_Pt10_maxCand_5_maxChi2_2000_nSigma_3.root",
+#    "Pt10": "trackValHistogramsPt10GSF.root",
+#    "Pt100": "trackValHistogramsPt100GSF.root"
 }
 
 infilenames_pt = {
-    "FlatPt": "trackValHistogramsFlatPt.root"
+#    "FlatPt": "trackValHistogramsFlatPt.root"
+    "FlatPt": "trackValHistograms_trackValTree_FlatPt_maxCand_5_maxChi2_100_nSigma_3.root"
 }
 
 infilenames_pt_gsf = {
-    "FlatPt": "trackValHistogramsFlatPtGSF.root"
+    "FlatPt": "trackValHistograms_trackValTree_FlatPt_maxCand_5_maxChi2_100_nSigma_3.root"
+#    "FlatPt": "trackValHistogramsFlatPtGSF.root"    
 }
 
 def load_input_files(indir, infilenames):
@@ -86,7 +89,7 @@ def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  
         hist.SetMarkerStyle(20);
         hist.SetMarkerSize(1);
         if n==0:
-            hist.SetMaximum(ymax)
+            #hist.SetMaximum(ymax)
             hist.SetMinimum(0.)
             hist.GetXaxis().SetTitleOffset(1.3)
             hist.GetYaxis().SetTitleOffset(1.4)
@@ -167,6 +170,11 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
     if eff_fake[:4] == "fake":
         ytitle = "Fake rate"
         ymax = 0.3
+    if eff_fake[:4] == "pull":
+        ytitle = "pull"
+
+    if eff_fake[:4] == "res":
+        ytitle ="res"
     if len(label) > 0:
         ytitle = ytitle + " (" + label + ")"
 

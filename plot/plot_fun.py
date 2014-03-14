@@ -80,6 +80,7 @@ colors = [ROOT.kBlack, ROOT.kRed, ROOT.kYellow, ROOT.kYellow-3, ROOT.kGreen, ROO
 
 def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  1., region="none"):
     """
+    hists -- dictionary of histograms
     plot a list of efficiency histogras
     """
     n = 0

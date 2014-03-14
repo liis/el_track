@@ -7,33 +7,21 @@ debug = False
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--ptmode', dest='ptmode', choices=["Pt1","Pt10","Pt100","FlatPt"], required=False, help= "pt cut in analyzed dataset")
-parser.add_argument('--isGSF', dest='is_gsf',  action="store_true")
 parser.add_argument('--testRun', dest='is_test_run', action="store_true", default=False, required=False)
-parser.add_argument('--cutstr', dest='cutstring', required=False, help="specify the list of cfg parameters as a string in input file name")
-parser.add_argument('--infile', dest='infile')
+parser.add_argument('--infile', dest='infile', required=True) #file name of the input tree
 args = parser.parse_args()
-cutstring = args.cutstring
 
-indir = "$WORKING_DIR/tree_to_histo/input_trees/rereco_trees/"
+indir = "$WORKING_DIR/tree_to_histo/"
 
-#if args.is_gsf:
-#    infile = "trackValTree_" + args.ptmode + "_" + cutstring +  ".root" # add GSF flag later for GSF KF comparisons
-#else:
-#    infile = "trackValTree_" + args.ptmode + "_" + cutstring + ".root"
-
-if args.infile:
-    infile = args.infile
-
+infile = args.infile
 print "Opening input file: " + infile
 
 f = ROOT.TFile(indir + infile)
 t = f.Get("TrackValTreeMaker/trackValTree")
 
-report_every = 100
-
+report_every = 1000
 if args.is_test_run:
-    max_event=10000
+    max_event=1000
 else:
     max_event = -1
 nEvt = t.GetEntries()
@@ -388,12 +376,8 @@ for region in eta_regions:
     efficiency_histograms["h_fakerate_pt_" + region] = fill_hist_ratio(recpt_hists["fake_pt_" + region], recpt_hists["reco_pt_" + region], "fake_rate_pt_" + region, binning = "log")
 
 #---------------------create outfile------------------------
-if args.infile:
-    outfile = "histograms/trackValHistograms_" + args.infile
-elif args.is_gsf:
-    outfile = "histograms/trackValHistograms" + args.ptmode + "_" + cutstring + "_GSF.root"
-else:
-    outfile = "histograms/trackValHistograms" + args.ptmode  + "_" + cutstring +  ".root"
+outfilename = (args.infile).split('/trackValTree_',1)[1]
+outfile = "histograms/trackValHistograms_" + outfilename
 
 print "Writing histograms to file: " + outfile
 o = ROOT.TFile(outfile,"recreate")
@@ -433,3 +417,4 @@ for nrhit in range(0,maxhit):
     h_sim_pt_byhit_trans[nrhit].Write()
 
 o.Close()
+

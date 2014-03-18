@@ -1,8 +1,10 @@
 import ROOT
+from collections import OrderedDict as dict
 
 def get_infilenames_by_params(parameters, ptmode):
     print "Opening input files for " + ptmode + " samples"
-    infiles = {}
+
+    infiles = dict()
 
     nr_maxChi2 = len(parameters["maxChi2"])
     nr_nSigma = len(parameters["nSigma"])

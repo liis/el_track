@@ -11,7 +11,8 @@ process.MessageLogger = cms.Service("MessageLogger",
 readFiles = cms.untracked.vstring()
 secFiles = cms.untracked.vstring() 
 source = cms.Source ("PoolSource",fileNames = readFiles)
-readFiles.extend( ['file:./aod.root'])
+#readFiles.extend( ['file:/hdfs/cms/store/user/liis/El_GSF_studies/Pt100/step2_10_1_dDh.root'])
+readFiles.extend( ['file:/hdfs/cms/store/user/liis/El_GSF_studies/test/SingleElMinusPt10_1_1_9Rd.root'])
 
 process.source = source
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
@@ -27,7 +28,6 @@ process.load("Configuration.StandardSequences.RawToDigi_cff")
 process.load("Configuration.EventContent.EventContent_cff")
 process.load("Configuration.StandardSequences.Reconstruction_cff")
 process.load("Configuration.StandardSequences.MagneticField_cff")
-
 
 
 maxCandDefault = 5
@@ -47,14 +47,70 @@ process.ElectronChi2.nSigma = cms.double( nSigma )
 
 ########################################################################
 
+from RecoLocalTracker.SiStripZeroSuppression.SiStripZeroSuppression_cfi import *
+from RecoPixelVertexing.Configuration.RecoPixelVertexing_cff import *
+from RecoEcal.Configuration.RecoEcal_cff import *
+from RecoLocalCalo.Configuration.hcalGlobalReco_cff import *
+
+
+process.load("SimG4Core.Application.g4SimHits_cfi")
+process.load("SimGeneral.MixingModule.mixNoPU_cfi")
+
+# Reconstruction geometry service
+#process.load("Geometry.CaloEventSetup.CaloGeometry_cff")
+# geometry (Only Ecal)
+#process.load("Geometry.EcalCommonData.EcalOnly_cfi")
+process.load("Geometry.CaloEventSetup.CaloGeometry_cff")
+process.load("Geometry.CaloEventSetup.EcalTrigTowerConstituents_cfi")
+process.load("Geometry.EcalMapping.EcalMapping_cfi")
+process.load("Geometry.EcalMapping.EcalMappingRecord_cfi")
+
+# use trivial ESProducer for tests
+#process.load("CalibCalorimetry.EcalTrivialCondModules.EcalTrivialCondRetriever_cfi")
+
+# ECAL 'slow' digitization sequence
+process.load("SimCalorimetry.Configuration.ecalDigiSequence_cff")
+
+#process.load("SimCalorimetry.Configuration.ecalDigiSequenceComplete_cff")
+#from SimCalorimetry.Configuration.ecalDigiSequence_cff import ecalDigiSequence
+
+
+process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService",
+                                                   moduleSeeds = cms.PSet(
+    g4SimHits = cms.untracked.uint32(9876),
+    simEcalUnsuppressedDigis = cms.untracked.uint32(12345)
+    )
+                                                   )
+
 
 # sequence for re-running gsfTracking over RECO
 process.myGsfReco = cms.Sequence(
-    process.siPixelRecHits*process.siStripMatchedRecHits* #make local hits
+    process.offlineBeamSpot+
+    process.siPixelDigis*process.siPixelClusters*
+    process.siStripDigis*process.siStripZeroSuppression*process.siStripClusters*
+    process.siPixelRecHits*
+    process.recopixelvertexing*
+   
+    process.siStripMatchedRecHits* #make local hits
     process.iterTracking*process.trackCollectionMerging*  #CTF iterative tracking
-    process.newCombinedSeeds* #together with EG Cluasters, input for ecalDriven seeds
-    process.electronSeeds*    #produced merged collection of TkDriven and Ecaldriven seeds
-    process.electronCkfTrackCandidates*process.electronGsfTracks #run electron tracking
+    process.newCombinedSeeds* #together with EG Clasters, input for ecalDriven seeds
+
+    process.g4SimHits*
+    process.mix*
+    process.ecalDigis*
+    process.ecalPreshowerDigis*
+#    process.ecalDigiSequence
+    process.ecalLocalRecoSequence* # contains process.ecalRecHit
+
+#    process.hbheprereco*
+#    process.hcalGlobalRecoSequence*
+    #process.hbhereco
+    
+#    process.particleFlowCluster
+    process.ecalClusters*
+    
+    process.electronSeeds    #produced merged collection of TkDriven and Ecaldriven seeds
+   # process.electronCkfTrackCandidates*process.electronGsfTracks #run electron tracking
     )
 ###############
 outdir = "out_tests/"
@@ -83,7 +139,7 @@ process.RECODEBUGoutput_step = cms.EndPath(process.RECODEBUGoutput)
 
 process.schedule = cms.Schedule(
       process.p,
-      process.RECODEBUGoutput_step
+ #     process.RECODEBUGoutput_step
 )
 
 

@@ -101,16 +101,22 @@ process.myGsfReco = cms.Sequence(
     process.ecalPreshowerDigis*
 #    process.ecalDigiSequence
     process.ecalLocalRecoSequence* # contains process.ecalRecHit
-
-#    process.hbheprereco*
-#    process.hcalGlobalRecoSequence*
-    #process.hbhereco
-    
-#    process.particleFlowCluster
     process.ecalClusters*
+
+    process.hcalDigis*
+
+    process.hbheprereco*
+    process.trackExtrapolator*
+#    process.hcalGlobalRecoSequence*
+    process.hbhereco*
+    process.hfreco*
+    process.horeco*    
+    process.particleFlowCluster*
+    process.towerMaker*
     
-    process.electronSeeds    #produced merged collection of TkDriven and Ecaldriven seeds
-   # process.electronCkfTrackCandidates*process.electronGsfTracks #run electron tracking
+    process.electronSeeds*    #produced merged collection of TkDriven and Ecaldriven seeds
+    process.electronCkfTrackCandidates*
+    process.electronGsfTracks #run electron tracking
     )
 ###############
 outdir = "out_tests/"
@@ -139,7 +145,7 @@ process.RECODEBUGoutput_step = cms.EndPath(process.RECODEBUGoutput)
 
 process.schedule = cms.Schedule(
       process.p,
- #     process.RECODEBUGoutput_step
+      process.RECODEBUGoutput_step
 )
 
 

@@ -100,8 +100,7 @@ def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  
 
             if( region[:3]=="Pt1"):
                 hist.GetXaxis().SetTitle("#eta")
-            elif( region[:6]=="FlatPt"):
-                hist.GetXaxis().SetTitle("p_{T}")
+            elif( xtitle=="p_{T}"):
                 hist.SetAxisRange(1., 200, 'x')
 
             if not xtitle == "none":

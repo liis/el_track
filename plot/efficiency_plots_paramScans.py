@@ -25,7 +25,7 @@ parameters_maxChi2 = {
     "maxChi2": [10, 30, 50, 100, 300, 2000],
     "nSigma": [3],
     "maxCand": [5]
-    }
+     }
 
 parameters_nSigma = {
     "maxChi2": [2000],

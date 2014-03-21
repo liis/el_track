@@ -18,25 +18,25 @@ is_gsf = 0
 parameters_maxCand = {
     "maxChi2": [2000],
     "nSigma": [3],
-    "maxCand": [3, 5, 6, 7],
+    "maxCand": [3, 4, 5, 6, 7],
     } #consider all combinations of parameters
 
 parameters_maxChi2 = {
-    "maxChi2": [50, 100, 300, 2000],
+    "maxChi2": [10, 30, 50, 100, 300, 2000],
     "nSigma": [3],
     "maxCand": [5]
     }
 
 parameters_nSigma = {
     "maxChi2": [2000],
-    "nSigma": [2, 3, 4, 5],
+    "nSigma": [1, 2, 3, 4, 5],
     "maxCand": [5],
     }
 
 parameter_sets = [
-#    parameters_maxCand, 
+    parameters_maxCand, 
     parameters_maxChi2, 
-#    parameters_nSigma
+    parameters_nSigma
     ]
 
 for parameters in parameter_sets:
@@ -50,24 +50,25 @@ for parameters in parameter_sets:
     infiles_flatPt = load_input_files(indir, infilenames_flatPt)
 
 ##-------------- Group histograms wrt. Pt regions (Pt10, Pt100)--------------
+
     from collections import OrderedDict as dict
     fake_eta = {}
-    fake_eta["Pt10"] = {}
-    fake_eta["Pt100"] = {}
-    fake_eta["FlatPt"] = {}
+    fake_eta["Pt10"] = dict()
+    fake_eta["Pt100"] = dict()
+#    fake_eta["FlatPt"] = dict()
 
     eff_eta = {}
-    eff_eta["Pt10"] = {}
-    eff_eta["Pt100"] = {}
-    eff_eta["FlatPt"] = {}
+    eff_eta["Pt10"] = dict()
+    eff_eta["Pt100"] = dict()
+#    eff_eta["FlatPt"] = dict()
 
     eff_pt = {}
     fake_pt = {}
     eta_regions = ["barrel", "endcap", "trans"]
 
     for eta_region in eta_regions:
-        eff_pt["FlatPt_" + eta_region] = {}
-        fake_pt["FlatPt_" + eta_region] = {}
+        eff_pt["FlatPt_" + eta_region] = dict()
+        fake_pt["FlatPt_" + eta_region] = dict()
     
     for cutstring in infiles_pt10:
         eff_eta["Pt10"][cutstring] = infiles_pt10[cutstring].Get("eff_eta")
@@ -83,11 +84,10 @@ for parameters in parameter_sets:
 
     print "Plotting efficiencies and fake rates"
 
-    print eff_eta["Pt10"].values()
-
     for scan in parameters:
         if len(parameters[scan]) > 1:
             sel_str = scan + "Scan"
+
 
     draw_and_save_eff(eff_eta["Pt10"], "eta", "eff", is_gsf=False, label=sel_str+"_Pt10", leg_pos="down_right", title="el. p_{T} = 10")
     draw_and_save_eff(fake_eta["Pt10"], "eta", "fake", is_gsf=False, label=sel_str+"_Pt10", leg_pos="up_right", title="el. p_{T} = 10")
@@ -96,8 +96,8 @@ for parameters in parameter_sets:
     draw_and_save_eff(fake_eta["Pt100"], "eta", "fake", is_gsf=False, label=sel_str+"_Pt100", leg_pos="up_right", title="el. p_{T} = 100")
 
     for eta_region in eta_regions:
-        draw_and_save_eff(eff_pt["FlatPt_" + eta_region], "pt", "eff", is_gsf=False, label=sel_str+"_FlatPt_"+eta_region, leg_pos="down_right", title="barrel el.")
-        draw_and_save_eff(fake_pt["FlatPt_" + eta_region], "pt", "fake", is_gsf=False, label=sel_str+"_FlatPt_"+eta_region, leg_pos="up_right", title="barrel el.")
+        draw_and_save_eff(eff_pt["FlatPt_" + eta_region], "pt", "eff", is_gsf=False, label=sel_str+"_FlatPt_"+eta_region, leg_pos="down_right", title=eta_region + " el.")
+        draw_and_save_eff(fake_pt["FlatPt_" + eta_region], "pt", "fake", is_gsf=False, label=sel_str+"_FlatPt_"+eta_region, leg_pos="up_right", title=eta_region + " el.")
 
 #draw_efficiency_histograms(eff_eta["Pt10"].values(), xtitle="#eta", ytitle="Efficiency", ymax = 1.)
 

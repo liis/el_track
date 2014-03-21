@@ -1,4 +1,5 @@
 import ROOT
+from collections import OrderedDict as dict
 
 infilenames_eta = {
     "Pt100": "trackValHistograms_trackValTree_Pt100_maxCand_5_maxChi2_2000_nSigma_3.root",
@@ -27,7 +28,7 @@ def load_input_files(indir, infilenames):
     """
     load input files. give dir path and dictionary of filenames as input
     """
-    infiles = {}
+    infiles = dict()
 
     for region, filename in infilenames.iteritems():
         inpath = indir + filename

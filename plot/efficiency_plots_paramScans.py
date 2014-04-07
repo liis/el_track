@@ -34,9 +34,9 @@ parameters_nSigma = {
     }
 
 parameter_sets = [
-    parameters_maxCand, 
+#    parameters_maxCand, 
     parameters_maxChi2, 
-    parameters_nSigma
+#    parameters_nSigma
     ]
 
 for parameters in parameter_sets:
@@ -44,10 +44,12 @@ for parameters in parameter_sets:
     infilenames_pt10 = get_infilenames_by_params(parameters, "Pt10")
     infilenames_pt100 = get_infilenames_by_params(parameters, "Pt100")
     infilenames_flatPt = get_infilenames_by_params(parameters, "FlatPt")
+    infilenames_Zee = get_infilenames_by_params(parameters, "Zee")
 
     infiles_pt10 = load_input_files(indir, infilenames_pt10)
     infiles_pt100 = load_input_files(indir, infilenames_pt100)
     infiles_flatPt = load_input_files(indir, infilenames_flatPt)
+    infiles_Zee = load_input_files(indir, infilenames_Zee)
 
 ##-------------- Group histograms wrt. Pt regions (Pt10, Pt100)--------------
 
@@ -55,11 +57,13 @@ for parameters in parameter_sets:
     fake_eta = {}
     fake_eta["Pt10"] = dict()
     fake_eta["Pt100"] = dict()
+    fake_eta["Zee"] = dict()
 #    fake_eta["FlatPt"] = dict()
 
     eff_eta = {}
     eff_eta["Pt10"] = dict()
     eff_eta["Pt100"] = dict()
+    eff_eta["Zee"] = dict()
 #    eff_eta["FlatPt"] = dict()
 
     eff_pt = {}
@@ -69,6 +73,9 @@ for parameters in parameter_sets:
     for eta_region in eta_regions:
         eff_pt["FlatPt_" + eta_region] = dict()
         fake_pt["FlatPt_" + eta_region] = dict()
+        eff_pt["Zee_" + eta_region] = dict()
+        fake_pt["Zee_" + eta_region] = dict()
+
     
     for cutstring in infiles_pt10:
         eff_eta["Pt10"][cutstring] = infiles_pt10[cutstring].Get("eff_eta")
@@ -77,9 +84,15 @@ for parameters in parameter_sets:
         eff_eta["Pt100"][cutstring] = infiles_pt100[cutstring].Get("eff_eta")
         fake_eta["Pt100"][cutstring] = infiles_pt100[cutstring].Get("fake_rate_eta")
 
+        eff_eta["Zee"][cutstring] = infiles_Zee[cutstring].Get("eff_eta")
+        fake_eta["Zee"][cutstring] = infiles_Zee[cutstring].Get("fake_rate_eta")
+
         for eta_region in eta_regions:
             eff_pt["FlatPt_" + eta_region][cutstring] = infiles_flatPt[cutstring].Get("eff_pt_" + eta_region)
             fake_pt["FlatPt_" + eta_region][cutstring] = infiles_flatPt[cutstring].Get("fake_pt_" + eta_region)
+
+            eff_pt["Zee_" + eta_region][cutstring] = infiles_Zee[cutstring].Get("eff_pt_"+eta_region)
+            fake_pt["Zee_" + eta_region][cutstring] = infiles_Zee[cutstring].Get("fake_pt_"+eta_region)
 
 
     print "Plotting efficiencies and fake rates"
@@ -95,9 +108,15 @@ for parameters in parameter_sets:
     draw_and_save_eff(eff_eta["Pt100"], "eta", "eff", is_gsf=False, label=sel_str+"_Pt100", leg_pos="down_right", title="el. p_{T} = 100")
     draw_and_save_eff(fake_eta["Pt100"], "eta", "fake", is_gsf=False, label=sel_str+"_Pt100", leg_pos="up_right", title="el. p_{T} = 100")
 
+    draw_and_save_eff(eff_eta["Zee"], "eta", "eff", is_gsf=False, label=sel_str+"_Zee", leg_pos="down_right", title="Zee")
+    draw_and_save_eff(fake_eta["Zee"], "eta", "fake", is_gsf=False, label=sel_str+"_Zee", leg_pos="up_right", title="Zee")
+
     for eta_region in eta_regions:
         draw_and_save_eff(eff_pt["FlatPt_" + eta_region], "pt", "eff", is_gsf=False, label=sel_str+"_FlatPt_"+eta_region, leg_pos="down_right", title=eta_region + " el.")
         draw_and_save_eff(fake_pt["FlatPt_" + eta_region], "pt", "fake", is_gsf=False, label=sel_str+"_FlatPt_"+eta_region, leg_pos="up_right", title=eta_region + " el.")
+
+        draw_and_save_eff(eff_pt["Zee_" + eta_region], "pt", "eff", is_gsf=False, label=sel_str+"_Zee_"+eta_region, leg_pos="down_right", title=eta_region + " el.")
+        draw_and_save_eff(fake_pt["Zee_" + eta_region], "pt", "fake", is_gsf=False, label=sel_str+"_Zee_"+eta_region, leg_pos="up_right", title=eta_region + " el.")
 
 #draw_efficiency_histograms(eff_eta["Pt10"].values(), xtitle="#eta", ytitle="Efficiency", ymax = 1.)
 

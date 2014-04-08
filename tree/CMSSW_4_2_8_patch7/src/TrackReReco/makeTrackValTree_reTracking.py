@@ -17,10 +17,11 @@ source = cms.Source ("PoolSource",fileNames = readFiles)
 if not runDigi:
     readFiles.extend( ['file:/hdfs/cms/store/user/liis/El_GSF_studies/Pt10/step2_9_1_DD1.root'])
 else:
-    readFiles.extend( ['file:/hdfs/cms/store/user/liis/El_GSF_studies/test/SingleElMinusPt10_1_1_9Rd.root']) #digi
+    readFiles.extend( ['file:/hdfs/cms/store/relval/CMSSW_4_2_9_HLT1_patch1/RelValZEE/GEN-SIM-DIGI-RAW-HLTDEBUG/START42_V14B_RelVal_ZEErv_20Jun2013-v1/00000/FE45A2C2-E3D9-E211-8BFF-00261894394D.root'])
+#    readFiles.extend( ['file:/hdfs/cms/store/user/liis/El_GSF_studies/test/SingleElMinusPt10_1_1_9Rd.root']) #digi
 
 process.source = source
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(150) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
 ### conditions
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
@@ -73,7 +74,7 @@ process.load("Geometry.EcalMapping.EcalMappingRecord_cfi")
 process.load("SimCalorimetry.Configuration.ecalDigiSequence_cff")
 
 # sequence for re-running gsfTracking over RECO
-process.myGsfReco = cms.Sequence(
+process.myGsfReco_base = cms.Sequence(
     process.siPixelRecHits*process.siStripMatchedRecHits* #make local hits
     process.iterTracking*process.trackCollectionMerging*  #CTF iterative tracking
     process.newCombinedSeeds* #together with EG Cluasters, input for ecalDriven seeds
@@ -81,45 +82,34 @@ process.myGsfReco = cms.Sequence(
     process.electronCkfTrackCandidates*process.electronGsfTracks #run electron tracking
     )
 ###############
-# sequence for re-running gsfTracking over GEN-SIM-DIGI
+
+
+process.additional_digi = cms.Sequence( # if running on digi input
+        process.siPixelDigis*
+        process.siStripDigis*
+        process.ecalDigis*
+        process.ecalPreshowerDigis*
+        process.hcalDigis*
+        process.muonDTDigis*
+        process.muonCSCDigis*
+        process.muonRPCDigis*
+        process.castorDigis
+        )
+
+
 process.myGsfReco_forDigi = cms.Sequence(
-    process.offlineBeamSpot+
-    process.siPixelDigis*process.siPixelClusters*
-    process.siStripDigis*process.siStripZeroSuppression*process.siStripClusters*
-    process.siPixelRecHits*
-    process.recopixelvertexing*
-    
-    process.siStripMatchedRecHits* #make local hits
-    process.iterTracking*process.trackCollectionMerging*  #CTF iterative tracking
-    process.newCombinedSeeds* #together with EG Clasters, input for ecalDriven seeds
-    
-    process.g4SimHits*
-    process.mix*
-    process.ecalDigis*
-    process.ecalPreshowerDigis*
-    #    process.ecalDigiSequence
-    process.ecalLocalRecoSequence* # contains process.ecalRecHit
-    process.ecalClusters*
-    
-    process.hcalDigis*
-    
-    process.hbheprereco*
-    process.trackExtrapolator*
-    #    process.hcalGlobalRecoSequence*
-    process.hbhereco*
-    process.hfreco*
-    process.horeco*
-    process.particleFlowCluster*
-    process.towerMaker*
-    
-    process.electronSeeds*    #produced merged collection of TkDriven and Ecaldriven seeds
-    process.electronCkfTrackCandidates*
-    process.electronGsfTracks #run electron tracking
+        process.additional_digi *
+        process.localreco *
+        process.globalreco *
+#        process.highlevelreco *
+        process.myGsfReco_base 
     )
-###########################
+
 
 if runDigi:
     process.myGsfReco = process.myGsfReco_forDigi
+else:
+    process.myGsfReco = process.myGsfReco_base
 
 outdir = "out_tests/"
 outfilename = outdir + "trackValTree_reTrk_maxCand_" + str(maxCand) + "_MaxChi2_" + str(maxChi2) + "_nSigma_" + str(nSigma) + ".root"
@@ -193,7 +183,6 @@ process.printEventContent = cms.EDAnalyzer("EventContentAnalyzer")
 # paths
 process.p = cms.Path(
     process.myGsfReco *
-#    process.myGsfReco_forDigi *
     process.ValidationSelectors *
     process.elGsfTracksWithQuality *
 #    process.printEventContent *

@@ -71,8 +71,14 @@
 #include "DataFormats/Common/interface/Ref.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingVertex.h" //for digi->reco check
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingVertexContainer.h"
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupMixingContent.h"
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h" 
+
 #include "TTree.h"
 #include "TMath.h"
+#include "TLorentzVector.h"
 
 //
 // class declaration
@@ -536,6 +542,70 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     track_label = track_label_gsf_;
   else
     track_label = track_label_;
+
+  //---------------------------------- test digi->reco step -------------------------------------
+  /*
+  edm::InputTag PileupSrc_("addPileupInfo");
+  edm::Handle<std::vector< PileupSummaryInfo > >  PupInfo;
+  iEvent.getByLabel(PileupSrc_, PupInfo);
+
+  std::vector<PileupSummaryInfo>::const_iterator PVI;
+
+   for(PVI = PupInfo->begin(); PVI != PupInfo->end(); ++PVI) {
+
+    std::cout << " Pileup Information: bunchXing, nvtx: " << PVI->getBunchCrossing() << " " << PVI->getPU_NumInteractions() << std::endl;
+    std::cout<< " Num interaxtions = " <<PVI->getTrueNumInteractions() << std::endl;
+
+  }
+
+
+  edm::Handle<TrackingVertexCollection> TVCollection;
+  iEvent.getByLabel("mergedtruth", "MergedTrackTruth", TVCollection);
+  const TrackingVertexCollection tVC = *(TVCollection.product());
+
+  std::cout<<"tVC.size() = "<<tVC.size()<<std::endl;
+
+
+  for( TrackingVertexCollection::size_type i=0; i<tVC.size(); i++){
+    //  for( unsigned int i=0; i<tVC.size(); i++){
+   
+    std::cout<<"Starting vertex i = "<<i<<std::endl;
+    TrackingVertexRef tvr(TVCollection, i);
+    TrackingVertex* tv=const_cast<TrackingVertex*>(tvr.get());
+
+    std::cout<<"bunch crossing = "<<tv->eventId().bunchCrossing()<<std::endl;
+    std::cout<<"Vertex evt ID = "<<tv->eventId().event()<<std::endl;
+    std::cout<<"raw ID = "<<tv->eventId().rawId()<<std::endl;
+    std::cout<<"vertex position = "<< sqrt( pow((tv->position()).X(), 2) + pow((tv->position()).Y(), 2) + pow((tv->position()).Z(), 2))<<std::endl; 
+    // 
+//     std::cout<<"position.P() = "<<tv->position().P()<<std::endl;
+// 
+//     //
+ 
+  }
+  
+  edm::Handle< PileupMixingContent > MixingPileup;  // Get True pileup information from MixingModule
+  iEvent.getByLabel("mix", MixingPileup);
+
+  const PileupMixingContent* MixInfo = MixingPileup.product();
+
+  if(MixInfo) {  // extract information - way easier than counting vertices
+    const std::vector<int> bunchCrossing = MixInfo->getMix_bunchCrossing();
+    const std::vector<int> interactions = MixInfo->getMix_Ninteractions();
+    const std::vector<float> TrueInteractions = MixInfo->getMix_TrueInteractions();
+
+    std::cout<<"nr bunchcrossings = "<<(int)bunchCrossing.size()<<std::endl;
+    std::cout<<"interactions.size()"<<(int)interactions.size()<<std::endl;
+    std::cout<<"trueInteractions.size()"<<(int)TrueInteractions.size()<<std::endl;
+
+    for(int ib=0; ib<(int)bunchCrossing.size(); ++ib){
+      std::cout<<"nr interactions = "<<interactions[ib]<<std::endl;
+      std::cout<<"nr true interactions = "<<TrueInteractions[ib]<<std::endl;
+    }
+  }
+  
+  */
+  //---------------------------------------------------------------------------------------------
 
   edm::Handle<edm::View<reco::Track> > trackCollection; //reconstructed tracks
   iEvent.getByLabel(track_label, trackCollection);

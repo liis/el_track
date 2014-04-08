@@ -30,6 +30,7 @@ parameters_maxChi2 = {
 parameters_nSigma = {
     "maxChi2": [2000],
     "nSigma": [1, 2, 3, 4, 5],
+    "nSigma": [2, 3, 4, 5],
     "maxCand": [5],
     }
 
@@ -38,6 +39,14 @@ parameter_sets = [
     parameters_maxChi2, 
 #    parameters_nSigma
     ]
+
+#input_files = [
+#    "Pt10",
+#    "Pt100",
+#    "FlatPt",
+#    "Zee",
+#]
+
 
 for parameters in parameter_sets:
 
@@ -58,33 +67,44 @@ for parameters in parameter_sets:
     fake_eta["Pt10"] = dict()
     fake_eta["Pt100"] = dict()
     fake_eta["Zee"] = dict()
-#    fake_eta["FlatPt"] = dict()
 
     eff_eta = {}
     eff_eta["Pt10"] = dict()
     eff_eta["Pt100"] = dict()
     eff_eta["Zee"] = dict()
-#    eff_eta["FlatPt"] = dict()
 
+    eff_eta_sim = {}
+    eff_eta_sim["Pt10"] = dict()
+    eff_eta_sim["Pt100"] = dict()
+    eff_eta_sim["Zee"] = dict()
+
+    
     eff_pt = {}
+    eff_pt_sim = {}
     fake_pt = {}
     eta_regions = ["barrel", "endcap", "trans"]
 
     for eta_region in eta_regions:
+        eff_pt_sim["FlatPt_" + eta_region] = dict()
         eff_pt["FlatPt_" + eta_region] = dict()
         fake_pt["FlatPt_" + eta_region] = dict()
+
+        eff_pt_sim["Zee_" + eta_region] = dict()
         eff_pt["Zee_" + eta_region] = dict()
         fake_pt["Zee_" + eta_region] = dict()
 
     
     for cutstring in infiles_pt10:
         eff_eta["Pt10"][cutstring] = infiles_pt10[cutstring].Get("eff_eta")
+        eff_eta_sim["Pt10"][cutstring] = infiles_pt10[cutstring].Get("eff_eta_simMatch_sel")
         fake_eta["Pt10"][cutstring] = infiles_pt10[cutstring].Get("fake_rate_eta")
 
         eff_eta["Pt100"][cutstring] = infiles_pt100[cutstring].Get("eff_eta")
+        eff_eta_sim["Pt100"][cutstring] = infiles_pt100[cutstring].Get("eff_eta_simMatch_sel")
         fake_eta["Pt100"][cutstring] = infiles_pt100[cutstring].Get("fake_rate_eta")
 
         eff_eta["Zee"][cutstring] = infiles_Zee[cutstring].Get("eff_eta")
+        eff_eta_sim["Zee"][cutstring] = infiles_Zee[cutstring].Get("eff_eta_simMatch_sel")
         fake_eta["Zee"][cutstring] = infiles_Zee[cutstring].Get("fake_rate_eta")
 
         for eta_region in eta_regions:
@@ -103,16 +123,20 @@ for parameters in parameter_sets:
 
 
     draw_and_save_eff(eff_eta["Pt10"], "eta", "eff", is_gsf=False, label=sel_str+"_Pt10", leg_pos="down_right", title="el. p_{T} = 10")
+    draw_and_save_eff(eff_eta_sim["Pt10"], "eta", "eff", is_gsf=False, label=sel_str+"_sim_Pt10", leg_pos="down_right", title="sim, el. p_{T} = 10")
     draw_and_save_eff(fake_eta["Pt10"], "eta", "fake", is_gsf=False, label=sel_str+"_Pt10", leg_pos="up_right", title="el. p_{T} = 10")
 
     draw_and_save_eff(eff_eta["Pt100"], "eta", "eff", is_gsf=False, label=sel_str+"_Pt100", leg_pos="down_right", title="el. p_{T} = 100")
+    draw_and_save_eff(eff_eta_sim["Pt100"], "eta", "eff", is_gsf=False, label=sel_str+"_sim_Pt100", leg_pos="down_right", title="sim, el. p_{T} = 100")
     draw_and_save_eff(fake_eta["Pt100"], "eta", "fake", is_gsf=False, label=sel_str+"_Pt100", leg_pos="up_right", title="el. p_{T} = 100")
 
     draw_and_save_eff(eff_eta["Zee"], "eta", "eff", is_gsf=False, label=sel_str+"_Zee", leg_pos="down_right", title="Zee")
+    draw_and_save_eff(eff_eta_sim["Zee"], "eta", "eff", is_gsf=False, label=sel_str+"_sim_Zee", leg_pos="down_right", title="sim, Zee")
     draw_and_save_eff(fake_eta["Zee"], "eta", "fake", is_gsf=False, label=sel_str+"_Zee", leg_pos="up_right", title="Zee")
 
     for eta_region in eta_regions:
         draw_and_save_eff(eff_pt["FlatPt_" + eta_region], "pt", "eff", is_gsf=False, label=sel_str+"_FlatPt_"+eta_region, leg_pos="down_right", title=eta_region + " el.")
+        draw_and_save_eff(eff_pt_sim["FlatPt_" + eta_region], "pt", "eff", is_gsf=False, label=sel_str+"_FlatPt_"+eta_region, leg_pos="down_right", title=eta_region + " el.")
         draw_and_save_eff(fake_pt["FlatPt_" + eta_region], "pt", "fake", is_gsf=False, label=sel_str+"_FlatPt_"+eta_region, leg_pos="up_right", title=eta_region + " el.")
 
         draw_and_save_eff(eff_pt["Zee_" + eta_region], "pt", "eff", is_gsf=False, label=sel_str+"_Zee_"+eta_region, leg_pos="down_right", title=eta_region + " el.")

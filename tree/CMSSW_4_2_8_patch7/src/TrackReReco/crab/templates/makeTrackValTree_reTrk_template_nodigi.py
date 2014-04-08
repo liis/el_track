@@ -2,8 +2,6 @@ import FWCore.ParameterSet.Config as cms
 
 process = cms.Process("reGsfTracking")
 
-runDigi = 1
-
 # message logger
 process.MessageLogger = cms.Service("MessageLogger",
      default = cms.untracked.PSet( limit = cms.untracked.int32(-1) )
@@ -13,15 +11,10 @@ process.MessageLogger = cms.Service("MessageLogger",
 readFiles = cms.untracked.vstring()
 secFiles = cms.untracked.vstring() 
 source = cms.Source ("PoolSource",fileNames = readFiles)
-
-if not runDigi:
-    readFiles.extend( ['file:/hdfs/cms/store/user/liis/El_GSF_studies/Pt10/step2_9_1_DD1.root'])
-else:
-    readFiles.extend( ['file:/hdfs/cms/store/relval/CMSSW_4_2_9_HLT1_patch1/RelValZEE/GEN-SIM-DIGI-RAW-HLTDEBUG/START42_V14B_RelVal_ZEErv_20Jun2013-v1/00000/FE45A2C2-E3D9-E211-8BFF-00261894394D.root'])
- #   readFiles.extend( ['file:/hdfs/cms/store/user/liis/El_GSF_studies/test/SingleElMinusPt10_1_1_9Rd.root']) #digi
+readFiles.extend( ['file:./aod.root'])
 
 process.source = source
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
 
 ### conditions
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
@@ -35,7 +28,7 @@ process.load("Configuration.EventContent.EventContent_cff")
 process.load("Configuration.StandardSequences.Reconstruction_cff")
 process.load("Configuration.StandardSequences.MagneticField_cff")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(150) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 process.MessageLogger.cerr.FwkReport.reportEvery = 1
 
 maxCandDefault = 5
@@ -55,79 +48,36 @@ process.ElectronChi2.nSigma = cms.double( nSigma )
 
 ########################################################################
 
-process.load("SimG4Core.Application.g4SimHits_cfi")
-process.load("SimGeneral.MixingModule.mixNoPU_cfi")
-
-# Reconstruction geometry service
-#process.load("Geometry.CaloEventSetup.CaloGeometry_cff")
-# geometry (Only Ecal)
-#process.load("Geometry.EcalCommonData.EcalOnly_cfi")
-process.load("Geometry.CaloEventSetup.CaloGeometry_cff")
-process.load("Geometry.CaloEventSetup.EcalTrigTowerConstituents_cfi")
-process.load("Geometry.EcalMapping.EcalMapping_cfi")
-process.load("Geometry.EcalMapping.EcalMappingRecord_cfi")
-
-# use trivial ESProducer for tests
-#process.load("CalibCalorimetry.EcalTrivialCondModules.EcalTrivialCondRetriever_cfi")
-
-# ECAL 'slow' digitization sequence
-process.load("SimCalorimetry.Configuration.ecalDigiSequence_cff")
-
 # sequence for re-running gsfTracking over RECO
 process.myGsfReco = cms.Sequence(
     process.siPixelRecHits*process.siStripMatchedRecHits* #make local hits
     process.iterTracking*process.trackCollectionMerging*  #CTF iterative tracking
-    process.newCombinedSeeds* #together with EG Cluasters, input for ecalDriven seeds
+    process.newCombinedSeeds* #together with EG Clusters, input for ecalDriven seeds
     process.electronSeeds*    #produced merged collection of TkDriven and Ecaldriven seeds
     process.electronCkfTrackCandidates*process.electronGsfTracks #run electron tracking
     )
 ###############
-# sequence for re-running gsfTracking over GEN-SIM-DIGI
-process.myGsfReco_forDigi = cms.Sequence(
-    process.offlineBeamSpot+
-    process.siPixelDigis*process.siPixelClusters*
-    process.siStripDigis*process.siStripZeroSuppression*process.siStripClusters*
-    process.siPixelRecHits*
-    process.recopixelvertexing*
-    
-    process.siStripMatchedRecHits* #make local hits
-    process.iterTracking*process.trackCollectionMerging*  #CTF iterative tracking
-    process.newCombinedSeeds* #together with EG Clasters, input for ecalDriven seeds
-    
-    process.g4SimHits*
-    process.mix*
-    process.ecalDigis*
-    process.ecalPreshowerDigis*
-    #    process.ecalDigiSequence
-    process.ecalLocalRecoSequence* # contains process.ecalRecHit
-    process.ecalClusters*
-    
-    process.hcalDigis*
-    
-    process.hbheprereco*
-    process.trackExtrapolator*
-    #    process.hcalGlobalRecoSequence*
-    process.hbhereco*
-    process.hfreco*
-    process.horeco*
-    process.particleFlowCluster*
-    process.towerMaker*
-    
-    process.electronSeeds*    #produced merged collection of TkDriven and Ecaldriven seeds
-    process.electronCkfTrackCandidates*
-    process.electronGsfTracks #run electron tracking
-    )
-###########################
 
-if runDigi:
-    process.myGsfReco = process.myGsfReco_forDigi
-
+#outfilename = "trackValTree_reTrk_maxCand_" + str(maxCand) + "_maxChi2_" + str(maxChi2) + "_nSigma_" + str(nSigma) + ".root"
+#print "Writing output to file: " + outfilename
 
 process.TFileService = cms.Service("TFileService", # if save 
                                    fileName = cms.string("trackValTree_reTrk.root")
                                    )
 
 
+#process.RECODEBUGoutput = cms.OutputModule("PoolOutputModule", # if save reco output
+#    splitLevel = cms.untracked.int32(0),
+#    eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
+#    outputCommands = process.RECODEBUGEventContent.outputCommands,
+#    fileName = cms.untracked.string( outfilename ),
+#    dataset = cms.untracked.PSet(
+#        filterName = cms.untracked.string(''),
+#        dataTier = cms.untracked.string('GEN-SIM-RECODEBUG')
+#    )
+#)
+
+#process.RECODEBUGoutput.outputCommands.extend(cms.untracked.vstring('keep *_elGsfTracksWithQuality_*_*'))
 #####################################
 
 process.load("SimTracker.TrackAssociation.TrackAssociatorByHits_cfi")
@@ -142,10 +92,6 @@ process.cutsRecoTracksHp = process.recoTrackSelector.clone()
 process.cutsRecoTracksHp.quality = cms.vstring("highPurity")
 process.cutsRecoTracksHp.minAbsEta = cms.double(0.0)
 process.cutsRecoTracksHp.maxAbsEta = cms.double(2.5)
-
-process.ValidationSelectors = cms.Sequence(
-    process.cutsRecoTracksHp
-    )
 
 process.elGsfTracksWithQuality = cms.EDProducer("AnalyticalGsfTrackSelector",
                                                 max_d0 = cms.double(100.0),
@@ -174,14 +120,17 @@ process.elGsfTracksWithQuality = cms.EDProducer("AnalyticalGsfTrackSelector",
                                                 )
 process.elGsfTracksWithQuality.src = cms.InputTag("electronGsfTracks")
 
-process.printEventContent = cms.EDAnalyzer("EventContentAnalyzer")
+
+process.ValidationSelectors = cms.Sequence(
+    process.cutsRecoTracksHp
+    )
+
 
 # paths
 process.p = cms.Path(
     process.myGsfReco *
     process.ValidationSelectors *
     process.elGsfTracksWithQuality *
-#    process.printEventContent *
     process.TrackValTreeMaker
 )
 
@@ -189,6 +138,7 @@ process.p = cms.Path(
 
 process.schedule = cms.Schedule(
       process.p
+ #     process.RECODEBUGoutput_step
 )
 
 

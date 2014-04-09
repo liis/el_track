@@ -44,7 +44,7 @@ input_files = [
     "Pt10",
     "Pt100",
     "FlatPt",
-#    "Zee"
+    "Zee"
 ]
 
 infilenames = {} # filenames
@@ -85,7 +85,7 @@ for parameters in parameter_sets:
 
                 for cutstring in infiles[input_file]:
                     eff_pt[input_file + "_" + eta_region][cutstring] = infiles[input_file][cutstring].Get("eff_pt_" + eta_region)
-                    fake_pt[input_file + "_" + eta_region][cutstring] = infiles[input_file][cutstring].Get("fake_pt_" + eta_region)      
+                    fake_pt[input_file + "_" + eta_region][cutstring] = infiles[input_file][cutstring].Get("fake_rate_pt_" + eta_region)      
 
 
 #----------------------------------- plot and save output ---------------------------------------------------
@@ -99,11 +99,12 @@ for parameters in parameter_sets:
 
     for input_file in input_files:
         if input_file != "FlatPt":
-            draw_and_save_eff(eff_eta[input_file], "eta", "eff", is_gsf=False, label=sel_str+"_" + input_file, leg_pos="down_right", title="el. p_{T} = 10")
-            draw_and_save_eff(eff_eta_sim[input_file], "eta", "eff", is_gsf=False, label="sim_" + sel_str + "_" + input_file, leg_pos="down_right", title="sim, el. p_{T} = 10")
-            draw_and_save_eff(fake_eta[input_file], "eta", "fake", is_gsf=False, label=sel_str+"_" + input_file, leg_pos="up_right", title="el. p_{T} = 10")
+            draw_and_save_eff(eff_eta[input_file], "eta", "eff", is_gsf=False, label=sel_str+"_" + input_file, leg_pos="down_right", title=input_file)
+            draw_and_save_eff(eff_eta_sim[input_file], "eta", "eff", is_gsf=False, label="sim_" + sel_str + "_" + input_file, leg_pos="down_right", title="sim, " + input_file)
+            draw_and_save_eff(fake_eta[input_file], "eta", "fake", is_gsf=False, label=sel_str+"_" + input_file, leg_pos="up_right", title=input_file)
 
         if input_file != "Pt10" and input_file != "Pt100":
             for eta_region in eta_regions:
-                draw_and_save_eff(eff_pt[input_file + "_" + eta_region], "pt", "eff", is_gsf=False, label=sel_str+"_" + input_file + "_" + eta_region, leg_pos="down_right", title=eta_region + " el.")
+                draw_and_save_eff(eff_pt[input_file + "_" + eta_region], "pt", "eff", is_gsf=False, label=sel_str+"_" + input_file + "_" + eta_region, leg_pos="down_right", title=eta_region + " el. , " + input_file)
+                draw_and_save_eff(fake_pt[input_file + "_" + eta_region], "pt", "fake", is_gsf=False, label=sel_str+"_" + input_file + "_" + eta_region, leg_pos="up_right", title=eta_region + " el." + input_file)
 

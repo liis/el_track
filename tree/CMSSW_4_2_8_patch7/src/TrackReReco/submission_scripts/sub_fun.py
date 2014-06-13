@@ -1,12 +1,11 @@
-import re
+import re, ntpath
 
 from odict import OrderedDict as dict
 tracking_cfg_parameters = dict()
 
-tracking_cfg_parameters["maxCand"] = [5, 3, 4, 6, 7 ]
-tracking_cfg_parameters["maxChi2"] = [2000, 2000, 2000, 2000, 2000 ]
-tracking_cfg_parameters["nSigma"] = [3, 3, 3, 3, 3 ]
-
+tracking_cfg_parameters["maxCand"] = [5, 5, 5, 5, 5, 5 ]
+tracking_cfg_parameters["maxChi2"] = [10, 30, 50, 100, 300, 2000]
+tracking_cfg_parameters["nSigma"] = [3, 3, 3, 3, 3, 3 ]
 
 datasetnames = {
 #    "FlatPt": "/SingleElMinusFlatLogPt_CMSSW_4_2_8-START42_V12_GEN-SIM-DIGI-RAW-HLTDEBUG/mangano-CMSSW_4_2_8-START42_V12_GEN-SIM-RECO-v3-8de1ffbdb519f9edbafc5606a1926f13/USER",
@@ -42,7 +41,7 @@ def create_crab_cfg_from_template(template, varstr, dataset, outdir = ""):
     out_name = outdir + "crab_" + varstr + "_" + dataset + ".cfg"
     write_outfile(input, out_name)
 
-def create_cmssw_cfg_from_template(template, varstr, outdir = ""):
+def create_cmssw_cfg_from_template(template, varstr, outdir = "", mode = "batch", dataset = "", infiles = []):
     """
     template -- template file name
     varstr -- string of variables and their values, separated by _
@@ -54,13 +53,34 @@ def create_cmssw_cfg_from_template(template, varstr, outdir = ""):
     input = input.replace("MAXCHI2", varstr.rsplit("maxChi2_")[1].rsplit("_")[0] )
     input = input.replace("NSIGMA", varstr.rsplit("nSigma_")[1].rsplit("_")[0] )
 
+    if mode == "crab":
+        input = input.replace("OUTFILENAME", " 'trackValTree_reTrk.root' ")
+    else:
+        input = input.replace("OUTFILENAME", " ' " + "../output_batch/trackValTree_" + dataset + "_" + varstr + ".root" + " ' ")
+
+    input = input.replace("INFILELIST", str(infiles))
+                              
     if len(outdir):
         outdir = outdir + "/"
     out_name = outdir + "makeTrackValTree_reTrk_" + varstr + ".py"
     write_outfile(input, out_name)
+    return out_name
 
-#def make_varstrings( cfg_params ):
 
+def create_batch_submission_script(cmssw_cfg_file): # create .sh file to submit cmsRun job to batch
+    outname = cmssw_cfg_file.split(".py")[0] +".sh"
+    out_file = open(outname, "w")
+    
+    out_file.write("#!/bin/bash\n\n")
+
+    out_file.write('cd ${CMSSW_BASE}/src/TrackReReco/submission_scripts/batch_jobs/input_batch \n')
+    out_file.write('eval `scramv1 runtime -sh`\n')
+    out_file.write("cmsRun " + ntpath.basename(cmssw_cfg_file) + "\n")
+    
+    out_file.close()
+
+    print "Saved submission script as: " + outname
+                        
 
 def create_varstrings(tracking_cfg_parameters, iter = 0, skip_default = True):
     """
@@ -79,13 +99,5 @@ def create_varstrings(tracking_cfg_parameters, iter = 0, skip_default = True):
         varstrings.append(varstr)
         
     return varstrings
-
-
-varstrings = create_varstrings(tracking_cfg_parameters, iter = 5, skip_default = True)
-
-for varstr in varstrings:
-    create_cmssw_cfg_from_template("./templates/makeTrackValTree_reTrk_template.py", varstr, outdir = "input_crab") # run both retracking and tree production
-    for datasetname in datasetnames:
-        create_crab_cfg_from_template("./templates/crab_template.cfg", varstr, dataset = datasetname, outdir = "input_crab")
     
        

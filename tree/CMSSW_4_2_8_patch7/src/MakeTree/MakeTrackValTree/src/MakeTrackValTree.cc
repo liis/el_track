@@ -71,8 +71,14 @@
 #include "DataFormats/Common/interface/Ref.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingVertex.h" //for digi->reco check
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingVertexContainer.h"
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupMixingContent.h"
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h" 
+
 #include "TTree.h"
 #include "TMath.h"
+#include "TLorentzVector.h"
 
 //
 // class declaration
@@ -130,8 +136,8 @@ class MakeTrackValTree : public edm::EDAnalyzer {
   int rec_hit_isMatched_[MAXPART][MAXHIT], rec_hit_subdetector_[MAXPART][MAXHIT], rec_hit_layer_[MAXPART][MAXHIT];
 
 
-  double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_qoverp_[MAXPART], gen_matched_cotth_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_phi_[MAXPART], gen_matched_z0_[MAXPART], gen_matched_d0_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART], gen_ptAtLast_[MAXPART], gen_bremFraction_[MAXPART], gen_matched_seed_quality_[MAXPART];
-  double gen_matched_rec_pt_[MAXPART], gen_matched_rec_qoverp_[MAXPART], gen_matched_rec_cotth_[MAXPART], gen_matched_rec_phi_[MAXPART], gen_matched_rec_d0_[MAXPART], gen_matched_rec_z0_[MAXPART], pt_pull_[MAXPART], theta_pull_[MAXPART], phi_pull_[MAXPART], d0_pull_[MAXPART], z0_pull_[MAXPART], qoverp_pull_[MAXPART];
+  double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_qoverp_[MAXPART], gen_matched_cotth_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_theta_[MAXPART], gen_matched_phi_[MAXPART], gen_matched_z0_[MAXPART], gen_matched_d0_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART], gen_ptAtLast_[MAXPART], gen_bremFraction_[MAXPART], gen_matched_seed_quality_[MAXPART];
+  double gen_matched_rec_eta_[MAXPART], gen_matched_rec_theta_[MAXPART], gen_matched_rec_pt_[MAXPART], gen_matched_rec_qoverp_[MAXPART], gen_matched_rec_cotth_[MAXPART], gen_matched_rec_phi_[MAXPART], gen_matched_rec_d0_[MAXPART], gen_matched_rec_z0_[MAXPART], pt_pull_[MAXPART], theta_pull_[MAXPART], phi_pull_[MAXPART], d0_pull_[MAXPART], z0_pull_[MAXPART], qoverp_pull_[MAXPART];
 
   double reco_pt_[MAXPART], reco_eta_[MAXPART], reco_phi_[MAXPART], fake_pt_[MAXPART], fake_eta_[MAXPART], fake_phi_[MAXPART];
   int gen_pdgId_[MAXPART], gen_nrSimHits_[MAXPART], gen_nrUniqueSimHits_[MAXPART], gen_nrRecoHits_[MAXPART], gen_nrMatchedRecHits_[MAXPART], gen_nrSpuriousRecHits_[MAXPART], gen_nrLostSimHits_[MAXPART], gen_matched_seed_nshared_[MAXPART];
@@ -476,11 +482,14 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     gen_matched_qoverp_[i] = -999;
     gen_matched_phi_[i] = -999;
     gen_matched_eta_[i] = -999;
+    gen_matched_theta_[i] = -999;
     gen_matched_cotth_[i] = -999;
     gen_matched_d0_[i] = -999;
     gen_matched_z0_[i] = -999;
 
     gen_matched_rec_pt_[i] = -999;
+    gen_matched_rec_eta_[i] = -999;
+    gen_matched_rec_theta_[i] = -999;
     gen_matched_rec_qoverp_[i] = -999;
     gen_matched_rec_cotth_[i] = -999;
     gen_matched_rec_phi_[i] = -999;
@@ -533,6 +542,70 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     track_label = track_label_gsf_;
   else
     track_label = track_label_;
+
+  //---------------------------------- test digi->reco step -------------------------------------
+  /*
+  edm::InputTag PileupSrc_("addPileupInfo");
+  edm::Handle<std::vector< PileupSummaryInfo > >  PupInfo;
+  iEvent.getByLabel(PileupSrc_, PupInfo);
+
+  std::vector<PileupSummaryInfo>::const_iterator PVI;
+
+   for(PVI = PupInfo->begin(); PVI != PupInfo->end(); ++PVI) {
+
+    std::cout << " Pileup Information: bunchXing, nvtx: " << PVI->getBunchCrossing() << " " << PVI->getPU_NumInteractions() << std::endl;
+    std::cout<< " Num interaxtions = " <<PVI->getTrueNumInteractions() << std::endl;
+
+  }
+
+
+  edm::Handle<TrackingVertexCollection> TVCollection;
+  iEvent.getByLabel("mergedtruth", "MergedTrackTruth", TVCollection);
+  const TrackingVertexCollection tVC = *(TVCollection.product());
+
+  std::cout<<"tVC.size() = "<<tVC.size()<<std::endl;
+
+
+  for( TrackingVertexCollection::size_type i=0; i<tVC.size(); i++){
+    //  for( unsigned int i=0; i<tVC.size(); i++){
+   
+    std::cout<<"Starting vertex i = "<<i<<std::endl;
+    TrackingVertexRef tvr(TVCollection, i);
+    TrackingVertex* tv=const_cast<TrackingVertex*>(tvr.get());
+
+    std::cout<<"bunch crossing = "<<tv->eventId().bunchCrossing()<<std::endl;
+    std::cout<<"Vertex evt ID = "<<tv->eventId().event()<<std::endl;
+    std::cout<<"raw ID = "<<tv->eventId().rawId()<<std::endl;
+    std::cout<<"vertex position = "<< sqrt( pow((tv->position()).X(), 2) + pow((tv->position()).Y(), 2) + pow((tv->position()).Z(), 2))<<std::endl; 
+    // 
+//     std::cout<<"position.P() = "<<tv->position().P()<<std::endl;
+// 
+//     //
+ 
+  }
+  
+  edm::Handle< PileupMixingContent > MixingPileup;  // Get True pileup information from MixingModule
+  iEvent.getByLabel("mix", MixingPileup);
+
+  const PileupMixingContent* MixInfo = MixingPileup.product();
+
+  if(MixInfo) {  // extract information - way easier than counting vertices
+    const std::vector<int> bunchCrossing = MixInfo->getMix_bunchCrossing();
+    const std::vector<int> interactions = MixInfo->getMix_Ninteractions();
+    const std::vector<float> TrueInteractions = MixInfo->getMix_TrueInteractions();
+
+    std::cout<<"nr bunchcrossings = "<<(int)bunchCrossing.size()<<std::endl;
+    std::cout<<"interactions.size()"<<(int)interactions.size()<<std::endl;
+    std::cout<<"trueInteractions.size()"<<(int)TrueInteractions.size()<<std::endl;
+
+    for(int ib=0; ib<(int)bunchCrossing.size(); ++ib){
+      std::cout<<"nr interactions = "<<interactions[ib]<<std::endl;
+      std::cout<<"nr true interactions = "<<TrueInteractions[ib]<<std::endl;
+    }
+  }
+  
+  */
+  //---------------------------------------------------------------------------------------------
 
   edm::Handle<edm::View<reco::Track> > trackCollection; //reconstructed tracks
   iEvent.getByLabel(track_label, trackCollection);
@@ -839,12 +912,15 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	gen_matched_pt_[np_gen_] = tp->pt();
 	gen_matched_qoverp_[np_gen_] = tp->charge()/(tp->px()*tp->px() + tp->py()*tp->py() + tp->pz()*tp->pz());
 	gen_matched_eta_[np_gen_] = tp->eta();
+	gen_matched_theta_[np_gen_] = tp->theta();
 	gen_matched_cotth_[np_gen_] = 1./tan(tp->theta());
 	gen_matched_phi_[np_gen_] = tp->phi();
 	gen_matched_z0_[np_gen_] = gen_dz_[np_gen_];
 	gen_matched_d0_[np_gen_] =  gen_dxy_[np_gen_];
 	
 	gen_matched_rec_pt_[np_gen_] = matchedTrackPointer->pt();
+	gen_matched_rec_theta_[np_gen_] = matchedTrackPointer->theta();
+	gen_matched_rec_eta_[np_gen_] = matchedTrackPointer->eta();
 	gen_matched_rec_qoverp_[np_gen_] = matchedTrackPointer->qoverp();
 	gen_matched_rec_cotth_[np_gen_] = 1./(tan(matchedTrackPointer->theta()) );
         gen_matched_rec_phi_[np_gen_] = matchedTrackPointer->phi();
@@ -987,13 +1063,16 @@ MakeTrackValTree::beginJob()
   trackValTree_->Branch("gen_matched_pt", gen_matched_pt_, "gen_matched_pt[np_gen]/D");
   trackValTree_->Branch("gen_matched_qoverp", gen_matched_qoverp_, "gen_matched_qoverp[np_gen]/D");
   trackValTree_->Branch("gen_matched_eta", gen_matched_eta_, "gen_matched_eta[np_gen]/D");
+  trackValTree_->Branch("gen_matched_theta", gen_matched_theta_, "gen_matched_theta[np_gen]/D");
   trackValTree_->Branch("gen_matched_cotth", gen_matched_cotth_, "gen_matched_cotth[np_gen]/D");
   trackValTree_->Branch("gen_matched_phi", gen_matched_phi_, "gen_matched_phi[np_gen]/D");
   trackValTree_->Branch("gen_matched_d0", gen_matched_d0_, "gen_matched_d0[np_gen]/D");
   trackValTree_->Branch("gen_matched_z0", gen_matched_z0_, "gen_matched_z0[np_gen]/D");
 
   trackValTree_->Branch("gen_matched_rec_pt", gen_matched_rec_pt_, "gen_matched_rec_pt[np_gen]/D");
+  trackValTree_->Branch("gen_matched_rec_eta", gen_matched_rec_eta_, "gen_matched_rec_eta[np_gen]/D");
   trackValTree_->Branch("gen_matched_rec_qoverp", gen_matched_rec_qoverp_, "gen_matched_rec_qoverp[np_gen]/D");
+  trackValTree_->Branch("gen_matched_rec_theta", gen_matched_rec_theta_, "gen_matched_rec_theta[np_gen]/D");
   trackValTree_->Branch("gen_matched_rec_cotth", gen_matched_rec_cotth_, "gen_matched_rec_cotth[np_gen]/D");
   trackValTree_->Branch("gen_matched_rec_phi", gen_matched_rec_phi_, "gen_matched_rec_phi[np_gen]/D");
   trackValTree_->Branch("gen_matched_rec_d0", gen_matched_rec_d0_, "gen_matched_rec_d0[np_gen]/D");

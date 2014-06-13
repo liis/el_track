@@ -1,30 +1,34 @@
 import ROOT
+from collections import OrderedDict as dict
 
 infilenames_eta = {
-#    "Pt1": "trackValHistogramsPt1.root",
-    "Pt10": "trackValHistogramsPt10.root",
-    "Pt100": "trackValHistogramsPt100.root"
+    "Pt100": "trackValHistograms_trackValTree_Pt100_maxCand_5_maxChi2_2000_nSigma_3.root",
+    "Pt10":  "trackValHistograms_trackValTree_Pt10_maxCand_5_maxChi2_2000_nSigma_3.root",
+#    "Pt100": "trackValHistogramsPt100.root"
 }
 
 infilenames_eta_gsf = {
-#    "Pt1": "trackValHistogramsPt1.root",
-    "Pt10": "trackValHistogramsPt10GSF.root",
-    "Pt100": "trackValHistogramsPt100GSF.root"
+    "Pt100":   "trackValHistograms_trackValTree_Pt100_maxCand_5_maxChi2_2000_nSigma_3.root",
+    "Pt10" :   "trackValHistograms_trackValTree_Pt10_maxCand_5_maxChi2_2000_nSigma_3.root",
+#    "Pt10": "trackValHistogramsPt10GSF.root",
+#    "Pt100": "trackValHistogramsPt100GSF.root"
 }
 
 infilenames_pt = {
-    "FlatPt": "trackValHistogramsFlatPt.root"
+#    "FlatPt": "trackValHistogramsFlatPt.root"
+    "FlatPt": "trackValHistograms_trackValTree_FlatPt_maxCand_5_maxChi2_100_nSigma_3.root"
 }
 
 infilenames_pt_gsf = {
-    "FlatPt": "trackValHistogramsFlatPtGSF.root"
+    "FlatPt": "trackValHistograms_trackValTree_FlatPt_maxCand_5_maxChi2_100_nSigma_3.root"
+#    "FlatPt": "trackValHistogramsFlatPtGSF.root"    
 }
 
 def load_input_files(indir, infilenames):
     """
     load input files. give dir path and dictionary of filenames as input
     """
-    infiles = {}
+    infiles = dict()
 
     for region, filename in infilenames.iteritems():
         inpath = indir + filename
@@ -77,6 +81,7 @@ colors = [ROOT.kBlack, ROOT.kRed, ROOT.kYellow, ROOT.kYellow-3, ROOT.kGreen, ROO
 
 def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  1., region="none"):
     """
+    hists -- dictionary of histograms
     plot a list of efficiency histogras
     """
     n = 0
@@ -91,13 +96,13 @@ def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  
             hist.GetXaxis().SetTitleOffset(1.3)
             hist.GetYaxis().SetTitleOffset(1.4)
             hist.SetTitle("blabla")
+            hist.SetStats(False)
 
             if( region[:3]=="Pt1"):
                 hist.GetXaxis().SetTitle("#eta")
-            elif( region[:6]=="FlatPt"):
-                hist.GetXaxis().SetTitle("p_{T}")
-
+            elif( xtitle=="p_{T}"):
                 hist.SetAxisRange(1., 200, 'x')
+
             if not xtitle == "none":
                 hist.GetXaxis().SetTitle(xtitle)
             if not ytitle == "none":
@@ -112,10 +117,10 @@ def draw_legend(hists, pos = "down_right"):
     hist - dictionary of process names and histograms
     """
     if pos == "down_right":
-        leg = ROOT.TLegend(0.7,0.5,0.89,0.29);
+        leg = ROOT.TLegend(0.55,0.5,0.95,0.29);
     
     if pos == "up_right":
-        leg = ROOT.TLegend(0.7, 0.7, 0.89, 0.89);
+        leg = ROOT.TLegend(0.55, 0.7, 0.95, 0.89);
 
     if pos == "up_left":
         leg = ROOT.TLegend(0.2, 0.7, 0.45, 0.89);
@@ -159,7 +164,7 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
     ytitle = ""
     ymax = 1
     if eff_fake == "eff":
-        ytitle = "Efficiency" 
+        ytitle = "Efficiency "
     if eff_fake == "eff_seed":
         ytitle = "Seeding efficiency" 
     if eff_fake == "eff_wrt_seed":
@@ -167,8 +172,17 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
     if eff_fake[:4] == "fake":
         ytitle = "Fake rate"
         ymax = 0.3
-    if len(label) > 0:
-        ytitle = ytitle + " (" + label + ")"
+    if eff_fake[:4] == "pull":
+        ytitle = "pull"
+
+    if eff_fake[:4] == "res":
+        ytitle ="res"
+
+    if len(title)>0:
+        ytitle=ytitle + " (" + title + ")"
+
+#    if len(label) > 0:
+#        ytitle = ytitle + " (" + label + ")"
 
 
     draw_efficiency_histograms(hists.values(), xtitle, ytitle, ymax)
@@ -179,6 +193,6 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
     if(is_gsf):
         GSFstr = "_GSF"
 
-    c.SaveAs("$WORKING_DIR/plot/out_plots/" + eff_fake + "_" + var + "_" + label + GSFstr + ".pdf")
-    c.SaveAs("$WORKING_DIR/plot/out_plots/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
+    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/" + eff_fake + "_" + var + "_" + label + GSFstr + ".pdf")
+    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
     c.Close()

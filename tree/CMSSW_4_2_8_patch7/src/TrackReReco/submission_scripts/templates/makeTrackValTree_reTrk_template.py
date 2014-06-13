@@ -14,14 +14,15 @@ readFiles = cms.untracked.vstring()
 secFiles = cms.untracked.vstring() 
 source = cms.Source ("PoolSource",fileNames = readFiles)
 
-if not runDigi:
-    readFiles.extend( ['file:/hdfs/cms/store/user/liis/El_GSF_studies/Pt10/step2_9_1_DD1.root'])
-else:
-    readFiles.extend( ['file:/hdfs/cms/store/relval/CMSSW_4_2_9_HLT1_patch1/RelValZEE/GEN-SIM-DIGI-RAW-HLTDEBUG/START42_V14B_RelVal_ZEErv_20Jun2013-v1/00000/FE45A2C2-E3D9-E211-8BFF-00261894394D.root'])
-#    readFiles.extend( ['file:/hdfs/cms/store/user/liis/El_GSF_studies/test/SingleElMinusPt10_1_1_9Rd.root']) #digi
+#if not runDigi:
+#    readFiles.extend( ['file:/hdfs/cms/store/user/liis/El_GSF_studies/Pt10/step2_9_1_DD1.root'])
+#else:
+
+infilelist = INFILELIST
+readFiles.extend( infilelist )
+
 
 process.source = source
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
 ### conditions
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
@@ -35,16 +36,16 @@ process.load("Configuration.EventContent.EventContent_cff")
 process.load("Configuration.StandardSequences.Reconstruction_cff")
 process.load("Configuration.StandardSequences.MagneticField_cff")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(150) )
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.MessageLogger.cerr.FwkReport.reportEvery = 50
 
 maxCandDefault = 5
 maxChi2Default = 2000
 nSigmaDefault = 3.0
 
-maxCand = 2
-maxChi2 = 100
-nSigma = 4
+maxCand = MAXCAND
+maxChi2 = MAXCHI2
+nSigma = NSIGMA
 
 ########################################################################
 # to change parameters  as in slides from A.Tropiano
@@ -111,27 +112,12 @@ if runDigi:
 else:
     process.myGsfReco = process.myGsfReco_base
 
-outdir = "out_tests/"
-outfilename = outdir + "trackValTree_reTrk_maxCand_" + str(maxCand) + "_MaxChi2_" + str(maxChi2) + "_nSigma_" + str(nSigma) + ".root"
-print "Writing output to file: " + outfilename
 
+outfilename = OUTFILENAME
 process.TFileService = cms.Service("TFileService", # if save 
                                    fileName = cms.string(outfilename)
                                    )
 
-
-process.RECODEBUGoutput = cms.OutputModule("PoolOutputModule", # if save reco output
-    splitLevel = cms.untracked.int32(0),
-    eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
-    outputCommands = process.RECODEBUGEventContent.outputCommands,
-    fileName = cms.untracked.string( outfilename ),
-    dataset = cms.untracked.PSet(
-        filterName = cms.untracked.string(''),
-        dataTier = cms.untracked.string('GEN-SIM-RECODEBUG')
-    )
-)
-
-process.RECODEBUGoutput.outputCommands.extend(cms.untracked.vstring('keep *_elGsfTracksWithQuality_*_*'))
 #####################################
 
 process.load("SimTracker.TrackAssociation.TrackAssociatorByHits_cfi")
@@ -189,11 +175,8 @@ process.p = cms.Path(
     process.TrackValTreeMaker
 )
 
-process.RECODEBUGoutput_step = cms.EndPath(process.RECODEBUGoutput)
-
 process.schedule = cms.Schedule(
       process.p
- #     process.RECODEBUGoutput_step
-)
+      )
 
 

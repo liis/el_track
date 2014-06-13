@@ -3,14 +3,14 @@ import re
 from odict import OrderedDict as dict
 tracking_cfg_parameters = dict()
 
-tracking_cfg_parameters["maxCand"] = [5, 5, 5, 5 ]
-tracking_cfg_parameters["maxChi2"] = [300, 300, 300, 300 ]
-tracking_cfg_parameters["nSigma"] = [3, 3, 3, 3 ]
+tracking_cfg_parameters["maxCand"] = [5, 3, 4, 6, 7 ]
+tracking_cfg_parameters["maxChi2"] = [2000, 2000, 2000, 2000, 2000 ]
+tracking_cfg_parameters["nSigma"] = [3, 3, 3, 3, 3 ]
 
 datasetnames = {
     "FlatPt": "/SingleElMinusFlatLogPt_CMSSW_4_2_8-START42_V12_GEN-SIM-DIGI-RAW-HLTDEBUG/mangano-CMSSW_4_2_8-START42_V12_GEN-SIM-RECO-v3-8de1ffbdb519f9edbafc5606a1926f13/USER",
-#                "Pt10": "/SingleElMinusPt10_CMSSW_4_2_8-START42_V12_GEN-SIM-DIGI-RAW-HLTDEBUG-v2/mangano-CMSSW_4_2_8-START42_V12_GEN-SIM-RECO-v3-7bc796286602c18e9ed77a7f93a692b8/USER",
-#                "Pt100": "/SingleElMinusPt100_CMSSW_4_2_8-START42_V12_GEN-SIM-DIGI-RAW-HLTDEBUG-v2/mangano-CMSSW_4_2_8-START42_V12_GEN-SIM-RECO-v3-7bc796286602c18e9ed77a7f93a692b8/USER"
+    "Pt10": "/SingleElMinusPt10_CMSSW_4_2_8-START42_V12_GEN-SIM-DIGI-RAW-HLTDEBUG-v2/mangano-CMSSW_4_2_8-START42_V12_GEN-SIM-RECO-v3-7bc796286602c18e9ed77a7f93a692b8/USER",
+    "Pt100": "/SingleElMinusPt100_CMSSW_4_2_8-START42_V12_GEN-SIM-DIGI-RAW-HLTDEBUG-v2/mangano-CMSSW_4_2_8-START42_V12_GEN-SIM-RECO-v3-7bc796286602c18e9ed77a7f93a692b8/USER"
     }
 
 def read_template(filename):
@@ -79,7 +79,7 @@ def create_varstrings(tracking_cfg_parameters, iter = 0, skip_default = True):
     return varstrings
 
 
-varstrings = create_varstrings(tracking_cfg_parameters, iter = 4, skip_default = False)
+varstrings = create_varstrings(tracking_cfg_parameters, iter = 5, skip_default = True)
 
 for varstr in varstrings:
     create_cmssw_cfg_from_template("./templates/makeTrackValTree_reTrk_template.py", varstr, outdir = "input_crab") # run both retracking and tree production

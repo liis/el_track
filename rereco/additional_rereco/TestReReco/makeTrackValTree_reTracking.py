@@ -11,7 +11,7 @@ process.MessageLogger = cms.Service("MessageLogger",
 # source
 readFiles = cms.untracked.vstring()
 #------------------------- define secondary files -----------------------------
-useSecFiles = False
+useSecFiles = True #needed for MakeTrackValTree (tracking particles)
 run_PSI     = True
 
 if not useSecFiles: #Use secondary files
@@ -105,20 +105,6 @@ process.ElectronChi2.nSigma = cms.double( nSigma )
 
 ########################################################################
 
-#process.GlobalPaositionSource = cms.ESSource("PoolDBESSource",
-#                                            process.CondDBSetup,
-#                                            # Reading from oracle (instead of Frontier) needs the following shell variable setting (in zsh):
-#                                            # export CORAL_AUTH_PATH=/afs/cern.ch/cms/DB/conddb
-#                                            # string connect = "oracle://cms_orcoff_int2r/CMS_COND_ALIGNMENT"
-#                                            # untracked uint32 authenticationMethod = 1
-#                                            toGet = cms.VPSet(cms.PSet(
-#    record = cms.string('GlobalPositionRcd'),
-#    tag = cms.string('IdealGeometry')
-#    )),
-#                                            connect = cms.string('sqlite_file:output.db')
-#                                            )
-
-#process.load("RecoTracker.IterativeTracking.InitialStep_cff")
 process.load("RecoPixelVertexing.PixelLowPtUtilities.siPixelClusterShapeCache_cfi")
 
 process.printEventContent = cms.EDAnalyzer("EventContentAnalyzer")
@@ -144,6 +130,12 @@ process.TFileService = cms.Service("TFileService", # if save
                                    fileName = cms.string(outfilename)
                                    )
 
+
+
+process.load("SimTracker.TrackAssociation.TrackAssociatorByHits_cfi")
+process.TrackAssociatorByHits.SimToRecoDenominator = cms.string("reco") #Quality_SimToReco = shared hits/#reco(or #sim)
+process.TrackAssociatorByHits.Quality_SimToReco = cms.double(0.75)
+#process.TrackAssociatorByHits.AbsoluteNumberOfHits = cms.bool(True)
 #---------------- high purity selection of reco::Tracks---------------
 process.load("PhysicsTools.RecoAlgos.recoTrackSelector_cfi")
 process.cutsRecoTracksHp = process.recoTrackSelector.clone()
@@ -153,11 +145,16 @@ process.cutsRecoTracksHp.maxAbsEta = cms.double(2.5)
 
 
 process.ValidationSelectors = cms.Sequence(
-        process.cutsRecoTracksHp
-            )
+    process.cutsRecoTracksHp
+    )
 
 #--------------------------- tree maker --------------------------
-#process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi") # for writing output to a flat tree
+process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi") # for writing output to a flat tree
+
+process.load("SimGeneral.TrackingAnalysis.simHitTPAssociation_cfi")
+process.preValidation = cms.Sequence(
+    process.simHitTPAssocProducer
+    )
 
 process.printEventContent = cms.EDAnalyzer("EventContentAnalyzer")
 
@@ -165,8 +162,10 @@ process.printEventContent = cms.EDAnalyzer("EventContentAnalyzer")
 process.p = cms.Path(
     process.myGsfReco 
     *process.ValidationSelectors
+
+    *process.preValidation
 #    process.printEventContent 
-#    process.trackValTreeMaker
+    *process.trackValTreeMaker
     )
 
 

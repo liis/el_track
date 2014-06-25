@@ -164,7 +164,7 @@ process.p = cms.Path(
     *process.ValidationSelectors
 
     *process.preValidation
-#    process.printEventContent 
+#    *process.printEventContent 
     *process.trackValTreeMaker
     )
 

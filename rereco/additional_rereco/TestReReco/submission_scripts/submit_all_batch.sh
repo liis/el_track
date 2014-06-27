@@ -6,5 +6,5 @@ JOBS=`ls makeTrackValTree*.sh`
 for JOB in $JOBS
 do
   echo submitting $JOB
-  qsub $JOB
+  qsub -V -cwd -q all.q $JOB
 done

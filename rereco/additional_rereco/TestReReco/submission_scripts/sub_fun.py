@@ -41,7 +41,7 @@ def create_crab_cfg_from_template(template, varstr, dataset, outdir = ""):
     out_name = outdir + "crab_" + varstr + "_" + dataset + ".cfg"
     write_outfile(input, out_name)
 
-def create_cmssw_cfg_from_template(template, varstr, outdir = "", mode = "batch", dataset = "", infiles = []):
+def create_cmssw_cfg_from_template(template, varstr, outdir = "", mode = "batch", dataset = "", infiles = [], infiles_sec = []):
     """
     template -- template file name
     varstr -- string of variables and their values, separated by _
@@ -59,6 +59,7 @@ def create_cmssw_cfg_from_template(template, varstr, outdir = "", mode = "batch"
         input = input.replace("OUTFILENAME", " ' " + "../output_batch/trackValTree_" + dataset + "_" + varstr + ".root" + " ' ")
 
     input = input.replace("INFILELIST", str(infiles))
+    input = input.replace("SECFILELIST", str(infiles_sec))
                               
     if len(outdir):
         outdir = outdir + "/"
@@ -73,7 +74,7 @@ def create_batch_submission_script(cmssw_cfg_file): # create .sh file to submit 
     
     out_file.write("#!/bin/bash\n\n")
 
-    out_file.write('cd ${CMSSW_BASE}/src/TrackReReco/submission_scripts/batch_jobs/input_batch \n')
+    out_file.write('cd ${CMSSW_BASE}/src/TestReReco/submission_scripts/batch_jobs/input_batch \n')
     out_file.write('eval `scramv1 runtime -sh`\n')
     out_file.write("cmsRun " + ntpath.basename(cmssw_cfg_file) + "\n")
     

@@ -4,7 +4,7 @@ from odict import OrderedDict as dict
 tracking_cfg_parameters = dict()
 
 from sub_fun import read_template, write_outfile, create_cmssw_cfg_from_template, create_batch_submission_script, create_varstrings
-from infilelists import infilelist_Zee
+from infilelists import infilelist_Zee_PU50_DIGI, infilelist_Zee_PU50_RECO
 
 # Chi2 scan
 tracking_cfg_parameters["maxCand"] = [5, 5, 5, 5, 5, 5 ]
@@ -29,13 +29,16 @@ filelists = {
 #    "Flat_Pt": "",
 #    "Pt10": "",
 #    "Pt100": "",
-    "Zee": infilelist_Zee,
+    "Zee": infilelist_Zee_PU50_RECO,
     }
 
+filelists_sec = {
+    "Zee": infilelist_Zee_PU50_DIGI,
+    }
 
 for varstr in varstrings:
     for dataset in filelists:
-        cmssw_cfg_name = create_cmssw_cfg_from_template("./templates/makeTrackValTree_reTrk_template.py", varstr, outdir = "./batch_jobs/input_batch", mode = "batch", dataset = dataset, infiles = filelists[dataset])
+        cmssw_cfg_name = create_cmssw_cfg_from_template("./templates/makeTrackValTree_reTracking_template.py", varstr, outdir = "./batch_jobs/input_batch", mode = "batch", dataset = dataset, infiles = filelists[dataset], infiles_sec = filelists_sec[dataset])
 
         create_batch_submission_script( cmssw_cfg_name )
     

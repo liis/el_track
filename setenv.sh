@@ -4,8 +4,8 @@ export PYTHONPATH=$ROOTSYS/lib:$PYTHONPATH
 # Extract directories
 WORKING_DIR=`pwd`
 CMSSW_DIR=$WORKING_DIR"/tree/CMSSW_4_2_8_patch7/src"
-cd $CMSSW_DIR
-cmsenv
+#cd $CMSSW_DIR
+#cmsenv
 cd $WORKING_DIR
 
 export CMSSW_DIR

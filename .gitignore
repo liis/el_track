@@ -6,7 +6,7 @@
 *.png
 *.root
 *__init__.py
-
+.*
 CVS
 
 # CMSSW related stuff
@@ -42,6 +42,7 @@ tree_to_histo/*.pyc
 tree_to_histo/*~
 tree_to_histo/*.out
 tree_to_histo/*.root
+tree_to_histo/backup/*
 
 plot/out_plots
 plot/*.pyc

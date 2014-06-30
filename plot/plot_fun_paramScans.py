@@ -1,7 +1,7 @@
 import ROOT
 from collections import OrderedDict as dict
 
-def get_infilenames_by_params(parameters, ptmode):
+def get_infilenames_by_params(filename, parameters, ptmode):
     print "Opening input files for " + ptmode + " samples"
 
     infiles = dict()
@@ -15,7 +15,7 @@ def get_infilenames_by_params(parameters, ptmode):
             for it_maxCand in range(0, nr_maxCand):
                 cutstring = "maxCand_" + str(parameters["maxCand"][it_maxCand]) + "_maxChi2_" + str(parameters["maxChi2"][it_maxChi2]) + "_nSigma_" + str(parameters["nSigma"][it_nSigma])
 
-                infile = "trackValHistograms_" + ptmode + "_" + cutstring + ".root"
+                infile = filename + "_" + ptmode + "_" + cutstring + ".root"
                 print "Adding: " + infile + " to the analysis "
                 infiles[cutstring] = infile
     return infiles

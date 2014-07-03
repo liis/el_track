@@ -100,8 +100,7 @@ class MakeTrackValTree : public edm::EDAnalyzer {
       std::pair<std::vector<const reco::ElectronSeed*>, double> findMatchedSeed(edm::Handle<edm::View<reco::ElectronSeed>>, TrackingParticle*); 
       std::map<int, std::vector<PSimHit> > getSimHits(std::vector<std::string>, const edm::Event& );
       std::vector<int> getHitPosition(DetId, bool);
-  //  bool comp_simHits(const PSimHit, const PSimHit);
-  bool comparator(const std::pair<int,int>&, const std::pair<int,int>& );
+      std::vector<PSimHit> getSimHitsTP(TrackingParticle*, std::map<int, std::vector<PSimHit> >, edm::ESHandle<TrackerGeometry>,  bool, bool, bool);
 
   // ------------------ thresholds for TPselector ----------
   double ptMinTP, minRapidityTP, maxRapidityTP, tipTP, lipTP, signalOnlyTP, chargedOnlyTP, stableOnlyTP; 
@@ -318,7 +317,98 @@ std::vector<int> MakeTrackValTree::getHitPosition(DetId dId, bool hitdebug = fal
   return hit_position;
 }
 
-std::vector<PSimHit>
+std::vector<PSimHit> MakeTrackValTree::getSimHitsTP(TrackingParticle* tp, std::map<int, std::vector<PSimHit>> simHitMap,  edm::ESHandle<TrackerGeometry> tracker, bool sort = true, bool cleanup = true, bool debug = false ){
+  // -- get sim hits in a tracking particle, optionally order by distance from PV and clean from noise and low pt hits
+  // input arguments: TP; map of all simHits in event (mapped by trackId); tracker_geometry
+
+  std::vector<PSimHit> simhits; // simhits from a simTrack (by trackID)
+  std::vector<PSimHit> simhitsTP; //all simhits in a TP
+  std::vector<PSimHit> simhits_sorted; //simhits sorted by distance from pv
+  std::vector<PSimHit> simhits_cleaned; //simhits cleaned up from noise hits
+  simhitsTP.clear();
+  simhits_sorted.clear();
+  simhits_cleaned.clear();
+
+  std::pair<double, int> hit_dist_idx; //for sorting list of hits by distance
+  std::vector< std::pair<double,int> > hit_dist_idx_vec;
+
+  std::vector<std::vector<int> > simhit_position;
+  
+  int hit_idx=0; //keep track of indexes in simhits_sorted
+  int nr_simtracks =0;
+  for( TrackingParticle::g4t_iterator g4T = tp->g4Track_begin(); g4T != tp->g4Track_end(); g4T++){  //loop over sim tracks in TP
+    nr_simtracks++;
+    std::map<int, std::vector<PSimHit> >::iterator simHitMap_simTrack = simHitMap.find(g4T->trackId()); // get simhits associated to simTrack
+    simhits.clear();
+    if( simHitMap_simTrack != simHitMap.end() ){
+      simhits = simHitMap_simTrack->second;
+      for ( std::vector<PSimHit>::const_iterator it_hit = simhits.begin(); it_hit != simhits.end(); ++it_hit){
+	const PSimHit ihit = *it_hit;
+
+	DetId dId = DetId(it_hit->detUnitId() );
+	const GeomDetUnit* detunit = tracker->idToDetUnit(dId.rawId());
+	
+	Local3DPoint local_x = it_hit->localPosition(); //get hit distance from PV (to sort in time order)
+	GlobalPoint global_x = detunit->toGlobal(local_x);
+
+	hit_dist_idx = std::make_pair( (double)global_x.mag(), hit_idx); //save hit distance with index for sorting
+	hit_dist_idx_vec.push_back(hit_dist_idx);
+
+	simhitsTP.push_back(ihit);
+	hit_idx++; //index simhits in tracking particle
+      } //<--- end loop over simhits in simTrack
+    }
+    std::cout<<"sim track with nrhits = " << simhits.size() << std::endl;
+  } // <-- end loop over g4T simTracks of TP
+
+  if(debug){
+    std::cout<< "--------------------" << std::endl;
+    std::cout<<"nr sim tracks = " << nr_simtracks << std::endl;
+  }
+  if ( hit_dist_idx_vec.size() && simhitsTP.size() ){
+    std::sort(hit_dist_idx_vec.begin(), hit_dist_idx_vec.end()); // sort global positions along with simhits_sorted indices
+  
+    for (unsigned int i = 0; i != hit_dist_idx_vec.size(); i++){ // reorder simhitsTP
+      simhits_sorted.push_back(simhitsTP.at(hit_dist_idx_vec.at(i).second ) );
+
+      DetId dId = DetId(simhits_sorted[i].detUnitId() );
+      simhit_position.push_back( getHitPosition(dId) );
+    }
+
+    
+
+    for (unsigned int i = 0; i != simhits_sorted.size(); i++){ // clean up sorted sim hits
+      DetId dId = DetId(simhits_sorted[i].detUnitId() );
+      const GeomDetUnit* detunit = tracker->idToDetUnit(dId.rawId());
+
+      Local3DPoint local_x = simhits_sorted[i].localPosition(); //get hit distance
+      GlobalPoint global_x = detunit->toGlobal(local_x);
+
+      LocalVector local_p = simhits_sorted[i].momentumAtEntry(); //get hit momentum
+      GlobalVector global_p = detunit->toGlobal(local_p);
+
+      if (global_p.perp() > 0.9 )  //the rest is noise or impossible to reach ECal
+	simhits_cleaned.push_back(simhits_sorted[i]);
+      else if (debug)
+	std::cout<<"REMOVE THIS HIT" << std::endl;
+
+      if(debug){
+	std::vector<int> hitposition = getHitPosition(dId, true); //get hit position wrt subdetectors
+	std::cout<<"hit pt = "<<global_p.perp()<<", eta = "<<global_p.eta()<<", phi = "<<global_p.phi()<<std::endl;
+	std::cout<<"dist = "<<global_x.mag()<<std::endl;
+	std::cout<<"---------------"<<std::endl;
+      }
+    } // <-- end loop over sorted simhits collection for cleaning
+  } // <-- end if simhitsTP.size()
+
+  if(debug){
+    std::cout<<"Nr simhits from TP = "<< gen_nr_simhits_[np_gen_]<<std::endl;
+    std::cout<<"counted hits in simTracks from TP = "<<hit_idx<<std::endl;
+    std::cout<<"simhits_cleaned.size() = " <<simhits_cleaned.size()<<std::endl;
+  }
+
+  return simhits_cleaned;
+}
 
 
 // ------------ method called for each event  ------------
@@ -426,6 +516,10 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      if( !tpSelector(*tp) ) continue;
      if( tp->pt() < 1 ) continue; // such tracks are irrelevant for electrons
 
+     gen_nr_simhits_[np_gen_] = tp->numberOfTrackerHits();
+     std::vector<PSimHit> simhits_TP = getSimHitsTP(tp, simHitMap, tracker, true, true, true); // FIXME get bremFraction and other stuff of interest
+
+     if ( !simhits_TP.size() ) continue; // if no simhit with pt > 0.9 (FIXME: maybe check the last hit momentum too)
      
      momentumTP = tp->momentum();
      vertexTP = tp->vertex(); 
@@ -494,7 +588,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	 is_trackerDrivenSeed_[np_gen_] = 1;
  
      }
-     gen_nr_simhits_[np_gen_] = tp->numberOfTrackerHits();
+
      
      //check whether TP is from PU vertices
      /*     double vtx_z_PU = vertexTP.z();
@@ -505,112 +599,13 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
        }
      }
      */
-
+     
      //     std::cout<<"Matched seed charge = "<<gen_matched_seed_okCharge_[np_gen_]<<", match quality = "<< gen_matched_seed_quality_[np_gen_]<<", nr matched seed hits = "<< gen_matched_seed_nshared_[np_gen_]<<std::endl;     
 
      std::cout<<"Found tracking particle with pt = "<<tp->pt()<<", eta = "<<tp->eta()<<std::endl; 
-     //     std::cout<<"nr shared hits = "<<nSharedHits<<", nr reco hits "<<nRecoTrackHits<<" matched reco pt = "<<gen_matched_rec_pt_[np_gen_]<<", gen. qoverp = "<<gen_matched_qoverp_[np_gen_]<<", matched reco qoverp = "<<gen_matched_rec_qoverp_[np_gen_]<<std::endl;
+     //     std::cout<<"nr shared hits = "<<nSharedHits<<", nr reco hits "<<nRecoTrackHits<<" matched reco pt = "<<gen_matched_rec_pt_[np_gen_]<<", gen. qoverp = "<<gen_matched_qoverp_[np_gen_]<<", matched reco qoverp = "<<gen_matched_rec_qoverp_[np_gen_]<<std::endl; 
 
 
-  
- 
-
-     //-------------------------- Get sim hits of the TP ----------------------------------------
-     std::vector<PSimHit> simhits;
-     std::vector<PSimHit> simhitsTP;
-     //std::vector< std::vector<PSimHit>::const_iterator > simhits_sorted;
-     simhitsTP.clear(); //vector of simhits for sorting for each TP
-
-     std::pair<double, int> hit_dist_idx; //for sorting list of hits by distance
-     std::vector< std::pair<double,int> > hit_dist_idx_vec;
-
-     int hit_idx=0; //keep track of indexes in simhits_sorted
-     for( TrackingParticle::g4t_iterator g4T = tp->g4Track_begin(); g4T != tp->g4Track_end(); g4T++){ 
-       std::map<int, std::vector<PSimHit> >::iterator simHitMap_simTrack = simHitMap.find(g4T->trackId()); // get simhits associated to simTrack
-
-       simhits.clear();
-       if( simHitMap_simTrack != simHitMap.end() ){
-       	 simhits = simHitMap_simTrack->second;
-
-	 for ( std::vector<PSimHit>::const_iterator it_hit = simhits.begin(); it_hit != simhits.end(); ++it_hit){
-	   const PSimHit ihit = *it_hit;   
-
-	   DetId dId = DetId(it_hit->detUnitId() );
-	   const GeomDetUnit* detunit = tracker->idToDetUnit(dId.rawId());
-
-	   //	   LocalVector local_p = it_hit->momentumAtEntry(); //get hit momentum
-	   //GlobalVector global_p = detunit->toGlobal(local_p);
-	   
-	   Local3DPoint local_x = it_hit->localPosition(); //get hit distance
-	   GlobalPoint global_x = detunit->toGlobal(local_x);
-
-	   hit_dist_idx = std::make_pair( (double)global_x.mag(), hit_idx);
-	   hit_dist_idx_vec.push_back(hit_dist_idx);
-
-	   simhitsTP.push_back(ihit); 	  
-	   hit_idx++; //index simhits in tracking particle
-	 } //<--- end loop over simhits in simTrack
-       }
-     } // <-- end loop over g4T simTracks of TP
-
-     
-     std::vector<PSimHit> sorted_simhits;
-     std::vector<PSimHit> cleaned_simhits;
-
-     std::vector<std::vector<int> > simhit_position;
-     simhit_position.clear();
-     cleaned_simhits.clear();
-     sorted_simhits.reserve(simhitsTP.size());
-     
-
-     if ( hit_dist_idx_vec.size() && simhitsTP.size() ){
-       std::sort(hit_dist_idx_vec.begin(), hit_dist_idx_vec.end()); // sort global positions along with simhits_sorted indices
-
-       for (unsigned int i = 0; i != hit_dist_idx_vec.size(); i++){ // reorder simhitsTP
-	 sorted_simhits.push_back(simhitsTP.at(hit_dist_idx_vec.at(i).second ) );
-
-	 DetId dId = DetId(sorted_simhits[i].detUnitId() );
-	 simhit_position.push_back( getHitPosition(dId) );
-	 
-       }
-
-       for (unsigned int i = 0; i != sorted_simhits.size(); i++){ // clean up sorted sim hits
-
-	 DetId dId = DetId(sorted_simhits[i].detUnitId() );
-	 const GeomDetUnit* detunit = tracker->idToDetUnit(dId.rawId());
-
-	 Local3DPoint local_x = sorted_simhits[i].localPosition(); //get hit distance
-	 GlobalPoint global_x = detunit->toGlobal(local_x);
-
-	 LocalVector local_p = sorted_simhits[i].momentumAtEntry(); //get hit momentum
- 	 GlobalVector global_p = detunit->toGlobal(local_p);
-	 
-	 std::cout<<"---------------"<<std::endl;
-	 std::vector<int> hitposition = getHitPosition(dId, true); //get hit position wrt subdetectors                                                                                                    
-	 std::cout<<"hit pt = "<<global_p.perp()<<", eta = "<<global_p.eta()<<", phi = "<<global_p.phi()<<std::endl;
-	 std::cout<<"dist = "<<global_x.mag()<<std::endl;
-
-
-	 if (global_p.perp() < 0.5 ) //we dont consider TP-s < 1 GeV at this point, this is noise (no hope to match to ECAL)
-	   // || (global_p.perp() < 0.02 && 
-	   //	     ((i>0 && simhit_position[i][0] == simhit_position[i-1][0] && simhit_position[i][1] == simhit_position[i-1][1] ) || 
-	   //	      (i<sorted_simhits.size()-1 && simhit_position[i][0] == simhit_position[i+1][0] && simhit_position[i][1] == simhit_position[i+1][1] )
-	   //)))
-	   {
-	     std::cout<<"REMOVE THIS HIT" << std::endl;
-	     //	     sorted_simhits.erase(sorted_simhits.begin() + i); // remove repeated hit
-	   }
-	 else
-	   cleaned_simhits.push_back(sorted_simhits[i]);
-
-       }
-       std::cout<<"Finish loop over sorted simhits"<<std::endl;
-     }
-
-    
-     std::cout<<"Nr simhits from TP = "<< gen_nr_simhits_[np_gen_]<<std::endl;
-     std::cout<<"counted hits in simTracks from TP = "<<hit_idx<<std::endl;
-     std::cout<<"cleaned_simhits.size() = " <<cleaned_simhits.size()<<std::endl;
 
      np_gen_++; // count tracking particles that pass the standard quality cuts
    } // <-- end loop over tracking particles

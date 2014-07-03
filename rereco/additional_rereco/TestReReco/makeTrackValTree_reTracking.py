@@ -5,7 +5,7 @@ process = cms.Process("reGsfTracking")
 # message logger
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger = cms.Service("MessageLogger",
-                                         default = cms.untracked.PSet( limit = cms.untracked.int32(-1) )
+                                         default = cms.untracked.PSet( limit = cms.untracked.int32(100) )
                                     )
 
 # source
@@ -82,7 +82,6 @@ process.load("CondCore.DBCommon.CondDBSetup_cfi")
 process.load("Configuration.StandardSequences.Reconstruction_cff")
 
 
-
 from SimGeneral.MixingModule.trackingTruthProducer_cfi import *
 
 #process.TrajectoryBuilderForElectrons.estimator = cms.string('Chi4A')
@@ -97,7 +96,6 @@ nSigma = 4
 
 ########################################################################
 # to change parameters  as in slides from A.Tropiano
-
 
 process.TrajectoryBuilderForElectrons.maxCand = cms.int32( maxCand )
 process.ElectronChi2.MaxChi2 = cms.double( maxChi2 )

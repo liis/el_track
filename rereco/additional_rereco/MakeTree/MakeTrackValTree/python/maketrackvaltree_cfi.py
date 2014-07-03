@@ -1,5 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 from Validation.RecoTrack.TrackingParticleSelectionForEfficiency_cfi import * 
+from SimTracker.TrackAssociation.LhcParametersDefinerForTP_cfi import *
 
 TrackingParticleSelectionForEfficiency.tipTP = cms.double(3)
 TrackingParticleSelectionForEfficiency.pdgIdTP = cms.vint32([-11, 11])

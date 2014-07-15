@@ -1,0 +1,62 @@
+
+##########################################
+    Welcome to the DataReplica service
+    from PSI/ETHZ with love
+##########################################
+
+Preferred Sites:  []
+Denied Sites:  ['T0', 'MSS']
+Your proxy will last 11.9 hours, if you think you'll need more time please renew it.
+ 
+### Copy process of file 1/1: /store/mc/Fall13dr/DYJetsToLL_M-50_13TeV-pythia6/GEN-SIM-RAW/tsg_PU40bx25_POSTLS162_V2-v1/00000/044C97C0-B675-E311-B49C-0025901D4D76.root
+	 Using PhEDEx Data Service for Discovery: True
+	 To site: T3_CH_PSI
+
+	 Trial from: T1_UK_RAL_Disk--------------
+		 From-PFN: srm://srm-cms-disk.gridpp.rl.ac.uk:8443/srm/managerv2?SFN=/castor/ads.rl.ac.uk/prod/cms/disk/store/mc/Fall13dr/DYJetsToLL_M-50_13TeV-pythia6/GEN-SIM-RAW/tsg_PU40bx25_POSTLS162_V2-v1/00000/044C97C0-B675-E311-B49C-0025901D4D76.root
+		 To-PFN: srm://t3se01.psi.ch:8443/srm/managerv2?SFN=/pnfs/psi.ch/cms/trivcat/store/user/liis/GSF_tracking_samples/test_Zee_62_RECO_2/044C97C0-B675-E311-B49C-0025901D4D76.root
+		 Size: 4274012716 bytes (4076.01615524 MB)
+ 		 Elapsed Time: 15.6172831059 s
+		 Speed: 0 MB/s
+		 Success: -1
+		 Error: (lcg_cp: Invalid argument )
+
+	 Trial from: T2_FR_GRIF_LLR--------------
+		 From-PFN: srm://polgrid4.in2p3.fr:8446/srm/managerv2?SFN=/dpm/in2p3.fr/home/cms/trivcat/store/mc/Fall13dr/DYJetsToLL_M-50_13TeV-pythia6/GEN-SIM-RAW/tsg_PU40bx25_POSTLS162_V2-v1/00000/044C97C0-B675-E311-B49C-0025901D4D76.root
+		 To-PFN: srm://t3se01.psi.ch:8443/srm/managerv2?SFN=/pnfs/psi.ch/cms/trivcat/store/user/liis/GSF_tracking_samples/test_Zee_62_RECO_2/044C97C0-B675-E311-B49C-0025901D4D76.root
+		 Size: 4274012716 bytes (4076.01615524 MB)
+ 		 Elapsed Time: 3.22960495949 s
+		 Speed: 0 MB/s
+		 Success: -1
+		 Error: (lcg_cp: Invalid argument )
+
+	 Trial from: T1_UK_RAL_Buffer--------------
+		 From-PFN: srm://srm-cms.gridpp.rl.ac.uk:8443/srm/managerv2?SFN=/castor/ads.rl.ac.uk/prod/cms/store/mc/Fall13dr/DYJetsToLL_M-50_13TeV-pythia6/GEN-SIM-RAW/tsg_PU40bx25_POSTLS162_V2-v1/00000/044C97C0-B675-E311-B49C-0025901D4D76.root
+		 To-PFN: srm://t3se01.psi.ch:8443/srm/managerv2?SFN=/pnfs/psi.ch/cms/trivcat/store/user/liis/GSF_tracking_samples/test_Zee_62_RECO_2/044C97C0-B675-E311-B49C-0025901D4D76.root
+		 Size: 4274012716 bytes (4076.01615524 MB)
+ 		 Elapsed Time: 1408.19211793 s
+		 Speed: 0 MB/s
+		 Success: -1
+		 Error: ([SE][StatusOfGetRequest][ETIMEDOUT] httpg://srm-cms.gridpp.rl.ac.uk:8443/srm/managerv2: User timeout over  lcg_cp: Connection timed out )
+
+	 Trial from: T2_US_Wisconsin--------------
+		 From-PFN: srm://cmssrm.hep.wisc.edu:8443/srm/v2/server?SFN=/hdfs/store/mc/Fall13dr/DYJetsToLL_M-50_13TeV-pythia6/GEN-SIM-RAW/tsg_PU40bx25_POSTLS162_V2-v1/00000/044C97C0-B675-E311-B49C-0025901D4D76.root
+		 To-PFN: srm://t3se01.psi.ch:8443/srm/managerv2?SFN=/pnfs/psi.ch/cms/trivcat/store/user/liis/GSF_tracking_samples/test_Zee_62_RECO_2/044C97C0-B675-E311-B49C-0025901D4D76.root
+		 Size: 4274012716 bytes (4076.01615524 MB)
+ 		 Elapsed Time: 11.4955720901 s
+		 Speed: 0 MB/s
+		 Success: -1
+		 Error: (lcg_cp: Invalid argument )
+Returned code 1
+# ================================================================
+# JOB Live Resources USAGE for job 5504664: ( don't consider mem values, they are wrong )
+# usage    1:                 cpu=00:27:15, mem=1447.00000 GBs, io=0.00649, vmem=1.000G, maxvmem=1.000G
+# 
+# JOB Historical Resources USAGE for job 5504664: you have to manually run
+# qacct -j 5504664 || qacct -f /gridware/sge/default/common/accounting.complete -j 5504664
+# 
+# JOB ran over queue@host = all.q@t3wn36.psi.ch
+# 
+# JOBs executed on t3wn[30-40] should run ~1.13 faster than t3wn[10-29]
+#
+# removing TMPDIR: /scratch/tmpdir-5504664.1.all.q

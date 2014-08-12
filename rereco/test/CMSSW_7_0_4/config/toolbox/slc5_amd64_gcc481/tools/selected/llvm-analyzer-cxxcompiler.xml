@@ -1,8 +1,0 @@
-  <tool name="llvm-analyzer-cxxcompiler" version="3.3-cms3" type="compiler">
-    <use name="llvm-cxxcompiler"/>
-    <client>
-      <environment name="LLVM_ANALYZER_CXXCOMPILER_BASE" default="/swshare/cms/slc5_amd64_gcc481/external/llvm/3.3-cms3"/>
-      <environment name="CXX" value="$LLVM_ANALYZER_CXXCOMPILER_BASE/bin/c++-analyzer"/>
-    </client>
-    <runtime name="COMPILER_RUNTIME_OBJECTS" value="/swshare/cms/slc5_amd64_gcc481/external/gcc/4.8.1"/>
-  </tool>

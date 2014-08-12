@@ -1,6 +1,0 @@
-  <tool name="ccache-f77compiler" version="" type="compiler">
-    <use name="gcc-f77compiler"/>
-    <client>
-      <environment name="FC" default="/swshare/cms/slc5_amd64_gcc481/external/ccache/3.1.8/bin/gfortran"/>
-    </client>
-  </tool>

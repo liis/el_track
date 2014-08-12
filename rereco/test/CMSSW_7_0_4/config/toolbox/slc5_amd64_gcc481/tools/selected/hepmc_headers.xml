@@ -1,6 +1,0 @@
-<tool name="hepmc_headers" version="2.06.07">
-  <client>
-    <environment name="HEPMC_HEADERS_BASE" default="/swshare/cms/slc5_amd64_gcc481/external/hepmc/2.06.07"/>
-    <environment name="INCLUDE" default="$HEPMC_HEADERS_BASE/include"/>
-  </client>
-</tool>

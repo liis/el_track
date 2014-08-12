@@ -1,5 +1,0 @@
-<tool name="xdaqsentinelutils" version="VR17173-cms5">
-  <info url="http://home.cern.ch/xdaq"/>
-  <lib name="sentinelutils"/>
-  <use name="xdaq"/>
-</tool>

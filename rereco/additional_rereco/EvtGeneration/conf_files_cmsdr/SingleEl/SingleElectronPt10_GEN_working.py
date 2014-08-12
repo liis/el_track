@@ -2,7 +2,7 @@
 # using: 
 # Revision: 1.19 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
-# with command line options: SingleElectronPt10_cfi --conditions PRE_STA71_V4 -n 10 --eventcontent FEVTDEBUG --relval 9000,500 -s GEN,SIM --datatier GEN-SIM --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1 --magField 38T_PostLS1 --io ./outfiles/SingleElectronPt10_GEN.io --python ./conf_files_cmsdr/SingleElectronPt10_GEN.py --no_exec --fileout file:./outfiles/SingleElectronPt10_GEN.root
+# with command line options: SingleElectronPt10_cfi --conditions PRE_STA71_V4::All -n 100000 --eventcontent FEVTDEBUG --relval 9000,500 -s GEN,SIM --datatier GEN-SIM --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1 --magField 38T_PostLS1 --io ./outfiles/SingleElectronPt10_GEN.io --python ./conf_files_cmsdr/SingleEl_GEN/SingleElectronPt10_GEN.py --no_exec --fileout file:./outfiles/SingleElectronPt10_GEN.root
 import FWCore.ParameterSet.Config as cms
 
 process = cms.Process('SIM')
@@ -24,20 +24,20 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10)
-)
+	input = cms.untracked.int32(100000)
+	)
+
+process.MessageLogger.cerr.FwkReport.reportEvery = 1
 
 # Input source
 process.source = cms.Source("EmptySource")
 
-process.options = cms.untracked.PSet(
-
-)
+process.options = cms.untracked.PSet()
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
     version = cms.untracked.string('$Revision: 1.19 $'),
-    annotation = cms.untracked.string('SingleElectronPt10_cfi nevts:10'),
+    annotation = cms.untracked.string('SingleElectronPt10_cfi nevts:200000'),
     name = cms.untracked.string('Applications')
 )
 
@@ -47,7 +47,7 @@ process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
     splitLevel = cms.untracked.int32(0),
     eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
     outputCommands = process.FEVTDEBUGEventContent.outputCommands,
-    fileName = cms.untracked.string('file:./outfiles/SingleElectronPt10_GEN.root'),
+    fileName = cms.untracked.string('file:../../outfiles/GEN/SingleElectronPt10_GEN.root'),
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string(''),
         dataTier = cms.untracked.string('GEN-SIM')
@@ -62,7 +62,7 @@ process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
 # Other statements
 process.genstepfilter.triggerConditions=cms.vstring("generation_step")
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'PRE_STA71_V4::All', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'POSTLS170_V7::All', '')
 
 process.generator = cms.EDProducer("FlatRandomPtGunProducer",
     PGunParameters = cms.PSet(

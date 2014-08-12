@@ -1,0 +1,8 @@
+<tool name="mimetic" version="0.9.6">
+  <lib name="mimetic"/>
+  <client>
+    <environment name="MIMETIC_BASE" default="/swshare/cms/slc5_amd64_gcc472/external/mimetic/0.9.6"/>
+    <environment name="LIBDIR" default="$MIMETIC_BASE/lib"/>
+    <environment name="INCLUDE" default="$MIMETIC_BASE/include"/>
+  </client>
+</tool>

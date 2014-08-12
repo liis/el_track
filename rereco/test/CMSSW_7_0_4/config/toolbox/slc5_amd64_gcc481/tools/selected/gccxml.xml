@@ -1,0 +1,6 @@
+<tool name="gccxml" version="0.9.0-20130702-0-cms">
+  <client>
+    <environment name="GCCXML_BASE" default="/swshare/cms/slc5_amd64_gcc481/external/gccxml/0.9.0-20130702-0-cms"/>
+  </client>
+  <runtime name="PATH" value="$GCCXML_BASE/bin" type="path"/>
+</tool>

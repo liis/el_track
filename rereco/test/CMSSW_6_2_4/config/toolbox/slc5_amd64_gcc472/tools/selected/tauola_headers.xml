@@ -1,0 +1,6 @@
+<tool name="tauola_headers" version="27.121.5-cms">
+  <client>
+    <environment name="TAUOLA_HEADERS_BASE" default="/swshare/cms/slc5_amd64_gcc472/external/tauola/27.121.5-cms"/>
+    <environment name="INCLUDE" default="$TAUOLA_HEADERS_BASE/include"/>
+  </client>
+</tool>

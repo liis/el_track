@@ -1,0 +1,7 @@
+<tool name="castor_header" version="2.1.13.9">
+  <client>
+    <environment name="CASTOR_HEADER_BASE" default="/swshare/cms/slc5_amd64_gcc481/external/castor/2.1.13.9"/>
+    <environment name="INCLUDE" default="$CASTOR_HEADER_BASE/include"/>
+    <environment name="INCLUDE" default="$CASTOR_HEADER_BASE/include/shift"/>
+  </client>
+</tool>

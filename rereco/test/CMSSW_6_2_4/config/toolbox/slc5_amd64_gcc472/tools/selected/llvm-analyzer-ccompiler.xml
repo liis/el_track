@@ -1,0 +1,7 @@
+  <tool name="llvm-analyzer-ccompiler" version="3.2-cms2" type="compiler">
+    <use name="llvm-ccompiler"/>
+    <client>
+      <environment name="LLVM_ANALYZER_CCOMPILER_BASE" default="/swshare/cms/slc5_amd64_gcc472/external/llvm/3.2-cms2"/>
+      <environment name="CC" value="$LLVM_ANALYZER_CCOMPILER_BASE/bin/ccc-analyzer"/>
+    </client>
+  </tool>

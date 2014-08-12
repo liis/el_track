@@ -1,0 +1,9 @@
+  <tool name="openssl" version="0.9.8e__1.0.1">
+    <lib name="ssl"/>
+    <lib name="crypto"/>
+    <client>
+      <environment name="OPENSSL_BASE" default="/swshare/cms/slc5_amd64_gcc472/external/openssl/0.9.8e__1.0.1"/>
+      <environment name="INCLUDE" default="$OPENSSL_BASE/include"/>
+      <environment name="LIBDIR" default="$OPENSSL_BASE/lib"/>
+    </client>
+  </tool>

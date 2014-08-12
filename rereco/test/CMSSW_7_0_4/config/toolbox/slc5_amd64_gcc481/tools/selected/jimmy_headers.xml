@@ -1,0 +1,6 @@
+<tool name="jimmy_headers" version="4.2-cms">
+  <client>
+    <environment name="JIMMY_HEADERS_BASE" default="/swshare/cms/slc5_amd64_gcc481/external/jimmy/4.2-cms"/>
+    <environment name="INCLUDE" default="$JIMMY_HEADERS_BASE/include"/>
+  </client>
+</tool>

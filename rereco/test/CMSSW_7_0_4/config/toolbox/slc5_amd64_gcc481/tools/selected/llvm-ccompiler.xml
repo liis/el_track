@@ -1,0 +1,7 @@
+  <tool name="llvm-ccompiler" version="3.3-cms3" type="compiler">
+    <use name="gcc-ccompiler"/>
+    <client>
+      <environment name="LLVM_CCOMPILER_BASE" default="/swshare/cms/slc5_amd64_gcc481/external/llvm/3.3-cms3"/>
+      <environment name="CC" value="$LLVM_CCOMPILER_BASE/bin/clang"/>
+    </client>
+  </tool>

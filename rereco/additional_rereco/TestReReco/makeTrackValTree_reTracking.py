@@ -11,7 +11,7 @@ process.MessageLogger = cms.Service("MessageLogger",
 # source
 readFiles = cms.untracked.vstring()
 #------------------------- define secondary files -----------------------------
-useSecFiles = True #needed for MakeTrackValTree (tracking particles)
+useSecFiles = False #needed for MakeTrackValTree (tracking particles)
 run_PSI     = True
 
 if not useSecFiles: #Use secondary files
@@ -56,13 +56,20 @@ else:  # run at EE
     
 source = cms.Source ("PoolSource",
                      fileNames=cms.untracked.vstring(
-    'file:007CEDE1-B1D1-E311-9EC9-02163E00E9CC.root' 
+#    'file:007CEDE1-B1D1-E311-9EC9-02163E00E9CC.root' 
+#    'file:step2.root'
+#    'file:samtest_reco.root'
+#    'file:test2_sam.root' ## the last one
+#    'file:../EvtGeneration/outfiles/testing/SingleElectronPt10_RECO.root'
+    'file:test_sam_zee.root'
+#    'file:rawToReco.root'
+#    'root://eoscms//eos/cms/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_100_2_qzC.root'
     ),
                      secondaryFileNames=secFiles #Provide corresponding DIGI files for tracking particles
     )
 
 process.source = source
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(200) )
 
 
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")

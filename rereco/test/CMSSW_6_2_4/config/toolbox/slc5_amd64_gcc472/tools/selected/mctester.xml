@@ -1,0 +1,12 @@
+<tool name="mctester" version="1.25.0a-cms18">
+  <lib name="HEPEvent"/>
+  <lib name="HepMCEvent"/>
+  <lib name="MCTester"/>
+  <client>
+    <environment name="MCTESTER_BASE" default="/swshare/cms/slc5_amd64_gcc472/external/mctester/1.25.0a-cms18"/>
+    <environment name="LIBDIR" default="$MCTESTER_BASE/lib"/>
+    <environment name="INCLUDE" default="$MCTESTER_BASE/include"/>
+  </client>
+  <use name="root"/>
+  <use name="HepMC"/>
+</tool>

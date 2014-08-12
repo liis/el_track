@@ -1,0 +1,6 @@
+  <tool name="distcc-cxxcompiler" version="3.2rc1-cms2" type="compiler">
+    <use name="gcc-cxxcompiler"/>
+    <client>
+      <environment name="CXX" value="/swshare/cms/slc5_amd64_gcc472/external/distcc/3.2rc1-cms2/bin/c++"/>
+    </client>
+  </tool>

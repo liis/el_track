@@ -1,0 +1,7 @@
+<project name="CMSSW" version="CMSSW_6_2_4">
+  <config dir="config"/>
+  <toolbox dir="file:/swshare/cms/slc5_amd64_gcc472/cms/cmssw-tool-conf/26.0-cms13"/>
+  <base url="file:/swshare/cms/BUILD/slc5_amd64_gcc472/cms/cmssw/CMSSW_6_2_4/">
+    <download url="file:config" name="config"/>
+  </base>
+</project>

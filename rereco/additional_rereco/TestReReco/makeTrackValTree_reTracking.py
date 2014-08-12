@@ -61,9 +61,9 @@ source = cms.Source ("PoolSource",
 #    'file:samtest_reco.root'
 #    'file:test2_sam.root' ## the last one
 #    'file:../EvtGeneration/outfiles/testing/SingleElectronPt10_RECO.root'
-    'file:test_sam_zee.root'
+#    'file:test_sam_zee.root'
 #    'file:rawToReco.root'
-#    'root://eoscms//eos/cms/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_100_2_qzC.root'
+    '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_100_2_qzC.root'
     ),
                      secondaryFileNames=secFiles #Provide corresponding DIGI files for tracking particles
     )
@@ -75,7 +75,7 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(200) )
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 #from Configuration.AlCa.GlobalTag import GlobalTag
 #process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:startup')
-process.GlobalTag.globaltag = 'PRE_STA71_V2::All'
+process.GlobalTag.globaltag = 'PRE_STA71_V4::All'
 
 process.load('Configuration/StandardSequences/Services_cff')
 process.load("Configuration.Geometry.GeometryIdeal_cff")
@@ -87,7 +87,6 @@ process.load("Configuration.EventContent.EventContent_cff")
 process.load("Configuration.StandardSequences.MagneticField_cff")
 process.load("CondCore.DBCommon.CondDBSetup_cfi")
 process.load("Configuration.StandardSequences.Reconstruction_cff")
-
 
 from SimGeneral.MixingModule.trackingTruthProducer_cfi import *
 
@@ -128,7 +127,8 @@ process.myGsfReco = cms.Sequence(
 )
 
 outdir = "out_tests/"
-outfilename = outdir + "reGsfTracking_maxCand_" + str(maxCand) + "_MaxChi2_" + str(maxChi2) + "_nSigma_" + str(nSigma) + ".root"
+#outfilename = outdir + "reGsfTracking_maxCand_" + str(maxCand) + "_MaxChi2_" + str(maxChi2) + "_nSigma_" + str(nSigma) + ".root"
+outfilename = "trackValTree_reTrk.root"
 print "Writing output to file: " + outfilename
 
 process.TFileService = cms.Service("TFileService", # if save

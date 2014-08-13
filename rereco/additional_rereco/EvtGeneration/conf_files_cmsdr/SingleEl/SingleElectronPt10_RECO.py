@@ -28,7 +28,7 @@ process.maxEvents = cms.untracked.PSet(
 # Input source
 process.source = cms.Source("PoolSource",
     secondaryFileNames = cms.untracked.vstring(),
-    fileNames = cms.untracked.vstring('file:./outfiles/testing/SingleElectronPt10_RAW.root')
+    fileNames = cms.untracked.vstring('file:SingleElectronPt10_RAW.root')
 )
 
 process.options = cms.untracked.PSet(
@@ -44,11 +44,14 @@ process.configurationMetadata = cms.untracked.PSet(
 
 # Output definition
 
+outfile="SingleElectronPt10_RECO.root"
+print "Saving output to: " + outfile
+
 process.RECODEBUGoutput = cms.OutputModule("PoolOutputModule",
     splitLevel = cms.untracked.int32(0),
     eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
     outputCommands = process.RECODEBUGEventContent.outputCommands,
-    fileName = cms.untracked.string('file:./outfiles/testing/SingleElectronPt10_RECO.root'),
+    fileName = cms.untracked.string('file:' + outfile ),
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string(''),
         dataTier = cms.untracked.string('GEN-SIM-RECO-RECODEBUG')

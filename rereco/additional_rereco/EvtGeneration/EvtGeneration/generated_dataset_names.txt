@@ -1,0 +1,10 @@
+Single particle datasets with 200 000 events each
+
+SingleEl Pt10 RAW: /SingleElectronPt10_GENRAW/liis-SingleElectronPt10_GENRAW-e3836bbc8963af856a63e9ad4f908d25/USER (complete)
+SingleEl Pt10 RECO: running
+
+SingleEl Pt100 RAW: running
+SingleEl Pt100 RECO:
+
+SingleEl FlatPt RAW: running
+SingleEl FlatPt RECO:

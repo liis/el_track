@@ -1,1 +1,0 @@
-qsub -V -cwd -q long.q run_GEN.sh

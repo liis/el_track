@@ -37,6 +37,8 @@
 #include "DataFormats/EgammaReco/interface/ElectronSeed.h"
 #include "DataFormats/EgammaReco/interface/ElectronSeedFwd.h"
 #include "DataFormats/TrajectorySeed/interface/TrajectorySeedCollection.h"
+#include "DataFormats/VertexReco/interface/Vertex.h"
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
 
 #include "DataFormats/SiStripDetId/interface/StripSubdetector.h"
 #include "DataFormats/SiPixelDetId/interface/PixelSubdetector.h"
@@ -68,6 +70,7 @@
 #include "Geometry/CommonDetUnit/interface/TrackingGeometry.h"
 #include "Geometry/CommonDetUnit/interface/GeomDetUnit.h"
 #include "TTree.h"
+
 //
 // class declaration
 //
@@ -428,14 +431,13 @@ std::vector<PSimHit> MakeTrackValTree::getSimHitsTP(TrackingParticle* tp, std::m
 
 bool MakeTrackValTree::isGoodTrack(edm::RefToBase<reco::Track> trk, math::XYZPoint bsPosition, std::vector<math::XYZPoint> points, bool debug = false){
 
-  //  double max_dxy = 3;
-  //  double max_dz = 30;
+  double max_dxy = 3;
+  double max_dz = 30;
   double res_par[2] = {0.003, 0.01};
   double d0_par1[2] = {0.3, 4.0};
   double dz_par1[2] = {0.35, 4.0};
   double d0_par2[2] = {0.4, 4.0};
   double dz_par2[2] = {0.4, 4.0};
-  //  double nSigmaZ = 4;
   
   int min_layers = 3;
   int min_3Dlayers = 3;
@@ -464,36 +466,32 @@ bool MakeTrackValTree::isGoodTrack(edm::RefToBase<reco::Track> trk, math::XYZPoi
   double d0Cut = std::min( pow(d0_par1[0]*nlayers,d0_par1[1])*nomd0E,
 					  pow(d0_par2[0]*nlayers,d0_par2[1])*d0E );
 
-  std::cout<<"dzcut = "<< dzCut<<"d0cut = " <<d0Cut <<std::endl;
-
   // ---- PrimaryVertex compatibility cut
   bool primaryVertexZCompatibility(false);
   bool primaryVertexD0Compatibility(false);
 
-  /*
-  if (points.empty()) { //If not primaryVertices are reconstructed, check just the compatibility with the BS
-	//z0 within (n sigma + dzCut) of the beam spot z, if no good vertex is found
-	if ( abs(dz) < hypot(vertexBeamSpot.sigmaZ()*nSigmaZ,dzCut) ) primaryVertexZCompatibility = true;
-	// d0 compatibility with beam line
-	if (abs(d0) < d0Cut) primaryVertexD0Compatibility = true;
-	}
-  */
-
-  /*  for (std::vector<math::XYZPoint>::const_iterator point = points.begin(), end = points.end(); point != end; ++point) {
-	std::cout << "Test track w.r.t. vertex with z position " << point->z();
-	if(primaryVertexZCompatibility && primaryVertexD0Compatibility) break;
-	double dzPV = tk.dz(*point); //re-evaluate the dz with respect to the vertex position
-	double d0PV = tk.dxy(*point); //re-evaluate the dxy with respect to the vertex position
+  
+  for (std::vector<math::XYZPoint>::const_iterator point = points.begin(); point != points.end(); ++point) { //at least one primary vertex required
+	double dzPV = trk->dz(*point); //re-evaluate the dz with respect to the vertex position
+	double d0PV = trk->dxy(*point); //re-evaluate the dxy with respect to the vertex position
 	if (abs(dzPV) < dzCut)  primaryVertexZCompatibility = true;
 	if (abs(d0PV) < d0Cut) primaryVertexD0Compatibility = true;
-	std::cout << "distances " << dzPV << " " << d0PV << " vs " << dzCut << " " << d0Cut;
-	}
-  */
-  
-  
-  //  if( abs(dz) > max_dz || abs(d0) > max_dxy){
 
-  if(primaryVertexZCompatibility && primaryVertexD0Compatibility){
+	if(primaryVertexZCompatibility && primaryVertexD0Compatibility) {
+	  if ( debug )
+		std::cout << "distances " << dzPV << " " << d0PV << " vs " << dzCut << " " << d0Cut << std::endl;
+	  break;
+	}
+  }
+  if (points.size() < 0.5){ // typically in case of single particle events
+	if (abs(dz) < max_dz )
+	  primaryVertexZCompatibility = true;
+	if (abs(d0) < max_dxy )
+	  primaryVertexD0Compatibility = true;
+  }
+  
+
+  if( !(primaryVertexZCompatibility && primaryVertexD0Compatibility) ){
 	if( debug )
 	  std::cout<<"didnt pass the ip cuts"<<std::endl;
 	return false;
@@ -620,6 +618,22 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    edm::Handle<edm::View<reco::ElectronSeed> > elSeedCollection; 
    iEvent.getByLabel(el_seed_label_, elSeedCollection);
 
+   // Select good primary vertices for use in subsequent track selection
+   edm::Handle<reco::VertexCollection> hVtx;
+   iEvent.getByLabel("pixelVertices", hVtx);
+   
+   std::vector<math::XYZPoint> PV_points;
+   PV_points.clear();
+   for (reco::VertexCollection::const_iterator it = hVtx->begin(); it != hVtx->end(); ++it) {
+	 reco::Vertex vtx = *it;
+	 if( it->ndof() >=2 && !(it->isFake()) )
+	   PV_points.push_back(it->position());
+   }
+
+   //   nr_PV_ = PV_points.size()
+   //   std::cout<<"Nr of primary vertices = " << PV_points.size() <<std::endl;
+   
+   // Tracking particles
    edm::Handle<TrackingParticleCollection>  TPCollection ; //simulated tracks
    iEvent.getByLabel("mix","MergedTrackTruth",TPCollection);
 
@@ -692,14 +706,14 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      //--------check for matched reco track defined by AssociatorByHits (efficiency and fake-rate plots)-----------
      const reco::Track* matchedTrackPointer=0;
      std::vector<std::pair<edm::RefToBase<reco::Track>, double> > rt;
-     //     int nSharedHits = 0; int nRecoTrackHits=0;
+	 // int nSharedHits = 0; int nRecoTrackHits=0;
 
      if(simRecColl.find(tpr) != simRecColl.end()){
        rt = simRecColl[tpr]; // find sim-to-reco association
        if ( rt.size()!=0 ) {
 		 matchedTrackPointer = rt.begin()->first.get(); //pointer to corresponding reco track                                                 
-		 //	 nSharedHits = rt.begin()->second;
-		 //	 nRecoTrackHits = matchedTrackPointer->numberOfValidHits();
+		 //		 nSharedHits = rt.begin()->second;
+		 //		 nRecoTrackHits = matchedTrackPointer->numberOfValidHits();
 		 is_reco_matched_[np_gen_] = 1;
 
 		 //-------------- efficiencies-----------------
@@ -770,19 +784,17 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      
      //     std::cout<<"Matched seed charge = "<<gen_matched_seed_okCharge_[np_gen_]<<", match quality = "<< gen_matched_seed_quality_[np_gen_]<<", nr matched seed hits = "<< gen_matched_seed_nshared_[np_gen_]<<std::endl;     
 
-	 //     std::cout<<"Found tracking particle with pt = "<<tp->pt()<<", eta = "<<tp->eta()<<std::endl; 
-     //     std::cout<<"nr shared hits = "<<nSharedHits<<", nr reco hits "<<nRecoTrackHits<<" matched reco pt = "<<gen_matched_rec_pt_[np_gen_]<<", gen. qoverp = "<<gen_matched_qoverp_[np_gen_]<<", matched reco qoverp = "<<gen_matched_rec_qoverp_[np_gen_]<<std::endl; 
+	 //	 std::cout<<"Found tracking particle with pt = "<<tp->pt()<<", eta = "<<tp->eta()<<", phi = " << tp->phi()<<std::endl; 
+	 // std::cout<<"nr shared hits = "<<nSharedHits<<", nr reco hits "<<nRecoTrackHits<<" matched reco pt = "<<gen_matched_rec_pt_[np_gen_]<< std::endl;
+	 //", gen. qoverp = "<<gen_matched_qoverp_[np_gen_]<<", matched reco qoverp = "<<gen_matched_rec_qoverp_[np_gen_]<<std::endl; 
 
 
 
      np_gen_++; // count tracking particles that pass the standard quality cuts
    } // <-- end loop over tracking particles
 
-   std::cout<<"nr. sel TP-s = " <<np_gen_<<std::endl;
+   //   std::cout<<"nr. sel TP-s = " <<np_gen_<<std::endl;
 
-   std::vector<math::XYZPoint> PV_points;
-   PV_points.clear();
-   
    //------------------------ loop over reco tracks --------------------------
    np_reco_ = 0;
    np_reco_toGen_ = 0;
@@ -790,16 +802,17 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    for( edm::View<reco::Track>::size_type i=0; i<trackCollection->size(); i++){
      edm::RefToBase<reco::Track> track(trackCollection, i);
 
-	 if (isGoodTrack(track, bsPosition, PV_points, true) )
-	   std::cout<<"found good track"<<std::endl;
+	 if( track->pt() < 2 ) continue; // reduce noise, irrelevant for electrons
+	 if (isGoodTrack(track, bsPosition, PV_points, false) ) continue;
+	 //	   std::cout<<"found good track"<<std::endl;
 	 
-     if( track->pt() < 2 ) continue; // reduce noise, irrelevant for electrons
-	 //	 if( fabs(track->dxy(bsPosition)) > 0.05) continue; // check distance from bs
-
 	 
      reco_pt_[np_reco_] = track->pt();
      reco_phi_[np_reco_] = track->phi();
-     reco_eta_[np_reco_] = track->eta();
+
+	 if( track->pt() > 9.5) //don't take the low pt trash to eta fake-rate
+	   reco_eta_[np_reco_] = track->eta();
+
      //     reco_nrRecoHits_[np_reco_] = track->numberOfValidHits();
 
      //---------------------check association maps to sim-tracks---------------------
@@ -818,7 +831,10 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
      else{  // if fake
        is_gen_matched_[np_reco_] = 0;
-       fake_eta_[np_fake_] = track->eta();
+
+	   if (track->pt() > 9.5)
+		 fake_eta_[np_fake_] = track->eta();
+
        fake_pt_[np_fake_] = track->pt();
        fake_phi_[np_fake_] = track->phi();
 	   fake_nr_rechits_[np_fake_] = track->numberOfValidHits();

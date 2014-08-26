@@ -22,7 +22,7 @@ f = ROOT.TFile(indir + infile)
 t = f.Get("trackValTreeMaker/trackValTree")
 #t = f.Get("TrackValTreeMaker/trackValTree") # for old trees (??)
 
-report_every = 1
+report_every = 10000
 if args.is_test_run:
     max_event=1000
 else:

@@ -3,6 +3,10 @@ from Validation.RecoTrack.TrackingParticleSelectionForEfficiency_cfi import *
 from SimTracker.TrackAssociation.LhcParametersDefinerForTP_cfi import *
 
 TrackingParticleSelectionForEfficiency.tipTP = cms.double(3)
+TrackingParticleSelectionForEfficiency.lipTP = cms.double(30)
+TrackingParticleSelectionForEfficiency.signalOnlyTP = cms.bool(True) # if True, dont consider PU tracks
+TrackingParticleSelectionForEfficiency.minHitTP = cms.int32(3)
+TrackingParticleSelectionForEfficiency.ptMinTP = cms.double(2)
 TrackingParticleSelectionForEfficiency.pdgIdTP = cms.vint32([-11, 11])
 
 trackValTreeMaker = cms.EDAnalyzer('MakeTrackValTree',                                   

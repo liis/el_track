@@ -102,6 +102,8 @@ class MakeTrackValTree : public edm::EDAnalyzer {
       std::vector<int> getHitPosition(DetId, bool);
       GlobalVector getHitMomentum(std::vector<PSimHit>::const_iterator, edm::ESHandle<TrackerGeometry>, bool);
       std::vector<PSimHit> getSimHitsTP(TrackingParticle*, std::map<int, std::vector<PSimHit> >, edm::ESHandle<TrackerGeometry>,  bool, bool, bool);
+      bool isGoodTrack(edm::RefToBase<reco::Track>, math::XYZPoint, std::vector<math::XYZPoint>, bool); //possibly use instead of AnalyticalTrackSelector
+
 
   // ------------------ thresholds for TPselector ----------
   double ptMinTP, minRapidityTP, maxRapidityTP, tipTP, lipTP, signalOnlyTP, chargedOnlyTP, stableOnlyTP; 
@@ -114,7 +116,7 @@ class MakeTrackValTree : public edm::EDAnalyzer {
   int is_reco_matched_[MAXPART], is_gen_matched_[MAXPART];
   int gen_pdgId_[MAXPART], gen_nr_simhits_[MAXPART], gen_matched_seed_nshared_[MAXPART], gen_matched_seed_okCharge_[MAXPART], is_ecalDrivenSeed_[MAXPART], is_trackerDrivenSeed_[MAXPART];
 
-  double reco_pt_[MAXPART], reco_eta_[MAXPART], reco_phi_[MAXPART], fake_pt_[MAXPART], fake_eta_[MAXPART], fake_phi_[MAXPART];
+  double reco_pt_[MAXPART], reco_eta_[MAXPART], reco_phi_[MAXPART], fake_pt_[MAXPART], fake_eta_[MAXPART], fake_phi_[MAXPART], fake_dxy_[MAXPART], fake_dz_[MAXPART], fake_nr_rechits_[MAXPART];
 
   // parameters of TPs and reco matched TPs
   double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_qoverp_[MAXPART], gen_matched_cotth_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_theta_[MAXPART], gen_matched_phi_[MAXPART], gen_matched_dz_[MAXPART], gen_matched_dxy_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART], gen_ptAtLast_[MAXPART], gen_bremFraction_[MAXPART], gen_matched_seed_quality_[MAXPART];  
@@ -424,6 +426,108 @@ std::vector<PSimHit> MakeTrackValTree::getSimHitsTP(TrackingParticle* tp, std::m
   return simhits_cleaned;
 }
 
+bool MakeTrackValTree::isGoodTrack(edm::RefToBase<reco::Track> trk, math::XYZPoint bsPosition, std::vector<math::XYZPoint> points, bool debug = false){
+
+  //  double max_dxy = 3;
+  //  double max_dz = 30;
+  double res_par[2] = {0.003, 0.01};
+  double d0_par1[2] = {0.3, 4.0};
+  double dz_par1[2] = {0.35, 4.0};
+  double d0_par2[2] = {0.4, 4.0};
+  double dz_par2[2] = {0.4, 4.0};
+  //  double nSigmaZ = 4;
+  
+  int min_layers = 3;
+  int min_3Dlayers = 3;
+  int max_lostLayers = 2; 
+  double chi2n_par = 0.7;
+
+  int nlayers = trk->hitPattern().trackerLayersWithMeasurement();
+  int nlayers3D = trk->hitPattern().pixelLayersWithMeasurement() + trk->hitPattern().numberOfValidStripLayersWithMonoAndStereo();
+  int nlayersLost = trk->hitPattern().trackerLayersWithoutMeasurement();
+
+  double d0 = trk->dxy(bsPosition), d0E = trk->d0Error();
+  double dz = trk->dz(bsPosition), dzE = trk->dzError();
+  
+  if( debug ){
+	std::cout << "trk pt = " << trk->pt() << ", dxy = " << d0 << ", dz = " << dz << ", ndof = "<< trk->ndof() << std::endl;
+	std::cout << "nlayers = " << nlayers << ", nlayers3D = " << nlayers3D << ", nlayersLost = " << nlayersLost <<std::endl;
+  }
+  //--------- distance from PV / beam spot -----------
+
+  // parametrized d0 resolution for the track pt
+  double nomd0E = sqrt(res_par[0]*res_par[0]+(res_par[1]/std::max(trk->pt(),1e-9))*(res_par[1]/std::max(trk->pt(),1e-9)));
+  // parametrized z0 resolution for the track pt and eta
+  double nomdzE = nomd0E*(std::cosh(trk->eta()) );
+  double dzCut = std::min( pow(dz_par1[0]*nlayers,dz_par1[1])*nomdzE,
+					  pow(dz_par2[0]*nlayers,dz_par2[1])*dzE );
+  double d0Cut = std::min( pow(d0_par1[0]*nlayers,d0_par1[1])*nomd0E,
+					  pow(d0_par2[0]*nlayers,d0_par2[1])*d0E );
+
+  std::cout<<"dzcut = "<< dzCut<<"d0cut = " <<d0Cut <<std::endl;
+
+  // ---- PrimaryVertex compatibility cut
+  bool primaryVertexZCompatibility(false);
+  bool primaryVertexD0Compatibility(false);
+
+  /*
+  if (points.empty()) { //If not primaryVertices are reconstructed, check just the compatibility with the BS
+	//z0 within (n sigma + dzCut) of the beam spot z, if no good vertex is found
+	if ( abs(dz) < hypot(vertexBeamSpot.sigmaZ()*nSigmaZ,dzCut) ) primaryVertexZCompatibility = true;
+	// d0 compatibility with beam line
+	if (abs(d0) < d0Cut) primaryVertexD0Compatibility = true;
+	}
+  */
+
+  /*  for (std::vector<math::XYZPoint>::const_iterator point = points.begin(), end = points.end(); point != end; ++point) {
+	std::cout << "Test track w.r.t. vertex with z position " << point->z();
+	if(primaryVertexZCompatibility && primaryVertexD0Compatibility) break;
+	double dzPV = tk.dz(*point); //re-evaluate the dz with respect to the vertex position
+	double d0PV = tk.dxy(*point); //re-evaluate the dxy with respect to the vertex position
+	if (abs(dzPV) < dzCut)  primaryVertexZCompatibility = true;
+	if (abs(d0PV) < d0Cut) primaryVertexD0Compatibility = true;
+	std::cout << "distances " << dzPV << " " << d0PV << " vs " << dzCut << " " << d0Cut;
+	}
+  */
+  
+  
+  //  if( abs(dz) > max_dz || abs(d0) > max_dxy){
+
+  if(primaryVertexZCompatibility && primaryVertexD0Compatibility){
+	if( debug )
+	  std::cout<<"didnt pass the ip cuts"<<std::endl;
+	return false;
+  }
+  //--------- hit pattern quality ------------
+  
+  if(nlayers < min_layers) return false;
+  if(nlayers3D < min_3Dlayers) return false;
+  if(nlayersLost > max_lostLayers) return false;
+  
+  //--------------- chi2 ---------------
+
+  int count1dhits = 0;
+  double chi2n = trk->normalizedChi2();
+  for (trackingRecHit_iterator ith = trk->recHitsBegin(); ith != trk->recHitsEnd(); ++ith) {
+	const TrackingRecHit * hit = ith->get();
+	if (hit->isValid()) {
+	  if (typeid(*hit) == typeid(SiStripRecHit1D))
+		++count1dhits;
+	}
+  }
+  if (count1dhits > 0) {
+	double chi2 = trk->chi2();
+	chi2n = (chi2+count1dhits)/double(trk->ndof()+count1dhits);
+  }
+
+  if( debug )
+	std::cout<<"chi2 = " << chi2n << std::endl;
+
+  if (chi2n > chi2n_par*nlayers) return false;
+  
+  return true;
+}
+
 
 // ------------ method called for each event  ------------
 void
@@ -487,7 +591,10 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      fake_pt_[i] = -99;
      fake_eta_[i] = -99;
      fake_phi_[i] = -99;
-
+	 fake_dxy_[i] = -99;
+	 fake_dz_[i] = -99;
+	 fake_nr_rechits_[i] = -99;
+	 
      gen_matched_rec_pt_[i] = -99;
      gen_matched_rec_eta_[i] = -99;
      gen_matched_rec_theta_[i] = -99;
@@ -505,6 +612,8 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    else
      track_label = track_label_;
 
+   //   std::cout<<"RECO track label = "<<track_label<<std::endl;
+   
    edm::Handle<edm::View<reco::Track> > trackCollection; //reconstructed tracks
    iEvent.getByLabel(track_label, trackCollection);
    
@@ -555,7 +664,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      TrackingParticle::Vector momentum = parametersDefinerTP->momentum(iEvent,iSetup,tpr);
 
      if( !tpSelector(*tp) ) continue;
-     if( tp->pt() < 1 ) continue; // such tracks are irrelevant for electrons
+     if( tp->pt() < 2 ) continue; // such tracks are irrelevant for electrons
 
      std::vector<PSimHit> simhits_TP = getSimHitsTP(tp, simHitMap, tracker, true, true, false); //last bool is for debug 
      if ( !simhits_TP.size() ) continue; // if no simhit with pt > 0.9 (FIXME: maybe check the last hit momentum too)
@@ -669,16 +778,24 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      np_gen_++; // count tracking particles that pass the standard quality cuts
    } // <-- end loop over tracking particles
 
-   //   std::cout<<"nr. sel TP-s = " <<np_gen_<<std::endl;
+   std::cout<<"nr. sel TP-s = " <<np_gen_<<std::endl;
 
+   std::vector<math::XYZPoint> PV_points;
+   PV_points.clear();
+   
    //------------------------ loop over reco tracks --------------------------
    np_reco_ = 0;
    np_reco_toGen_ = 0;
    np_fake_ = 0;
    for( edm::View<reco::Track>::size_type i=0; i<trackCollection->size(); i++){
      edm::RefToBase<reco::Track> track(trackCollection, i);
-     
-     if(track->pt() < 1 ) continue; // reduce noise, irrelevant for electrons
+
+	 if (isGoodTrack(track, bsPosition, PV_points, true) )
+	   std::cout<<"found good track"<<std::endl;
+	 
+     if( track->pt() < 2 ) continue; // reduce noise, irrelevant for electrons
+	 //	 if( fabs(track->dxy(bsPosition)) > 0.05) continue; // check distance from bs
+
 	 
      reco_pt_[np_reco_] = track->pt();
      reco_phi_[np_reco_] = track->phi();
@@ -691,11 +808,11 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      if(recSimColl.find(track) != recSimColl.end()){ // if matched
        tp = recSimColl[track];
        if(tp.size() != 0) {
-	 is_gen_matched_[np_reco_] = 1;
-	 np_reco_toGen_++;
-	 TrackingParticleRef matchedTrackingParticle = tp.begin()->first;
-	 //	 reco_nrSharedHits_[np_reco_] = tp.begin()->second;
-	 // reco_nrSimHits_[np_reco_] = (matchedTrackingParticle->trackPSimHit(DetId::Tracker) ).size();
+		 is_gen_matched_[np_reco_] = 1;
+		 np_reco_toGen_++;
+		 TrackingParticleRef matchedTrackingParticle = tp.begin()->first;
+		 //	 reco_nrSharedHits_[np_reco_] = tp.begin()->second;
+		 // reco_nrSimHits_[np_reco_] = (matchedTrackingParticle->trackPSimHit(DetId::Tracker) ).size();
        }
      }
 
@@ -704,7 +821,10 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
        fake_eta_[np_fake_] = track->eta();
        fake_pt_[np_fake_] = track->pt();
        fake_phi_[np_fake_] = track->phi();
-
+	   fake_nr_rechits_[np_fake_] = track->numberOfValidHits();
+	   fake_dxy_[np_fake_] = track->dxy(bsPosition);
+	   fake_dz_[np_fake_] = track->dz(bsPosition);
+	   
        np_fake_++;
      }
      np_reco_++;     
@@ -744,6 +864,10 @@ MakeTrackValTree::beginJob()
   trackValTree_->Branch("fake_pt", fake_pt_, "fake_pt[np_fake]/D");
   trackValTree_->Branch("fake_eta", fake_eta_, "fake_eta[np_fake]/D");
   trackValTree_->Branch("fake_phi", fake_phi_, "fake_phi[np_fake]/D");
+
+  trackValTree_->Branch("fake_dxy", fake_dxy_, "fake_dxy[np_fake]/D");
+  trackValTree_->Branch("fake_dz", fake_dz_, "fake_dz[np_fake]/D");
+  trackValTree_->Branch("fake_nr_rechits", fake_nr_rechits_, "fake_nr_rechits[np_fake]/D");
 
   // ----------------- TPs ----------------------------
   trackValTree_->Branch("np_gen", &np_gen_, "np_gen/I");

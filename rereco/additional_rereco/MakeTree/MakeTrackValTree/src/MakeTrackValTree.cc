@@ -636,7 +636,8 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    // Tracking particles
    edm::Handle<TrackingParticleCollection>  TPCollection ; //simulated tracks
    iEvent.getByLabel("mix","MergedTrackTruth",TPCollection);
-
+   //   std::cout<<"Number of TPs in the event = " << TPCollection->size() << std::endl;
+   
    edm::Handle<TrackingVertexCollection> tvH; //For checking PU vertices
    iEvent.getByLabel("mix","MergedTrackTruth",tvH);
 
@@ -680,6 +681,8 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      if( !tpSelector(*tp) ) continue;
      if( tp->pt() < 2 ) continue; // such tracks are irrelevant for electrons
 
+	 //	 std::cout<<"found tracking particle nr "<<np_gen_+1<<"with pt = "<<tp->pt() <<", eta = "<<tp->eta() << ", phi = "<<tp->phi() << "nr hits = " <<tp->numberOfTrackerHits() << ", charge = " << tp->charge()<<std::endl;
+	 
      std::vector<PSimHit> simhits_TP = getSimHitsTP(tp, simHitMap, tracker, true, true, false); //last bool is for debug 
      if ( !simhits_TP.size() ) continue; // if no simhit with pt > 0.9 (FIXME: maybe check the last hit momentum too)
 	 
@@ -714,6 +717,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 		 matchedTrackPointer = rt.begin()->first.get(); //pointer to corresponding reco track                                                 
 		 //		 nSharedHits = rt.begin()->second;
 		 //		 nRecoTrackHits = matchedTrackPointer->numberOfValidHits();
+		 //		 std::cout<<"matched with reco track with pt = " << matchedTrackPointer->pt() <<", eta = "<<matchedTrackPointer->eta() << ", phi = " << matchedTrackPointer->phi() << std::endl;
 		 is_reco_matched_[np_gen_] = 1;
 
 		 //-------------- efficiencies-----------------
@@ -799,18 +803,20 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    np_reco_ = 0;
    np_reco_toGen_ = 0;
    np_fake_ = 0;
+   float pt_min_rectrk = 0; //applly the cut when making histograms
    for( edm::View<reco::Track>::size_type i=0; i<trackCollection->size(); i++){
      edm::RefToBase<reco::Track> track(trackCollection, i);
-
-	 if( track->pt() < 2 ) continue; // reduce noise, irrelevant for electrons
-	 if (isGoodTrack(track, bsPosition, PV_points, false) ) continue;
-	 //	   std::cout<<"found good track"<<std::endl;
 	 
+	 if( track->pt() < 2 ) continue; // reduce noise, irrelevant for electrons
+	 //	 std::cout<<"Found reco track with pt = " << track->pt() << " eta = " << track->eta() <<std::endl;
+	   
+	 if (!isGoodTrack(track, bsPosition, PV_points, false) ) continue;
+	 //	 std::cout<<"Track passed filtering!!!!" << std::endl;
 	 
      reco_pt_[np_reco_] = track->pt();
      reco_phi_[np_reco_] = track->phi();
 
-	 if( track->pt() > 9.5) //don't take the low pt trash to eta fake-rate
+	 if( track->pt() > pt_min_rectrk) //don't take the low pt trash to eta fake-rate
 	   reco_eta_[np_reco_] = track->eta();
 
      //     reco_nrRecoHits_[np_reco_] = track->numberOfValidHits();
@@ -832,14 +838,14 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      else{  // if fake
        is_gen_matched_[np_reco_] = 0;
 
-	   if (track->pt() > 9.5)
-		 fake_eta_[np_fake_] = track->eta();
-
        fake_pt_[np_fake_] = track->pt();
        fake_phi_[np_fake_] = track->phi();
 	   fake_nr_rechits_[np_fake_] = track->numberOfValidHits();
 	   fake_dxy_[np_fake_] = track->dxy(bsPosition);
 	   fake_dz_[np_fake_] = track->dz(bsPosition);
+
+	   if (track->pt() > pt_min_rectrk)
+		 fake_eta_[np_fake_] = track->eta();
 	   
        np_fake_++;
      }

@@ -30,10 +30,10 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(2000)
+    input = cms.untracked.int32(200)
 )
 
-process.MessageLogger.cerr.FwkReport.reportEvery = 100
+process.MessageLogger.cerr.FwkReport.reportEvery = 1
 
 # Input source
 process.source = cms.Source("EmptySource")
@@ -85,7 +85,7 @@ process.generator = cms.EDProducer("FlatRandomPtGunProducer",
     ),
     Verbosity = cms.untracked.int32(0),
     psethack = cms.string('single electron pt 10'),
-    AddAntiParticle = cms.bool(True),
+    AddAntiParticle = cms.bool(False), # if True make 2 back-to-back opposite chargetracks per event 
     firstRun = cms.untracked.uint32(1)
 )
 

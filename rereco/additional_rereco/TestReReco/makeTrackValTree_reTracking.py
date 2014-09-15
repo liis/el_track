@@ -4,17 +4,17 @@ process = cms.Process("reGsfTracking")
 
 # message logger
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
-process.MessageLogger = cms.Service("MessageLogger", #??
-                                    default = cms.untracked.PSet( limit = cms.untracked.int32(300) )
-                                    )
+process.MessageLogger.cerr.FwkReport.reportEvery = 10
+#process.MessageLogger = cms.Service("MessageLogger", #??
+#                                    default = cms.untracked.PSet( limit = cms.untracked.int32(300) )
+#                                    )
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(500) )
 
 # source
 readFiles = cms.untracked.vstring()
 #------------------------- define secondary files -----------------------------
 useSecFiles = False #needed for MakeTrackValTree (tracking particles)
-run_PSI     = True
+run_PSI     = False # only relevant if using sec files
 
 if not useSecFiles: #Use secondary files
     secFiles = cms.untracked.vstring()
@@ -62,7 +62,7 @@ source = cms.Source ("PoolSource",
 #    'file:step2.root'
 #    'file:samtest_reco.root'
 #    'file:test2_sam.root' ## the last one
-#    'file:../EvtGeneration/outfiles/testing/SingleElectronPt10_RECO.root'
+#    'file:../EvtGeneration/SingleElectronPt10_RECO.root'
 #    'file:test_sam_zee.root'
 #    'file:rawToReco.root'
 # -------- Zee produced by sam ----------------

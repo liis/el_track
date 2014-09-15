@@ -1,6 +1,6 @@
 import re, ntpath
 
-from odict import OrderedDict as dict
+from collections import OrderedDict as dict
 tracking_cfg_parameters = dict()
 
 tracking_cfg_parameters["maxCand"] = [5, 5, 5, 5, 5, 5 ]
@@ -26,15 +26,17 @@ def write_outfile(input, outname):
     out_file.write(input)
     out_file.close()
                     
-def create_crab_cfg_from_template(template, varstr, dataset, outdir = ""):
+def create_crab_cfg_from_template(template, varstr, dataset, datasetname, outdir = ""):
     """
-    dotaset = Pt100, Pt10, FlatPt
+    dataset = Pt100, Pt10, FlatPt
+    datasetname --> corresponding full datasetname
     """
     input = read_template(template)
     input = input.replace("CUTVALS", varstr)    
     input = input.replace("DATASET", dataset)
-    input = input.replace("DSNAME", datasetnames[dataset])
+    input = input.replace("DSNAME", datasetname)
 
+    input = input.replace("OUTDIR", outdir)
     if len(outdir):
         outdir = outdir + "/"
 
@@ -55,11 +57,12 @@ def create_cmssw_cfg_from_template(template, varstr, outdir = "", mode = "batch"
 
     if mode == "crab":
         input = input.replace("OUTFILENAME", " 'trackValTree_reTrk.root' ")
+        
     else:
         input = input.replace("OUTFILENAME", " ' " + "../output_batch/trackValTree_" + dataset + "_" + varstr + ".root" + " ' ")
 
-    input = input.replace("INFILELIST", str(infiles))
-    input = input.replace("SECFILELIST", str(infiles_sec))
+        input = input.replace("INFILELIST", str(infiles))
+        input = input.replace("SECFILELIST", str(infiles_sec))
                               
     if len(outdir):
         outdir = outdir + "/"

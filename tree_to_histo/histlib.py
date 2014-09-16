@@ -26,7 +26,7 @@ def fill_hists_by_eta_regions(var_eta, var_to_hist, varname, hist_dict):
         hist_dict[varname + "_trans"].Fill(var_to_hist)
     elif abs(var_eta) < 2.5:
         hist_dict[varname + "_endcap"].Fill(var_to_hist)
-    
+
     return 0
 
 def fill_hist_ratio(h_numerator, h_denominator, outhistname, binning = "const"):
@@ -45,7 +45,7 @@ def fill_hist_ratio(h_numerator, h_denominator, outhistname, binning = "const"):
     else:
         print "Error:fill_hist_ratio -- Implemented values for binning are: *const* or *log* "
         sys.exit()
-        
+
 
     for i in range(1, nbin-1):
 #        print "numerator = " + str(h_numerator.GetBinContent(i)) + ", denominator = " + str(h_denominator.GetBinContent(i))
@@ -57,6 +57,19 @@ def fill_hist_ratio(h_numerator, h_denominator, outhistname, binning = "const"):
             h_ratio.SetBinError(i, ROOT.sqrt( eff*(1-eff)/h_denominator.GetBinContent(i) ) ) # uncertainty on efficiency
 
     return h_ratio
+
+def fill_hist_ratio_poisson(h_numerator, h_denominator, outhistname, binning = "const"):
+    """
+    efficiency histogram with Poisson errorbars
+    """
+    #h_ratio_gr = ROOT.TGraphAsymmErrors(h_numerator.GetNbinsX())
+    h_ratio_gr = ROOT.TGraphAsymmErrors(h_numerator)
+
+    h_ratio_gr.BayesDivide(h_numerator, h_denominator)
+    h_ratio_gr.SetName(outhistname)
+
+    return h_ratio_gr
+
 
 eta_regions = ["barrel", "trans", "endcap"]
 
@@ -88,5 +101,3 @@ def initialize_histograms(vars, bin_reg, hist_in_regions = []):
         else:
             histograms[var] = initialize_histogram(var, bin_reg)
     return histograms
-
-

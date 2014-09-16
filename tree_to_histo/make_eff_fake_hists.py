@@ -10,6 +10,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--testRun', dest='is_test_run', action="store_true", default=False, required=False)
 parser.add_argument('--infile', dest='infile', required=True) #file name of the input tree
+parser.add_argument('--outdir', dest='outdir', required=False, default="histograms")
 args = parser.parse_args()
 
 #indir = "$WORKING_DIR/tree_to_histo/"
@@ -153,7 +154,7 @@ for region in eta_regions:
 
 #---------------------create outfile------------------------
 outfilename = (args.infile).split('/trackValTree_',1)[1]
-outfile = "histograms/efficiencyHistograms_" + outfilename
+outfile = args.outdir + "/efficiencyHistograms_" + outfilename
 print "Writing histograms to file: " + outfile
 o = ROOT.TFile(outfile,"recreate")
 

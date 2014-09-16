@@ -55,10 +55,10 @@ def create_cmssw_cfg_from_template(template, varstr, outdir = "", mode = "batch"
     input = input.replace("MAXCHI2", varstr.rsplit("maxChi2_")[1].rsplit("_")[0] )
     input = input.replace("NSIGMA", varstr.rsplit("nSigma_")[1].rsplit("_")[0] )
 
-    if mode == "crab":
-        input = input.replace("OUTFILENAME", " 'trackValTree_reTrk.root' ")
+#    if mode == "crab":
+#        input = input.replace("OUTFILENAME", " 'trackValTree_reTrk.root' ")
         
-    else:
+    if not mode == "crab":
         input = input.replace("OUTFILENAME", " ' " + "../output_batch/trackValTree_" + dataset + "_" + varstr + ".root" + " ' ")
 
         input = input.replace("INFILELIST", str(infiles))

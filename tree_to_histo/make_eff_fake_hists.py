@@ -94,18 +94,21 @@ for i in range(nEvt):
     t.LoadTree(i)
     t.GetEntry(i)
     for it_p in range( vt['np_reco'][0]): # loop over reco-tracks
+
         reco_eta = vt['reco_eta'][it_p]
         reco_pt = vt['reco_pt'][it_p]
 
         receta_hists["reco_eta"].Fill(reco_eta)
-        fill_hists_by_eta_regions(reco_eta, reco_pt, "reco_pt", recpt_hists)
+        if reco_pt > 30:
+            fill_hists_by_eta_regions(reco_eta, reco_pt, "reco_pt", recpt_hists)
 
     for it_p in range( vt['np_fake'][0]): # loop over fake traks
         fake_eta = vt['fake_eta'][it_p]
         fake_pt = vt['fake_pt'][it_p]
 
         receta_hists["fake_eta"].Fill(fake_eta)
-        fill_hists_by_eta_regions(fake_eta, fake_pt, "fake_pt", recpt_hists)
+        if fake_pt > 30:
+            fill_hists_by_eta_regions(fake_eta, fake_pt, "fake_pt", recpt_hists)
 
     for it_p in range( vt['np_gen'][0]): #loop over simulated tracks
         gen_track_pt = vt['gen_pt'][it_p]

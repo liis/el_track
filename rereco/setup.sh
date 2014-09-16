@@ -7,7 +7,6 @@ set -e
 set -x
 
 #export SCRAM_ARCH=slc6_amd64_gcc481 # do when running at EE
-#scram project -n CMSSW CMSSW CMSSW_7_1_0_pre7 #for t3_ui (later versions NA)
 scram project -n CMSSW CMSSW CMSSW_7_1_6
 
 cd CMSSW/src

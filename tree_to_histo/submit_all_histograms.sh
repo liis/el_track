@@ -4,7 +4,7 @@ INDIR=$1 # the dir, where the input trees are located
 #OUTDIR=$2 # directory where to store output histograms
 OUTDIR="./histograms/13TeV_v1"
 
-SUBMIT_BATCH=0
+SUBMIT_BATCH=1
 
 cd $INDIR
 TREES=`ls trackValTree_*.root`
@@ -18,10 +18,10 @@ do
 
   echo submit_batch = $SUBMIT_BATCH
   if [ "$SUBMIT_BATCH" = 1 ] 
-      then echo submitting to batch
+      then echo submitting to batch: $INFILE
       qsub make_histograms.sh $INFILE $OUTDIR
   else 
-      echo "Run locally"
+      echo "Run locally: " $INFILE
       sh make_histograms.sh $INFILE $OUTDIR
   fi
     

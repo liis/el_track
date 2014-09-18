@@ -83,8 +83,18 @@ def initialize_histogram(var, bin_reg ):
         sys.exit()
     return hist
 
+def initialize_histogram_2D(var, bin_reg_1, bin_reg_2 ):
+    if len(bin_reg_1) == 3: # assume const. binning
+        hist = ROOT.TH2F(var, var, bin_reg_1[0], bin_reg_1[1], bin_reg_1[2], bin_reg_2[0], bin_reg_2[1], bin_reg_2[2])
+    elif len(bin_reg_1) == 2 and len(bin_reg_1[1]) > 2: # assume varying bin size
+        hist = ROOT.TH2F(var, var, bin_reg_1[0], bin_reg_1[1], bin_reg_2[0], bin_reg_2[1])
+    else:
+        "Wrongly initialized histograms, please fix bin_reg and bin_type to allowed values"
+        sys.exit()
+    return hist
 
-def initialize_histograms(vars, bin_reg, hist_in_regions = []):
+
+def initialize_histograms(vars, bin_reg, bin_reg_2 = "", hist_in_regions = [], dim = "1D" ):
     """
     Initialize histograms for a set of variables
     var -- list of histogram variables [var1, var2, ...]
@@ -96,8 +106,15 @@ def initialize_histograms(vars, bin_reg, hist_in_regions = []):
     for var in vars:
         if len(hist_in_regions) != 0:
             for region in hist_in_regions:
-                histograms[var + "_" + region] = initialize_histogram(var + "_" + region, bin_reg)
+                if dim == "2D":
+                    histograms[var + "_" + region] = initialize_histogram_2D(var + "_" + region, bin_reg, bin_reg_2)
+                else:
+                    histograms[var + "_" + region] = initialize_histogram(var + "_" + region, bin_reg)
+
 
         else:
-            histograms[var] = initialize_histogram(var, bin_reg)
+            if dim == "2D":
+                histograms[var] = initialize_histogram_2D(var, bin_reg, vars[var])
+            else:
+                histograms[var] = initialize_histogram(var, bin_reg)
     return histograms

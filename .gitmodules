@@ -1,0 +1,3 @@
+[submodule "rereco/CMSSW/src"]
+	   path = rereco/CMSSW/src
+	   url = https://github.com/liis/cmssw

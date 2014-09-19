@@ -4,7 +4,7 @@ process = cms.Process("reGsfTracking")
 
 # message logger
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 10
+process.MessageLogger.cerr.FwkReport.reportEvery = 100
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 

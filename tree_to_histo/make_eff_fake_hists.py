@@ -1,10 +1,10 @@
 import ROOT, sys
 from array import array
-from tree_variables import eff_list, var_type, maxhit
+from tree_variables import eff_list, double_array_list_res_pull, var_type, maxhit
 from histlib import fill_hist_ratio, fill_hist_ratio_poisson, log_binning, fill_hists_by_eta_regions, initialize_histograms
 
 debug = False
-var_list = eff_list
+var_list = eff_list + double_array_list_res_pull
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -21,7 +21,6 @@ print "Opening input file: " + indir+infile
 
 f = ROOT.TFile(indir + infile)
 t = f.Get("trackValTreeMaker/trackValTree")
-#t = f.Get("TrackValTreeMaker/trackValTree") # for old trees (??)
 
 report_every = 10000
 if args.is_test_run:
@@ -72,6 +71,14 @@ simpt_vars = ["sim_pt", "sim_pt_matchedTrack", "sim_pt_matchedSeed", "sim_pt_mat
 recpt_vars = ["reco_pt", "fake_pt"]
 receta_vars = ["reco_eta", "fake_eta"]
 
+res_vs_eta_vars = { "res_pt_vs_eta": (500,-5,5),
+                    "res_cotth_vs_eta": (500, -0.01, 0.01),
+                    "res_phi_vs_eta": (500, -0.01, 0.01),
+                    "res_dxy_vs_eta": (500, -0.05, 0.05),
+                    "res_dz_vs_eta": (500,-0.1, 0.1) }
+
+res_vs_eta_hists = initialize_histograms( res_vs_eta_vars, bin_reg = (neta, mineta, maxeta), bin_reg_2 = (500, -5, 5), dim="2D")
+print res_vs_eta_hists
 
 simeta_hists = initialize_histograms( simeta_vars, bin_reg = (neta, mineta, maxeta) )
 simpt_hists = initialize_histograms( simpt_vars, bin_reg = (npt, array('d', xbinspt)), hist_in_regions = eta_regions )
@@ -99,17 +106,17 @@ for i in range(nEvt):
         reco_eta = vt['reco_eta'][it_p]
         reco_pt = vt['reco_pt'][it_p]
 
-        receta_hists["reco_eta"].Fill(reco_eta)
+        fill_hists_by_eta_regions(reco_eta, reco_pt, "reco_pt", recpt_hists)
         if reco_pt > 30:
-            fill_hists_by_eta_regions(reco_eta, reco_pt, "reco_pt", recpt_hists)
+            receta_hists["reco_eta"].Fill(reco_eta)
 
     for it_p in range( vt['np_fake'][0]): # loop over fake traks
         fake_eta = vt['fake_eta'][it_p]
         fake_pt = vt['fake_pt'][it_p]
 
-        receta_hists["fake_eta"].Fill(fake_eta)
+        fill_hists_by_eta_regions(fake_eta, fake_pt, "fake_pt", recpt_hists)
         if fake_pt > 30:
-            fill_hists_by_eta_regions(fake_eta, fake_pt, "fake_pt", recpt_hists)
+            receta_hists["fake_eta"].Fill(fake_eta)
 
     for it_p in range( vt['np_gen'][0]): #loop over simulated tracks
         gen_track_pt = vt['gen_pt'][it_p]
@@ -123,6 +130,18 @@ for i in range(nEvt):
             simeta_hists["sim_eta_matchedTrack"].Fill(gen_track_eta)
             fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedTrack", simpt_hists)
 
+            res_pt = ( vt["gen_matched_rec_pt"][it_p] - vt["gen_matched_pt"][it_p] )/(vt["gen_matched_rec_pt"][it_p])
+            res_cotth = ( vt["gen_matched_rec_cotth"][it_p] - vt["gen_matched_cotth"][it_p] )
+            res_phi = ( vt["gen_matched_rec_phi"][it_p] - vt["gen_matched_phi"][it_p] )
+            res_dxy = ( vt["gen_matched_rec_dxy"][it_p] - vt["gen_matched_dxy"][it_p] )
+            res_dz = ( vt["gen_matched_rec_dz"][it_p] - vt["gen_matched_dz"][it_p] )
+
+            res_vs_eta_hists["res_pt_vs_eta"].Fill(gen_track_eta, res_pt)
+            res_vs_eta_hists["res_cotth_vs_eta"].Fill(gen_track_eta, res_cotth)
+            res_vs_eta_hists["res_phi_vs_eta"].Fill(gen_track_eta, res_phi)
+            res_vs_eta_hists["res_dxy_vs_eta"].Fill(gen_track_eta, res_dxy)
+            res_vs_eta_hists["res_dz_vs_eta"].Fill(gen_track_eta, res_dz)
+
         # ------------------------------ matched to seed ------------------------------
         if vt["gen_matchedSeedQuality"][it_p] == 1:
             simeta_hists["sim_eta_matchedSeed"].Fill(vt['gen_eta'][it_p])
@@ -135,9 +154,13 @@ eta_regions = ["barrel", "trans", "endcap"]
 
 print "Processing total Sim-to-Reco efficiencies:"
 efficiency_histograms={}
-efficiency_histograms["h_eff_eta"] = fill_hist_ratio_poisson(simeta_hists["sim_eta_matchedTrack"], simeta_hists["sim_eta"], "eff_eta")
-efficiency_histograms["h_eff_seed_eta"] = fill_hist_ratio_poisson(simeta_hists["sim_eta_matchedSeed"], simeta_hists["sim_eta"], "eff_seed_eta")
-efficiency_histograms["h_eff_wrt_seed_eta"] = fill_hist_ratio_poisson(simeta_hists["sim_eta_matchedTrack"], simeta_hists["sim_eta_matchedSeed"], "eff_wrt_seed_eta")
+#efficiency_histograms["h_eff_eta"] = fill_hist_ratio_poisson(simeta_hists["sim_eta_matchedTrack"], simeta_hists["sim_eta"], "eff_eta")
+#efficiency_histograms["h_eff_seed_eta"] = fill_hist_ratio_poisson(simeta_hists["sim_eta_matchedSeed"], simeta_hists["sim_eta"], "eff_seed_eta")
+#efficiency_histograms["h_eff_wrt_seed_eta"] = fill_hist_ratio_poisson(simeta_hists["sim_eta_matchedTrack"], simeta_hists["sim_eta_matchedSeed"], "eff_wrt_seed_eta")
+
+efficiency_histograms["h_eff_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrack"], simeta_hists["sim_eta"], "eff_eta")
+efficiency_histograms["h_eff_seed_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedSeed"], simeta_hists["sim_eta"], "eff_seed_eta")
+efficiency_histograms["h_eff_wrt_seed_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrack"], simeta_hists["sim_eta_matchedSeed"], "eff_wrt_seed_eta")  
 
 for region in eta_regions:
     efficiency_histograms["h_eff_pt" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrack_" + region], simpt_hists["sim_pt_" + region], "eff_pt_" + region, binning="log")
@@ -172,5 +195,14 @@ dir = o.mkdir("efficiencies")
 dir.cd()
 for histogram in efficiency_histograms.values():
     histogram.Write()
+
+print "Saving resolution histograms..."
+dir2 = o.mkdir("resolutions")
+dir2.cd()
+
+print res_vs_eta_hists
+for histogram in res_vs_eta_hists:
+    print "Saving: " + histogram
+    res_vs_eta_hists[histogram].Write()
 
 o.Close()

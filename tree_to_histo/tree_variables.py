@@ -11,7 +11,7 @@ float_2D_array_list = ["gen_hit_pt"]
 
 double_list = []
 double_array_list_hits = []
-double_array_list_res_pull = ["pt_pull", "qoverp_pull", "theta_pull", "phi_pull", "d0_pull", "z0_pull", "gen_matched_rec_pt", "gen_matched_cotth", "gen_matched_rec_cotth", "gen_matched_rec_qoverp", "gen_matched_qoverp", "gen_matched_z0", "gen_matched_rec_z0", "gen_matched_rec_phi", "gen_matched_d0", "gen_matched_rec_d0"] #, "gen_matched_theta", "gen_matched_rec_theta"]
+double_array_list_res_pull = ["pt_pull", "qoverp_pull", "theta_pull", "phi_pull", "d0_pull", "z0_pull", "gen_matched_rec_pt", "gen_matched_cotth", "gen_matched_rec_cotth", "gen_matched_rec_qoverp", "gen_matched_qoverp", "gen_matched_dz", "gen_matched_rec_dz", "gen_matched_rec_phi", "gen_matched_dxy", "gen_matched_rec_dxy", "gen_matched_phi", "gen_mathed_rec_phi"] #, "gen_matched_theta", "gen_matched_rec_theta"]
 
 eff_double_array_list = ["reco_pt", "reco_eta", "gen_pt", "gen_eta", "fake_pt", "fake_eta", "gen_matched_eta", "gen_matched_pt", "gen_matchedSeedQuality"]
 eff_int_array_list = ["gen_reco_matched", "is_ecalDrivenSeed", "is_trackerDrivenSeed", "gen_nrMatchedSeedHits", "gen_matchedSeedOkCharge"]

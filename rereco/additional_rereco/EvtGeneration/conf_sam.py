@@ -24,8 +24,11 @@ process.maxEvents = cms.untracked.PSet(
 process.source = cms.Source("PoolSource",
                             #         fileNames = cms.untracked.vstring(filePrefex+sys.argv[2]),
                             #     inputCommands = cms.untracked.vstring("drop *","keep *_source_*_*"),
-                            fileNames = cms.untracked.vstring('/store/user/liis/GSF_tracking_samples/test_Zee_62_RECO_2/044C97C0-B675-E311-B49C-0025901D4D76.root'),
-)
+                            fileNames = cms.untracked.vstring(
+#        '/store/user/liis/GSF_tracking_samples/test_Zee_62_RECO_2/044C97C0-B675-E311-B49C-0025901D4D76.root'), #t3 ch
+        'file:/tmp/liis/044C97C0-B675-E311-B49C-0025901D4D76.root' #lxplus0157
+        ),
+                            )
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet( # ??

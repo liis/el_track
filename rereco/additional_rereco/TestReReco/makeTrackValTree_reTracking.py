@@ -61,12 +61,12 @@ source = cms.Source ("PoolSource",
 #    'file:007CEDE1-B1D1-E311-9EC9-02163E00E9CC.root' 
 #    'file:step2.root'
 #    'file:samtest_reco.root'
-#    'file:test2_sam.root' ## the last one
+    'file:test2_sam.root' ## the last one
 #    'file:../EvtGeneration/SingleElectronPt10_RECO.root'
 #    'file:test_sam_zee.root'
 #    'file:rawToReco.root'
 # -------- Zee produced by sam ----------------
-        '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_101_1_Fsb.root',
+#        '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_101_1_Fsb.root',
 #        '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_100_2_qzC.root',
 #        '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_102_1_VzM.root',
 #-----------------------------------------------
@@ -190,7 +190,6 @@ process.p = cms.Path(
 #    process.myGsfReco 
     process.ValidationSelectors
     *process.elTracksWithQuality #preselection for standard reco tracks
-
     *process.preValidation
 
 #    *process.printEventContent 

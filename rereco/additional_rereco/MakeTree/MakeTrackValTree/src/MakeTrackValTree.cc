@@ -55,6 +55,7 @@
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingVertex.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingVertexContainer.h"
 
+#include "SimDataFormats/Track/interface/SimTrack.h"
 #include "SimTracker/Common/interface/TrackingParticleSelector.h"
 #include "SimTracker/TrackAssociation/interface/TrackAssociatorByHits.h"
 #include "SimTracker/TrackerHitAssociation/interface/TrackerHitAssociator.h"
@@ -624,21 +625,6 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    edm::Handle<edm::View<reco::ElectronSeed> > elSeedCollection; 
    iEvent.getByLabel(el_seed_label_, elSeedCollection);
 
-   // Select good primary vertices for use in subsequent track selection
-   edm::Handle<reco::VertexCollection> hVtx;
-   iEvent.getByLabel("pixelVertices", hVtx);
-   
-   std::vector<math::XYZPoint> PV_points;
-   PV_points.clear();
-   for (reco::VertexCollection::const_iterator it = hVtx->begin(); it != hVtx->end(); ++it) {
-	 reco::Vertex vtx = *it;
-	 if( it->ndof() >=2 && !(it->isFake()) )
-	   PV_points.push_back(it->position());
-   }
-
-   //   nr_PV_ = PV_points.size()
-   std::cout<<"Nr of primary vertices = " << PV_points.size() <<std::endl;
-   
    // Tracking particles
    edm::Handle<TrackingParticleCollection>  TPCollection ; //simulated tracks
    iEvent.getByLabel("mix","MergedTrackTruth",TPCollection);
@@ -672,9 +658,65 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    np_gen_ = 0;
    np_gen_toReco_ = 0;
 
+   float primary_tv_dz = 0; int nc = 0;
+   for (size_t j = 0; j < tv.size(); j++) {
+     if ( tv[j].sourceTracks().size() == 0 ){ // if no mother track
+       //       std::cout<<" Tracking vertex with dxy = "<<tv[j].sourceTracks().size()<<", dxy = "<< sqrt( pow(tv[j].position().X(),2) + pow(tv[j].position().Y(), 2) ) <<", dz = "<< tv[j].position().Z() << std::endl; //**2 + tv[j].position.y()**2) <<std::endl;
+
+       if( nc == 0)
+	 primary_tv_dz = tv[j].position().Z();
+       nc++;
+     }
+
+     if ( !(tv[j].eventId().bunchCrossing()== 0 && tv[j].eventId().event() == 0) )
+       std::cout<< "Found PU vertex with bc = "<< tv[j].eventId().bunchCrossing() << std::endl;
+   }
+   std::cout<<"Leading TV dz = " << primary_tv_dz <<std::endl;
+
+   // Select good primary vertices for use in subsequent track selection                                                                       
+   edm::Handle<reco::VertexCollection> hVtx;
+   iEvent.getByLabel("pixelVertices", hVtx);
+   
+   std::vector<math::XYZPoint> PV_points;
+
+   math::XYZPoint leading_PV_point;
+   int leading_pv_index = 0;
+
+   PV_points.clear();
+   int vertex_count = 0;
+   double dz_min = 1000;
+   for (reco::VertexCollection::const_iterator it = hVtx->begin(); it != hVtx->end(); ++it) {
+     reco::Vertex vtx = *it;
+     if( it->ndof() >=2 && !(it->isFake()) ){
+       PV_points.push_back(it->position());
+       //       std::cout<<"reco primary vertex with dz(leading tp, vertex) = "<< fabs(it->position().Z() - primary_tv_dz) <<", vertex nr = "<<vertex_count<<std::endl;
+       
+       if( fabs(it->position().Z() - primary_tv_dz) < dz_min){
+	 dz_min = fabs(it->position().Z() - primary_tv_dz);
+	 leading_pv_index = vertex_count;
+       }
+       
+       vertex_count++;
+     }
+   }
+
+   std::cout<<"dz min = "<<dz_min<<std::endl;
+   leading_PV_point = PV_points[leading_pv_index];
+
+   edm::Handle<SimTrackContainer>  simTrackCollection ; //simulated tracks
+   iEvent.getByLabel("g4SimHits", simTrackCollection);
+
+   SimTrackContainer simTC = *(simTrackCollection.product() );
+
+   for (size_t j = 0; j <simTC.size(); j++){
+     EncodedEventId simTrackEvt = simTC[j].eventId();
+     if ( !(simTrackEvt.event() == 0 && simTrackEvt.bunchCrossing() == 0) )
+       std::cout<<"Sim track evt Id = " <<simTrackEvt.event()<< ", bunchCrossing = " << simTrackEvt.bunchCrossing() <<std::endl;
+   }
 
    std::map<int, std::vector<PSimHit>> simHitMap = getSimHits(trackerContainers, iEvent); // get all simHits in the event
-   std::cout<<"nr tps = "<<tPCeff.size() << std::endl;
+   //   std::cout<<"nr tps = "<<tPCeff.size() << std::endl;
+
    for (TrackingParticleCollection::size_type i=0; i<tPCeff.size(); i++){ // get information from simulated  tracks   
      TrackingParticleRef tpr(TPCollection, i);
      TrackingParticle* tp=const_cast<TrackingParticle*>(tpr.get());
@@ -684,11 +726,11 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
      TrackingParticle::Point vertex = parametersDefinerTP->vertex(iEvent,iSetup,tpr);
      TrackingParticle::Vector momentum = parametersDefinerTP->momentum(iEvent,iSetup,tpr);
-
-	 //	 if( !tpSelector(*tp) ) continue; // be careful with not adding preselections -- memory issues
-	 //	 if( tp->pt() < 0.9 ) continue; // such tracks are irrelevant for electrons
-
-	 //     std::vector<PSimHit> simhits_TP = getSimHitsTP(tp, simHitMap, tracker, true, true, false); //last bool is for debug 
+     
+     //	 if( !tpSelector(*tp) ) continue; // be careful with not adding preselections -- memory issues
+     //	 if( tp->pt() < 0.9 ) continue; // such tracks are irrelevant for electrons
+     
+     //     std::vector<PSimHit> simhits_TP = getSimHitsTP(tp, simHitMap, tracker, true, true, false); //last bool is for debug 
      //if ( !simhits_TP.size() ) continue; // if no simhit with pt > 0.9 (FIXME: maybe check the last hit momentum too)
 	 
      momentumTP = tp->momentum();
@@ -698,21 +740,16 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      gen_phi_[np_gen_] = tp->phi();
      gen_pt_[np_gen_] = tp->pt();
      gen_pdgId_[np_gen_] = tp->pdgId();
-	 gen_nr_simhits_[np_gen_] = tp->numberOfTrackerHits();
-	 gen_dxy_[np_gen_] = -vertex.x()*sin(momentum.phi()) + vertex.y()*cos(momentum.phi());
+     gen_nr_simhits_[np_gen_] = tp->numberOfTrackerHits();
+     gen_dxy_[np_gen_] = -vertex.x()*sin(momentum.phi()) + vertex.y()*cos(momentum.phi());
      gen_dz_[np_gen_] = vertex.z() - (vertex.x()*momentum.x()+vertex.y()*momentum.y())/sqrt(momentum.perp2())* momentum.z()/sqrt(momentum.perp2());	 
 
 
-	 if ( !(tp->eventId().bunchCrossing()== 0 && tp->eventId().event() == 0) )
-	   std::cout<<"found PU particle!"<<std::endl;
+     if ( !(tp->eventId().bunchCrossing()== 0 && tp->eventId().event() == 0) )
+       std::cout<<"found PU particle!"<<std::endl;
 	 
-
-	 for (size_t j = 0; j < tv.size(); j++) {
-	   if ( !(tv[j].eventId().bunchCrossing()== 0 && tv[j].eventId().event() == 0) )
-		 std::cout<< "Found PU vertex with bc = "<< tv[j].eventId().bunchCrossing() << std::endl;
-	 }                                   
-
-		 //	 std::cout<<"bunch crossing = "<<tp->eventId().bunchCrossing()<<", event = "<<tp->eventId().event() << std::endl; //0, 0 indicates primary vertex, the rest is PU
+     
+     //	 std::cout<<"bunch crossing = "<<tp->eventId().bunchCrossing()<<", event = "<<tp->eventId().event() << std::endl; //0, 0 indicates primary vertex, the rest is PU
 
 	   
 	 //	 std::cout<<"found tracking particle nr "<<np_gen_+1<<"with pt = "<<tp->pt() <<", eta = "<<tp->eta() << ", phi = "<<tp->phi() << "nr hits = " <<tp->numberOfTrackerHits() << ", charge = " << tp->charge()<<std::endl;
@@ -820,7 +857,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      np_gen_++; // count tracking particles that pass the standard quality cuts
    } // <-- end loop over tracking particles
 
-   std::cout<<"NR. SEL TP-s = " <<np_gen_<<std::endl;
+   //   std::cout<<"NR. SEL TP-s = " <<np_gen_<<std::endl;
 
    //------------------------ loop over reco tracks --------------------------
    np_reco_ = 0;
@@ -830,17 +867,19 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    for( edm::View<reco::Track>::size_type i=0; i<trackCollection->size(); i++){
      edm::RefToBase<reco::Track> track(trackCollection, i);
 	 
-	 if( track->pt() < 2 ) continue; // reduce noise, irrelevant for electrons
-	 //	 std::cout<<"Found reco track with pt = " << track->pt() << " eta = " << track->eta() <<std::endl;
-	   
-	 if (!isGoodTrack(track, bsPosition, PV_points, false) ) continue;
+     if( track->pt() < 2 ) continue; // reduce noise, irrelevant for electrons
+     if (!isGoodTrack(track, bsPosition, PV_points, false) ) continue;
 	 //	 std::cout<<"Track passed filtering!!!!" << std::endl;
-	 
+     
+     if( fabs(track->dz(leading_PV_point)) < 0.5 ){
+       std::cout<<"Found reco track with pt = " << track->pt() << " eta = " << track->eta() << ", dz leadPV = "<<track->dz(leading_PV_point) <<std::endl;
+     }
+
      reco_pt_[np_reco_] = track->pt();
      reco_phi_[np_reco_] = track->phi();
 
-	 if( track->pt() > pt_min_rectrk) //don't take the low pt trash to eta fake-rate
-	   reco_eta_[np_reco_] = track->eta();
+     if( track->pt() > pt_min_rectrk) //don't take the low pt trash to eta fake-rate
+       reco_eta_[np_reco_] = track->eta();
 
      //     reco_nrRecoHits_[np_reco_] = track->numberOfValidHits();
 
@@ -850,11 +889,13 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      if(recSimColl.find(track) != recSimColl.end()){ // if matched
        tp = recSimColl[track];
        if(tp.size() != 0) {
-		 is_gen_matched_[np_reco_] = 1;
-		 np_reco_toGen_++;
-		 TrackingParticleRef matchedTrackingParticle = tp.begin()->first;
-		 //	 reco_nrSharedHits_[np_reco_] = tp.begin()->second;
-		 // reco_nrSimHits_[np_reco_] = (matchedTrackingParticle->trackPSimHit(DetId::Tracker) ).size();
+	 is_gen_matched_[np_reco_] = 1;
+	 np_reco_toGen_++;
+	 TrackingParticleRef matchedTrackingParticle = tp.begin()->first;
+	 //	 reco_nrSharedHits_[np_reco_] = tp.begin()->second;
+	 // reco_nrSimHits_[np_reco_] = (matchedTrackingParticle->trackPSimHit(DetId::Tracker) ).size();
+
+	 std::cout<<"MATCHED!"<<std::endl;
        }
      }
 
@@ -863,12 +904,12 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
        fake_pt_[np_fake_] = track->pt();
        fake_phi_[np_fake_] = track->phi();
-	   fake_nr_rechits_[np_fake_] = track->numberOfValidHits();
-	   fake_dxy_[np_fake_] = track->dxy(bsPosition);
-	   fake_dz_[np_fake_] = track->dz(bsPosition);
-
-	   if (track->pt() > pt_min_rectrk)
-		 fake_eta_[np_fake_] = track->eta();
+       fake_nr_rechits_[np_fake_] = track->numberOfValidHits();
+       fake_dxy_[np_fake_] = track->dxy(bsPosition);
+       fake_dz_[np_fake_] = track->dz(bsPosition);
+       
+       if (track->pt() > pt_min_rectrk)
+	 fake_eta_[np_fake_] = track->eta();
 	   
        np_fake_++;
      }

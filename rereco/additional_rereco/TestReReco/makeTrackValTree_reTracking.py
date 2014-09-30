@@ -4,7 +4,7 @@ process = cms.Process("reGsfTracking")
 
 # message logger
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
+process.MessageLogger.cerr.FwkReport.reportEvery = 100
 #process.MessageLogger = cms.Service("MessageLogger", #??
 #                                    default = cms.untracked.PSet( limit = cms.untracked.int32(300) )
 #                                    )
@@ -61,9 +61,9 @@ source = cms.Source ("PoolSource",
 #    'file:007CEDE1-B1D1-E311-9EC9-02163E00E9CC.root' 
 #    'file:step2.root'
 #    'file:samtest_reco.root'
+#    'file:SingleElectronPt10_RECO.root',
     'file:test2_sam.root' ## the last one
 #    'file:../EvtGeneration/SingleElectronPt10_RECO.root'
-#    'file:test_sam_zee.root'
 #    'file:rawToReco.root'
 # -------- Zee produced by sam ----------------
 #        '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_101_1_Fsb.root',
@@ -177,6 +177,18 @@ process.ValidationSelectors = cms.Sequence(
 
 #--------------------------- tree maker --------------------------
 process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi") # for writing output to a flat tree
+process.trackValTreeMaker.isGSF = cms.bool(True)
+process.trackValTreeMaker.isSinglePart = cms.bool(False)
+
+if process.trackValTreeMaker.isGSF:
+    print "Running analysis on electron GSF tracks"
+else:
+    print "Running analysis on generalTracks"
+if process.trackValTreeMaker.isSinglePart:
+    print "Assume SingleParticle datast and skip matching to leading vertex"
+else:
+    print "Require reco tracks to originate from the leading vertex"
+
 
 process.load("SimGeneral.TrackingAnalysis.simHitTPAssociation_cfi")
 process.preValidation = cms.Sequence(

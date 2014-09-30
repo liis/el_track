@@ -106,7 +106,8 @@ class MakeTrackValTree : public edm::EDAnalyzer {
       std::vector<int> getHitPosition(DetId, bool);
       GlobalVector getHitMomentum(std::vector<PSimHit>::const_iterator, edm::ESHandle<TrackerGeometry>, bool);
       std::vector<PSimHit> getSimHitsTP(TrackingParticle*, std::map<int, std::vector<PSimHit> >, edm::ESHandle<TrackerGeometry>,  bool, bool, bool);
-      bool isGoodTrack(edm::RefToBase<reco::Track>, math::XYZPoint, std::vector<math::XYZPoint>, bool); //possibly use instead of AnalyticalTrackSelector
+      bool isGoodTrack(edm::RefToBase<reco::Track>, math::XYZPoint, std::vector<math::XYZPoint>, bool); // use instead of AnalyticalTrackSelector
+  math::XYZPoint getClosestPVpoint( edm::RefToBase<reco::Track>, std::vector<math::XYZPoint> ); 
 
 
   // ------------------ thresholds for TPselector ----------
@@ -128,7 +129,7 @@ class MakeTrackValTree : public edm::EDAnalyzer {
   // parameters of reco tracks that have been matched to TPs
   double gen_matched_rec_eta_[MAXPART], gen_matched_rec_theta_[MAXPART], gen_matched_rec_pt_[MAXPART], gen_matched_rec_qoverp_[MAXPART], gen_matched_rec_cotth_[MAXPART], gen_matched_rec_phi_[MAXPART], gen_matched_rec_dxy_[MAXPART], gen_matched_rec_dz_[MAXPART], pt_pull_[MAXPART], theta_pull_[MAXPART], phi_pull_[MAXPART], dxy_pull_[MAXPART], dz_pull_[MAXPART], qoverp_pull_[MAXPART]; 
 
-  bool is_gsf_;
+  bool is_gsf_, is_single_part_;
   edm::InputTag track_label_gsf_, track_label_, el_seed_label_;
 
   std::vector<std::string> trackerContainers;
@@ -153,6 +154,7 @@ MakeTrackValTree::MakeTrackValTree(const edm::ParameterSet& iConfig):
 {
    //now do what ever initialization is needed
   is_gsf_ = iConfig.getParameter<bool>("isGSF");
+  is_single_part_ = iConfig.getParameter<bool>("isSinglePart");
   track_label_gsf_ = iConfig.getParameter<edm::InputTag>("trackLabelGSF");
   track_label_ = iConfig.getParameter<edm::InputTag>("trackLabel");
   el_seed_label_ = iConfig.getParameter<edm::InputTag>("elSeedLabel");
@@ -435,6 +437,27 @@ std::vector<PSimHit> MakeTrackValTree::getSimHitsTP(TrackingParticle* tp, std::m
   return simhits_cleaned;
 }
 
+
+math::XYZPoint MakeTrackValTree::getClosestPVpoint(edm::RefToBase<reco::Track> trk, std::vector<math::XYZPoint> points){
+
+  math::XYZPoint PV;
+  PV.SetXYZ(0,0,0);
+  float dz_max = 1000;
+
+  for (std::vector<math::XYZPoint>::const_iterator point = points.begin(); point != points.end(); ++point) { 
+    double dz_PV = trk->dz(*point);
+
+    //    std::cout<<"Checking vertex with dxy = "<<trk->dxy(*point) << ", dz = " << dz_PV << std::endl;
+
+    if( fabs(dz_PV) < fabs(dz_max) ){
+      PV = *point;
+      dz_max = dz_PV;
+    }
+      
+  }
+  return PV;
+}
+
 bool MakeTrackValTree::isGoodTrack(edm::RefToBase<reco::Track> trk, math::XYZPoint bsPosition, std::vector<math::XYZPoint> points, bool debug = false){
   // implementation of/RecoTracker/FinalTrackSelectors/python/selectHighPurity_cfi.py for reco GSF tracks
   
@@ -630,9 +653,6 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    iEvent.getByLabel("mix","MergedTrackTruth",TPCollection);
    //   std::cout<<"Number of TPs in the event = " << TPCollection->size() << std::endl;
    
-   edm::Handle<TrackingVertexCollection> tvH; //For checking PU vertices
-   iEvent.getByLabel("mix","MergedTrackTruth",tvH);
-
    edm::ESHandle<TrackerGeometry> tracker;
    iSetup.get<TrackerDigiGeometryRecord>().get(tracker);
 
@@ -641,8 +661,6 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    reco::BeamSpot bs = *recoBeamSpotHandle;
    math::XYZPoint bsPosition = bs.position();
    
-   TrackingVertexCollection tv = *tvH;
-
    const TrackingParticleCollection tPCeff = *(TPCollection.product());
    TrackingParticleSelector tpSelector = TrackingParticleSelector(ptMinTP, minRapidityTP, maxRapidityTP,tipTP, lipTP, minHitTP,signalOnlyTP, chargedOnlyTP, stableOnlyTP,pdgIdTP);
 
@@ -655,44 +673,51 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    edm::ESHandle<ParametersDefinerForTP> parametersDefinerTP;
    iSetup.get<TrackAssociatorRecord>().get("LhcParametersDefinerForTP", parametersDefinerTP);
    
-   np_gen_ = 0;
-   np_gen_toReco_ = 0;
 
-   float primary_tv_dz = 0; int nc = 0;
-   for (size_t j = 0; j < tv.size(); j++) {
-     if ( tv[j].sourceTracks().size() == 0 ){ // if no mother track
-       //       std::cout<<" Tracking vertex with dxy = "<<tv[j].sourceTracks().size()<<", dxy = "<< sqrt( pow(tv[j].position().X(),2) + pow(tv[j].position().Y(), 2) ) <<", dz = "<< tv[j].position().Z() << std::endl; //**2 + tv[j].position.y()**2) <<std::endl;
+   edm::Handle<TrackingVertexCollection> tvH; //For checking PU vertices
+   iEvent.getByLabel("mix","MergedTrackTruth",tvH);
+   TrackingVertexCollection tv = *tvH;
+   //   std::cout<<"nr tracking vertices = "<<tv.size()<<std::endl;
 
-       if( nc == 0)
+   float primary_tv_dz = 1000; 
+   float max_nr_daughters = 0;
+
+   for (size_t j = 0; j < tv.size(); j++) { //loop over trackingVertices to find a leading-one
+     if ( tv[j].sourceTracks().size() == 0 ){ // if no mother track (why > 1 present in case of Zee?)
+       //       std::cout<<" Tracking vertex wih nr. source tracks = "<<tv[j].sourceTracks().size()<<", dxy = "<< sqrt( pow(tv[j].position().X(),2) + pow(tv[j].position().Y(), 2) ) <<", dz = "<< tv[j].position().Z() << ", involume = "<<tv[j].inVolume()<<", nr daughters = "<< tv[j].nDaughterTracks()<<std::endl; 
+
+       
+       if( tv[j].nDaughterTracks() > max_nr_daughters){ //pick the leading one (contains max number of daughter-tracks)
+	 max_nr_daughters = tv[j].nDaughterTracks();
 	 primary_tv_dz = tv[j].position().Z();
-       nc++;
+       }
      }
 
-     if ( !(tv[j].eventId().bunchCrossing()== 0 && tv[j].eventId().event() == 0) )
+     if ( !(tv[j].eventId().bunchCrossing()== 0 && tv[j].eventId().event() == 0) ) //check whether there are PU vertices
        std::cout<< "Found PU vertex with bc = "<< tv[j].eventId().bunchCrossing() << std::endl;
    }
-   std::cout<<"Leading TV dz = " << primary_tv_dz <<std::endl;
-
-   // Select good primary vertices for use in subsequent track selection                                                                       
+   
+   // Select good primary vertices for use in subsequent track selection
    edm::Handle<reco::VertexCollection> hVtx;
    iEvent.getByLabel("pixelVertices", hVtx);
-   
-   std::vector<math::XYZPoint> PV_points;
+   //   std::cout<<"Nr primary vertices = " << hVtx->size()<<std::endl;
 
+   std::vector<math::XYZPoint> PV_points;
    math::XYZPoint leading_PV_point;
    int leading_pv_index = 0;
 
    PV_points.clear();
    int vertex_count = 0;
    double dz_min = 1000;
-   for (reco::VertexCollection::const_iterator it = hVtx->begin(); it != hVtx->end(); ++it) {
+
+   for (reco::VertexCollection::const_iterator it = hVtx->begin(); it != hVtx->end(); it++) {
      reco::Vertex vtx = *it;
-     if( it->ndof() >=2 && !(it->isFake()) ){
+     if( !(it->isFake()) && it->ndof() >=2 ){
        PV_points.push_back(it->position());
        //       std::cout<<"reco primary vertex with dz(leading tp, vertex) = "<< fabs(it->position().Z() - primary_tv_dz) <<", vertex nr = "<<vertex_count<<std::endl;
        
        if( fabs(it->position().Z() - primary_tv_dz) < dz_min){
-	 dz_min = fabs(it->position().Z() - primary_tv_dz);
+	 dz_min = fabs(it->position().Z() - primary_tv_dz); //choose the reco PV that is closest to leading TrackingVertex
 	 leading_pv_index = vertex_count;
        }
        
@@ -700,8 +725,17 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      }
    }
 
-   std::cout<<"dz min = "<<dz_min<<std::endl;
-   leading_PV_point = PV_points[leading_pv_index];
+   //   std::cout<<"dz min = "<<dz_min<<std::endl;
+  
+   if( PV_points.size() ) //write vertex that is closest in dz to the leading TrackingVertex
+     leading_PV_point = PV_points[leading_pv_index];
+   else if(is_single_part_) // accept all vertices for singleParticle samples later, here use placeholder
+     leading_PV_point.SetXYZ(0,0,0);
+   else{
+     leading_PV_point.SetXYZ(1000,1000,1000);
+     std::cout<< "WARNING! No primary vertex found in the event! Setting leading_PV_Point to a placeholder value. PV mathing will be skipped. " <<std::endl;
+   }
+     
 
    edm::Handle<SimTrackContainer>  simTrackCollection ; //simulated tracks
    iEvent.getByLabel("g4SimHits", simTrackCollection);
@@ -717,6 +751,8 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    std::map<int, std::vector<PSimHit>> simHitMap = getSimHits(trackerContainers, iEvent); // get all simHits in the event
    //   std::cout<<"nr tps = "<<tPCeff.size() << std::endl;
 
+   np_gen_ = 0;
+   np_gen_toReco_ = 0;
    for (TrackingParticleCollection::size_type i=0; i<tPCeff.size(); i++){ // get information from simulated  tracks   
      TrackingParticleRef tpr(TPCollection, i);
      TrackingParticle* tp=const_cast<TrackingParticle*>(tpr.get());
@@ -727,11 +763,11 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      TrackingParticle::Point vertex = parametersDefinerTP->vertex(iEvent,iSetup,tpr);
      TrackingParticle::Vector momentum = parametersDefinerTP->momentum(iEvent,iSetup,tpr);
      
-     //	 if( !tpSelector(*tp) ) continue; // be careful with not adding preselections -- memory issues
-     //	 if( tp->pt() < 0.9 ) continue; // such tracks are irrelevant for electrons
+     if( !tpSelector(*tp) ) continue; // be careful with not adding preselections -- memory issues
+     if( tp->pt() < 2 ) continue; // such tracks are irrelevant for electrons
      
-     //     std::vector<PSimHit> simhits_TP = getSimHitsTP(tp, simHitMap, tracker, true, true, false); //last bool is for debug 
-     //if ( !simhits_TP.size() ) continue; // if no simhit with pt > 0.9 (FIXME: maybe check the last hit momentum too)
+     std::vector<PSimHit> simhits_TP = getSimHitsTP(tp, simHitMap, tracker, true, true, false); //last bool is for debug 
+     if ( !simhits_TP.size() ) continue; // if no simhit with pt > 0.9 (FIXME: maybe check the last hit momentum too)
 	 
      momentumTP = tp->momentum();
      vertexTP = tp->vertex(); 
@@ -757,63 +793,63 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	 //	 if( abs(gen_dxy_[np_gen_]) < 0.5 )
 	 //	 std::cout<<"pt TP = " << tp->pt() << ", dxy TP = "<<gen_dxy_[np_gen_] << "TP parent vertex z = "<<vertexTP.z()<<". vertex z = " << vertex.z()<<std::endl;
 
-	 /*
-	 for(std::vector<PSimHit>::const_iterator it_hit = simhits_TP.begin(); it_hit != simhits_TP.end(); it_hit++){ //get the fraction of brehmstrahlung at last hit
-	   if( it_hit+1 == simhits_TP.end() ){
-		 GlobalVector global_p = getHitMomentum(it_hit,tracker, false); 
-		 gen_ptAtLast_[np_gen_] = global_p.perp();
-		 gen_bremFraction_[np_gen_] = 1 - global_p.perp()/tp->pt(); //fraction of pT lost via brehmstrahlung
-		 //		 std::cout<<"pt at last = "<<global_p.perp()<<"TP pt = "<<tp->pt()<<std::endl;
-	   }
-	 }
+     
+     for(std::vector<PSimHit>::const_iterator it_hit = simhits_TP.begin(); it_hit != simhits_TP.end(); it_hit++){ //get the fraction of brehmstrahlung at last hit
+       if( it_hit+1 == simhits_TP.end() ){
+	 GlobalVector global_p = getHitMomentum(it_hit,tracker, false); 
+	 gen_ptAtLast_[np_gen_] = global_p.perp();
+	 gen_bremFraction_[np_gen_] = 1 - global_p.perp()/tp->pt(); //fraction of pT lost via brehmstrahlung
+	 //		 std::cout<<"pt at last = "<<global_p.perp()<<"TP pt = "<<tp->pt()<<std::endl;
+       }
+     }
 	 
      //--------check for matched reco track defined by AssociatorByHits (efficiency and fake-rate plots)-----------
      const reco::Track* matchedTrackPointer=0;
      std::vector<std::pair<edm::RefToBase<reco::Track>, double> > rt;
-	 // int nSharedHits = 0; int nRecoTrackHits=0;
+     // int nSharedHits = 0; int nRecoTrackHits=0;
 
      if(simRecColl.find(tpr) != simRecColl.end()){
        rt = simRecColl[tpr]; // find sim-to-reco association
        if ( rt.size()!=0 ) {
-		 matchedTrackPointer = rt.begin()->first.get(); //pointer to corresponding reco track                                                 
-		 //		 nSharedHits = rt.begin()->second;
-		 //		 nRecoTrackHits = matchedTrackPointer->numberOfValidHits();
-		 //		 std::cout<<"matched with reco track with pt = " << matchedTrackPointer->pt() <<", eta = "<<matchedTrackPointer->eta() << ", phi = " << matchedTrackPointer->phi() << std::endl;
-		 is_reco_matched_[np_gen_] = 1;
-
-		 //-------------- efficiencies-----------------
-		 gen_matched_eta_[np_gen_] = tp->eta();
-		 gen_matched_pt_[np_gen_] = tp->pt();
+	 matchedTrackPointer = rt.begin()->first.get(); //pointer to corresponding reco track                                                 
+	 //		 nSharedHits = rt.begin()->second;
+	 //		 nRecoTrackHits = matchedTrackPointer->numberOfValidHits();
+	 //		 std::cout<<"matched with reco track with pt = " << matchedTrackPointer->pt() <<", eta = "<<matchedTrackPointer->eta() << ", phi = " << matchedTrackPointer->phi() << std::endl;
+	 is_reco_matched_[np_gen_] = 1;
 		 
-		 //------------- for resolutions, additional gen vars  -------------------
-		 gen_matched_phi_[np_gen_] = tp->phi();
-		 gen_matched_qoverp_[np_gen_] = tp->charge()/(tp->px()*tp->px() + tp->py()*tp->py() + tp->pz()*tp->pz());
-		 gen_matched_theta_[np_gen_] = tp->theta();
-		 gen_matched_cotth_[np_gen_] = 1./tan(tp->theta());
-		 gen_matched_dz_[np_gen_] = gen_dz_[np_gen_];
-		 gen_matched_dxy_[np_gen_] =  gen_dxy_[np_gen_];
-		 
-		 //------------ for resolutions, gen matched reco vars --------------------
-		 gen_matched_rec_pt_[np_gen_] = matchedTrackPointer->pt();
-		 gen_matched_rec_theta_[np_gen_] = matchedTrackPointer->theta();
-		 gen_matched_rec_eta_[np_gen_] = matchedTrackPointer->eta();
-		 gen_matched_rec_qoverp_[np_gen_] = matchedTrackPointer->qoverp();
-		 gen_matched_rec_cotth_[np_gen_] = 1./(tan(matchedTrackPointer->theta()) );
-		 gen_matched_rec_phi_[np_gen_] = matchedTrackPointer->phi();
-
-		 gen_matched_rec_dz_[np_gen_] = matchedTrackPointer->dz(bsPosition);
-		 gen_matched_rec_dxy_[np_gen_] = matchedTrackPointer->dxy(bsPosition);
-		 
-		 //------------------- pulls ----------------------------------------
-		 pt_pull_[np_gen_] = (matchedTrackPointer->pt() - tp->pt())/matchedTrackPointer->ptError();
-		 qoverp_pull_[np_gen_] = (matchedTrackPointer->qoverp() - gen_matched_qoverp_[np_gen_])/matchedTrackPointer->qoverpError();
-		 theta_pull_[np_gen_] = (matchedTrackPointer->theta() - tp->theta())/matchedTrackPointer->thetaError();
-		 phi_pull_[np_gen_] = (matchedTrackPointer->phi() - tp->phi())/matchedTrackPointer->phiError();
-		 dz_pull_[np_gen_] = (matchedTrackPointer->dz(bsPosition) - gen_dz_[np_gen_])/matchedTrackPointer->dzError();
-		 dxy_pull_[np_gen_] = (matchedTrackPointer->dxy(bsPosition) - gen_dxy_[np_gen_])/matchedTrackPointer->dxyError();
-		 
-		 np_gen_toReco_++; //count reco matched TPs
-		 //	 std::cout<<"TP matched with RECO track"<<std::endl;
+	 //-------------- efficiencies-----------------
+	 gen_matched_eta_[np_gen_] = tp->eta();
+	 gen_matched_pt_[np_gen_] = tp->pt();
+	 
+	 //------------- for resolutions, additional gen vars  -------------------
+	 gen_matched_phi_[np_gen_] = tp->phi();
+	 gen_matched_qoverp_[np_gen_] = tp->charge()/(tp->px()*tp->px() + tp->py()*tp->py() + tp->pz()*tp->pz());
+	 gen_matched_theta_[np_gen_] = tp->theta();
+	 gen_matched_cotth_[np_gen_] = 1./tan(tp->theta());
+	 gen_matched_dz_[np_gen_] = gen_dz_[np_gen_];
+	 gen_matched_dxy_[np_gen_] =  gen_dxy_[np_gen_];
+	 
+	 //------------ for resolutions, gen matched reco vars --------------------
+	 gen_matched_rec_pt_[np_gen_] = matchedTrackPointer->pt();
+	 gen_matched_rec_theta_[np_gen_] = matchedTrackPointer->theta();
+	 gen_matched_rec_eta_[np_gen_] = matchedTrackPointer->eta();
+	 gen_matched_rec_qoverp_[np_gen_] = matchedTrackPointer->qoverp();
+	 gen_matched_rec_cotth_[np_gen_] = 1./(tan(matchedTrackPointer->theta()) );
+	 gen_matched_rec_phi_[np_gen_] = matchedTrackPointer->phi();
+	 
+	 gen_matched_rec_dz_[np_gen_] = matchedTrackPointer->dz(bsPosition);
+	 gen_matched_rec_dxy_[np_gen_] = matchedTrackPointer->dxy(bsPosition);
+	 
+	 //------------------- pulls ----------------------------------------
+	 pt_pull_[np_gen_] = (matchedTrackPointer->pt() - tp->pt())/matchedTrackPointer->ptError();
+	 qoverp_pull_[np_gen_] = (matchedTrackPointer->qoverp() - gen_matched_qoverp_[np_gen_])/matchedTrackPointer->qoverpError();
+	 theta_pull_[np_gen_] = (matchedTrackPointer->theta() - tp->theta())/matchedTrackPointer->thetaError();
+	 phi_pull_[np_gen_] = (matchedTrackPointer->phi() - tp->phi())/matchedTrackPointer->phiError();
+	 dz_pull_[np_gen_] = (matchedTrackPointer->dz(bsPosition) - gen_dz_[np_gen_])/matchedTrackPointer->dzError();
+	 dxy_pull_[np_gen_] = (matchedTrackPointer->dxy(bsPosition) - gen_dxy_[np_gen_])/matchedTrackPointer->dxyError();
+	 
+	 np_gen_toReco_++; //count reco matched TPs
+	 //	 std::cout<<"TP matched with RECO track"<<std::endl;
        }
      }
      else
@@ -821,39 +857,27 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
      if( findMatchedSeed(elSeedCollection, tp).first.size() > 0.5 && findMatchedSeed(elSeedCollection, tp).second >0.5 ){
        const reco::ElectronSeed* bestSeed = findMatchedSeed(elSeedCollection, tp).first.at(0);
-
+       
        gen_matched_seed_quality_[np_gen_] = findMatchedSeed(elSeedCollection,tp).second;
-
+       
        gen_matched_seed_nshared_[np_gen_] = (int)bestSeed->nHits();
        gen_matched_seed_okCharge_[np_gen_] = (int)bestSeed->getCharge()*(int)tp->charge(); //Check whether seed charge matches TP charge
-
+       
        is_ecalDrivenSeed_[np_gen_] = 0;
        is_trackerDrivenSeed_[np_gen_] = 0;
        if( bestSeed->isEcalDriven() )
 	 is_ecalDrivenSeed_[np_gen_] = 1;    
        if(bestSeed->isTrackerDriven())
 	 is_trackerDrivenSeed_[np_gen_] = 1;
- 
-     }
-
-     
-     //check whether TP is from PU vertices
-//          double vtx_z_PU = vertexTP.z();
-//     for (size_t j = 0; j < tv.size(); j++) {
-//       if (tp->eventId().event() == tv[j].eventId().event()) {
-//	 vtx_z_PU = tv[j].position().z();
-	 //	 std::cout<<"PU vertex -- with position: " << vtx_z_PU << std::endl; 
-//       }
-//     }
        
+     }
+     
      //     std::cout<<"Matched seed charge = "<<gen_matched_seed_okCharge_[np_gen_]<<", match quality = "<< gen_matched_seed_quality_[np_gen_]<<", nr matched seed hits = "<< gen_matched_seed_nshared_[np_gen_]<<std::endl;     
-
-	 //	 std::cout<<"Found tracking particle with pt = "<<tp->pt()<<", eta = "<<tp->eta()<<", phi = " << tp->phi()<<std::endl; 
-	 // std::cout<<"nr shared hits = "<<nSharedHits<<", nr reco hits "<<nRecoTrackHits<<" matched reco pt = "<<gen_matched_rec_pt_[np_gen_]<< std::endl;
-	 //", gen. qoverp = "<<gen_matched_qoverp_[np_gen_]<<", matched reco qoverp = "<<gen_matched_rec_qoverp_[np_gen_]<<std::endl; 
-
-	 */
-
+     
+     //	 std::cout<<"Found tracking particle with pt = "<<tp->pt()<<", eta = "<<tp->eta()<<", phi = " << tp->phi()<<std::endl; 
+     // std::cout<<"nr shared hits = "<<nSharedHits<<", nr reco hits "<<nRecoTrackHits<<" matched reco pt = "<<gen_matched_rec_pt_[np_gen_]<< std::endl;
+     //", gen. qoverp = "<<gen_matched_qoverp_[np_gen_]<<", matched reco qoverp = "<<gen_matched_rec_qoverp_[np_gen_]<<std::endl; 
+     
      np_gen_++; // count tracking particles that pass the standard quality cuts
    } // <-- end loop over tracking particles
 
@@ -863,56 +887,57 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    np_reco_ = 0;
    np_reco_toGen_ = 0;
    np_fake_ = 0;
-   float pt_min_rectrk = 0; //applly the cut when making histograms
+
    for( edm::View<reco::Track>::size_type i=0; i<trackCollection->size(); i++){
      edm::RefToBase<reco::Track> track(trackCollection, i);
 	 
      if( track->pt() < 2 ) continue; // reduce noise, irrelevant for electrons
      if (!isGoodTrack(track, bsPosition, PV_points, false) ) continue;
-	 //	 std::cout<<"Track passed filtering!!!!" << std::endl;
      
-     if( fabs(track->dz(leading_PV_point)) < 0.5 ){
-       std::cout<<"Found reco track with pt = " << track->pt() << " eta = " << track->eta() << ", dz leadPV = "<<track->dz(leading_PV_point) <<std::endl;
-     }
+     math::XYZPoint PV_point = getClosestPVpoint(track, PV_points); //pick the vertex with closest dz from the track
+     // std::cout<<"LEADING PV point dz distance to track = " <<track->dz(leading_PV_point) <<std::endl;
+     //std::cout<<"Closest PV point dz distance to track = " <<track->dz(PV_point) <<std::endl;
 
-     reco_pt_[np_reco_] = track->pt();
-     reco_phi_[np_reco_] = track->phi();
+     if( is_single_part_ || fabs( track->dz(leading_PV_point) - track->dz(PV_point) ) < 0.001 ){ //choose tracks from leading vertex (workaround for missing PU tracking particles)
 
-     if( track->pt() > pt_min_rectrk) //don't take the low pt trash to eta fake-rate
+       //std::cout<<"Found reco track with pt = " << track->pt() << " eta = " << track->eta() << ", dz leadPV = "<<track->dz(leading_PV_point) <<std::endl;
+     
+       reco_pt_[np_reco_] = track->pt();
+       reco_phi_[np_reco_] = track->phi();
        reco_eta_[np_reco_] = track->eta();
-
      //     reco_nrRecoHits_[np_reco_] = track->numberOfValidHits();
 
      //---------------------check association maps to sim-tracks---------------------
-     std::vector<std::pair<TrackingParticleRef, double> > tp;
+       std::vector<std::pair<TrackingParticleRef, double> > tp;
 
-     if(recSimColl.find(track) != recSimColl.end()){ // if matched
-       tp = recSimColl[track];
-       if(tp.size() != 0) {
-	 is_gen_matched_[np_reco_] = 1;
-	 np_reco_toGen_++;
-	 TrackingParticleRef matchedTrackingParticle = tp.begin()->first;
-	 //	 reco_nrSharedHits_[np_reco_] = tp.begin()->second;
-	 // reco_nrSimHits_[np_reco_] = (matchedTrackingParticle->trackPSimHit(DetId::Tracker) ).size();
+       if(recSimColl.find(track) != recSimColl.end()){ // if matched
+	 tp = recSimColl[track];
+	 if(tp.size() != 0) {
+	   is_gen_matched_[np_reco_] = 1;
+	   np_reco_toGen_++;
+	   TrackingParticleRef matchedTrackingParticle = tp.begin()->first;
+	   //	 reco_nrSharedHits_[np_reco_] = tp.begin()->second;
+	   // reco_nrSimHits_[np_reco_] = (matchedTrackingParticle->trackPSimHit(DetId::Tracker) ).size();
 
-	 std::cout<<"MATCHED!"<<std::endl;
+	   // if ( fabs( track->dz(leading_PV_point) - track->dz(PV_point) ) >= 0.001  ) //FIXME understand why these happen 
+	   //  std::cout << "NO PV MATCH at dz_lead = " << track->dz(leading_PV_point) << ", dz closest = " << track->dz(PV_point) <<std::endl;
+	   //  std::cout<<"MATCHED!"<<std::endl;
+	 }
        }
-     }
 
-     else{  // if fake
-       is_gen_matched_[np_reco_] = 0;
-
-       fake_pt_[np_fake_] = track->pt();
-       fake_phi_[np_fake_] = track->phi();
-       fake_nr_rechits_[np_fake_] = track->numberOfValidHits();
-       fake_dxy_[np_fake_] = track->dxy(bsPosition);
-       fake_dz_[np_fake_] = track->dz(bsPosition);
-       
-       if (track->pt() > pt_min_rectrk)
-	 fake_eta_[np_fake_] = track->eta();
-	   
-       np_fake_++;
-     }
+       else{  // if fake
+	 is_gen_matched_[np_reco_] = 0;
+	 
+	 fake_pt_[np_fake_] = track->pt();
+	 fake_phi_[np_fake_] = track->phi();
+	 fake_nr_rechits_[np_fake_] = track->numberOfValidHits();
+	 fake_dxy_[np_fake_] = track->dxy(bsPosition);
+	 fake_dz_[np_fake_] = track->dz(bsPosition);
+       	 fake_eta_[np_fake_] = track->eta();
+	 
+	 np_fake_++;
+       }
+     } // <-- end if reco track is matched to leading vertex
      np_reco_++;     
    } // <-- end loop over reco tracks
 
@@ -922,7 +947,6 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
 
    trackValTree_->Fill();
-
    simHitMap.clear();	 
 }
 

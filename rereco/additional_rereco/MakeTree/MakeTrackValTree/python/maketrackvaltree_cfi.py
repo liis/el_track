@@ -20,7 +20,8 @@ TrackAssociatorByHitsRecoDenom= SimTracker.TrackAssociation.quickTrackAssociator
 trackValTreeMaker = cms.EDAnalyzer('MakeTrackValTree',                                   
                                    TrackingParticleSelectionForEfficiency, # default tracking particle selection tresholds
                                    
-                                   isGSF = cms.bool(False),
+                                   isGSF = cms.bool(True),
+                                   isSinglePart = cms.bool(False),
                                    trackLabelGSF = cms.InputTag("electronGsfTracks"),
                                    trackLabel = cms.InputTag("generalTracks"),
                                    elSeedLabel = cms.InputTag("electronMergedSeeds"),                      

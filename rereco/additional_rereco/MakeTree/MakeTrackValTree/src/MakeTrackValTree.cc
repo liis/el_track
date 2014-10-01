@@ -513,7 +513,7 @@ bool MakeTrackValTree::isGoodTrack(edm::RefToBase<reco::Track> trk, math::XYZPoi
 	  break;
 	}
   }
-  if (points.size() < 0.5){ // typically in case of single particle events
+  if (points.size() < 0.5){ // for all single particle events as vertex ndof=0
 	if (abs(dz) < max_dz )
 	  primaryVertexZCompatibility = true;
 	if (abs(d0) < max_dxy )
@@ -937,8 +937,10 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	 
 	 np_fake_++;
        }
+       np_reco_++;     
      } // <-- end if reco track is matched to leading vertex
-     np_reco_++;     
+
+     //     np_reco_++;     //moved within if for consistent indexing
    } // <-- end loop over reco tracks
 
    //   for( edm::View<reco::ElectronSeed>::const_iterator it_seed = elSeedCollection->begin(); it_seed != elSeedCollection->end(); it_seed++){

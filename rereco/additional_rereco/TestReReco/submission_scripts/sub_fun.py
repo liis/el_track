@@ -26,10 +26,11 @@ def write_outfile(input, outname):
     out_file.write(input)
     out_file.close()
                     
-def create_crab_cfg_from_template(template, varstr, dataset, datasetname, outdir = ""):
+def create_crab_cfg_from_template(template, varstr, dataset, datasetname, isSinglePart, outdir = ""):
     """
     dataset = Pt100, Pt10, FlatPt
     datasetname --> corresponding full datasetname
+    isSinglePart -- is it a singleParticle dataset (true) or with PU (false)
     """
     input = read_template(template)
     input = input.replace("CUTVALS", varstr)    
@@ -40,10 +41,17 @@ def create_crab_cfg_from_template(template, varstr, dataset, datasetname, outdir
     if len(outdir):
         outdir = outdir + "/"
 
-    out_name = outdir + "crab_" + varstr + "_" + dataset + ".cfg"
+    if isSinglePart:
+        singlePartLabel = "_singlePart"
+        input = input.replace("EVTS_PER_JOB", "5000")
+    else:
+        singlePartLabel = ""
+        input = input.replace("EVTS_PER_JOB", "1500")
+
+    out_name = outdir + "crab_" + varstr + "_" + dataset + singlePartLabel +  ".cfg"
     write_outfile(input, out_name)
 
-def create_cmssw_cfg_from_template(template, varstr, outdir = "", mode = "batch", dataset = "", infiles = [], infiles_sec = []):
+def create_cmssw_cfg_from_template(template, varstr, isSinglePart, isGSF=True, outdir = "", mode = "batch", dataset = "", infiles = [], infiles_sec = []):
     """
     template -- template file name
     varstr -- string of variables and their values, separated by _
@@ -54,9 +62,14 @@ def create_cmssw_cfg_from_template(template, varstr, outdir = "", mode = "batch"
     input = input.replace("MAXCAND", varstr.rsplit("maxCand_")[1].rsplit("_")[0] )
     input = input.replace("MAXCHI2", varstr.rsplit("maxChi2_")[1].rsplit("_")[0] )
     input = input.replace("NSIGMA", varstr.rsplit("nSigma_")[1].rsplit("_")[0] )
+    input = input.replace("ISGSF", str(isGSF))
+    input = input.replace("ISSINGLEPART", str(isSinglePart))
 
-#    if mode == "crab":
-#        input = input.replace("OUTFILENAME", " 'trackValTree_reTrk.root' ")
+    #    if mode == "crab":
+    #        input = input.replace("OUTFILENAME", " 'trackValTree_reTrk.root' ")
+
+    if isSinglePart:
+        varstr = varstr+"_singlePart"
         
     if not mode == "crab":
         input = input.replace("OUTFILENAME", " ' " + "../output_batch/trackValTree_" + dataset + "_" + varstr + ".root" + " ' ")

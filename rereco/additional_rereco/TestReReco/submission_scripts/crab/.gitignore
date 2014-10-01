@@ -1,4 +1,6 @@
 crab_0_*
+crab.history
 *~
-input_crab/*	
-output_crab/*	
+
+output_crab/*		
+input_crab/crab_max*

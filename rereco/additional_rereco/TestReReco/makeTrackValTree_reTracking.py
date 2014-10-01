@@ -97,7 +97,7 @@ process.load("Configuration.StandardSequences.Reconstruction_cff")
 
 from SimGeneral.MixingModule.trackingTruthProducer_cfi import *
 
-process.TrajectoryBuilderForElectrons.estimator = cms.string('Chi2A') #comment out for an alternative trajectory finder
+process.TrajectoryBuilderForElectrons.estimator = cms.string('Chi2') #comment out for an alternative trajectory finder
 # 'Chi2A' -- separate costum producer defined in /TrackingTools/KalmanUpdators/python/Chi2MeasurementEstimatorESProducer_cfi.py
 # TrajectoryBuilderForElectrons -- defined at TrackingTools/GsfTracking/python/CkfElectronCandidateMaker_cff.py: TrajectoryBuilderForElectrons =RecoTracker.CkfPattern.CkfTrajectoryBuilder_cfi.CkfTrajectoryBuilder.clone()
 
@@ -177,7 +177,7 @@ process.ValidationSelectors = cms.Sequence(
 
 #--------------------------- tree maker --------------------------
 process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi") # for writing output to a flat tree
-process.trackValTreeMaker.isGSF = cms.bool(True)
+process.trackValTreeMaker.isGSF = cms.bool(False)
 process.trackValTreeMaker.isSinglePart = cms.bool(False)
 
 if process.trackValTreeMaker.isGSF:

@@ -151,8 +151,6 @@ process.TFileService = cms.Service("TFileService", # if save
                                    fileName = cms.string(outfilename)
                                    )
 
-
-
 process.load("SimTracker.TrackAssociation.TrackAssociatorByHits_cfi")
 process.TrackAssociatorByHits.SimToRecoDenominator = cms.string("reco") #Quality_SimToReco = shared hits/#reco(or #sim)
 process.TrackAssociatorByHits.Quality_SimToReco = cms.double(0.75)
@@ -164,13 +162,23 @@ process.cutsRecoTracksHp.quality = cms.vstring("highPurity")
 process.cutsRecoTracksHp.minAbsEta = cms.double(0.0)
 process.cutsRecoTracksHp.maxAbsEta = cms.double(2.5)
 
-
 process.ValidationSelectors = cms.Sequence(
     process.cutsRecoTracksHp
     )
 
 #--------------------------- tree maker --------------------------
 process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi") # for writing output to a flat tree
+process.trackValTreeMaker.isGSF = cms.bool(ISGSF)
+process.trackValTreeMaker.isSinglePart = cms.bool(ISSINGLEPART)
+
+if process.trackValTreeMaker.isGSF:
+    print "Running analysis on electron GSF tracks"
+else:
+    print "Running analysis on generalTracks"
+if process.trackValTreeMaker.isSinglePart:
+    print "Assume SingleParticle datast and skip matching to leading vertex"
+else:
+    print "Require reco tracks to originate from the leading vertex"
 
 process.load("SimGeneral.TrackingAnalysis.simHitTPAssociation_cfi")
 process.preValidation = cms.Sequence(

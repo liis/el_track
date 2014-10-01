@@ -8,4 +8,4 @@
 *__init__.py
 
 batch_jobs/*
-crab/*
+crab/crab_0_*

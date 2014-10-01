@@ -19,7 +19,7 @@ cd $INDIR
 INDIR=`pwd`
 
 echo "looking for crab output directories in "$INDIR
-CRABDIRNAME=FlatPt
+CRABDIRNAME=Zee_fake
 CRABDIRS=`find $INDIR -name "*$CRABDIRNAME*"`
 
 cd -

@@ -1,10 +1,10 @@
 import ROOT, sys
 from array import array
-from tree_variables import eff_list, double_array_list_res_pull, var_type, maxhit
+from tree_variables import eff_list, var_type, maxhit
 from histlib import fill_hist_ratio, fill_hist_ratio_poisson, log_binning, fill_hists_by_eta_regions, initialize_histograms
 
 debug = False
-var_list = eff_list + double_array_list_res_pull
+var_list = eff_list
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -21,10 +21,11 @@ print "Opening input file: " + indir+infile
 
 f = ROOT.TFile(indir + infile)
 t = f.Get("trackValTreeMaker/trackValTree")
+#t = f.Get("TrackValTreeMaker/trackValTree") # for old trees (??)
 
 report_every = 10000
 if args.is_test_run:
-    max_event=10000
+    max_event=1000
 else:
     max_event = -1
 
@@ -71,14 +72,6 @@ simpt_vars = ["sim_pt", "sim_pt_matchedTrack", "sim_pt_matchedSeed", "sim_pt_mat
 recpt_vars = ["reco_pt", "fake_pt"]
 receta_vars = ["reco_eta", "fake_eta"]
 
-res_vs_eta_vars = { "res_pt_vs_eta": (500,-5,5),
-                    "res_cotth_vs_eta": (500, -0.01, 0.01),
-                    "res_phi_vs_eta": (500, -0.01, 0.01),
-                    "res_dxy_vs_eta": (500, -0.05, 0.05),
-                    "res_dz_vs_eta": (500,-0.1, 0.1) }
-
-res_vs_eta_hists = initialize_histograms( res_vs_eta_vars, bin_reg = (neta, mineta, maxeta), bin_reg_2 = (500, -5, 5), dim="2D")
-print res_vs_eta_hists
 
 simeta_hists = initialize_histograms( simeta_vars, bin_reg = (neta, mineta, maxeta) )
 simpt_hists = initialize_histograms( simpt_vars, bin_reg = (npt, array('d', xbinspt)), hist_in_regions = eta_regions )
@@ -101,11 +94,7 @@ for i in range(nEvt):
 
     t.LoadTree(i)
     t.GetEntry(i)
-
-    if vt['np_reco'][0] > len(vt['reco_eta']):
-        print "Need to increase np_reco at tree_variables.py : np_reco = " + str(vt['np_reco'][0] ) + ", len(reco_eta) = " + str(len(vt['reco_eta']) ) 
-
-    for it_p in range( vt['np_reco'][0] ):
+    for it_p in range( vt['np_reco'][0]): # loop over reco-tracks
 
         reco_eta = vt['reco_eta'][it_p]
         reco_pt = vt['reco_pt'][it_p]
@@ -133,18 +122,6 @@ for i in range(nEvt):
         if vt["gen_reco_matched"][it_p]: # if matched to reco tracks (associatorByHits (matched/rec > 0.75))
             simeta_hists["sim_eta_matchedTrack"].Fill(gen_track_eta)
             fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedTrack", simpt_hists)
-
-            res_pt = ( vt["gen_matched_rec_pt"][it_p] - vt["gen_matched_pt"][it_p] )/(vt["gen_matched_rec_pt"][it_p])
-            res_cotth = ( vt["gen_matched_rec_cotth"][it_p] - vt["gen_matched_cotth"][it_p] )
-            res_phi = ( vt["gen_matched_rec_phi"][it_p] - vt["gen_matched_phi"][it_p] )
-            res_dxy = ( vt["gen_matched_rec_dxy"][it_p] - vt["gen_matched_dxy"][it_p] )
-            res_dz = ( vt["gen_matched_rec_dz"][it_p] - vt["gen_matched_dz"][it_p] )
-
-            res_vs_eta_hists["res_pt_vs_eta"].Fill(gen_track_eta, res_pt)
-            res_vs_eta_hists["res_cotth_vs_eta"].Fill(gen_track_eta, res_cotth)
-            res_vs_eta_hists["res_phi_vs_eta"].Fill(gen_track_eta, res_phi)
-            res_vs_eta_hists["res_dxy_vs_eta"].Fill(gen_track_eta, res_dxy)
-            res_vs_eta_hists["res_dz_vs_eta"].Fill(gen_track_eta, res_dz)
 
         # ------------------------------ matched to seed ------------------------------
         if vt["gen_matchedSeedQuality"][it_p] == 1:
@@ -198,17 +175,6 @@ print "Saving efficiency histograms..."
 dir = o.mkdir("efficiencies")
 dir.cd()
 for histogram in efficiency_histograms.values():
-#    print "writing histogram" + str(histogram)
     histogram.Write()
 
-print "Saving resolution histograms..."
-dir2 = o.mkdir("resolutions")
-dir2.cd()
-
-print res_vs_eta_hists
-for histogram in res_vs_eta_hists:
-    print "Saving: " + histogram
-    res_vs_eta_hists[histogram].Write()
-
-print "...done"
 o.Close()

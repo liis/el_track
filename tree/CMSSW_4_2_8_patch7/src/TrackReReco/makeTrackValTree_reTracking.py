@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 process = cms.Process("reGsfTracking")
 
-runDigi = 1
+runDigi = 0
 
 # message logger
 process.MessageLogger = cms.Service("MessageLogger",
@@ -17,11 +17,14 @@ source = cms.Source ("PoolSource",fileNames = readFiles)
 if not runDigi:
     readFiles.extend( ['file:/hdfs/cms/store/user/liis/El_GSF_studies/Pt10/step2_9_1_DD1.root'])
 else:
-    readFiles.extend( ['file:/hdfs/cms/store/relval/CMSSW_4_2_9_HLT1_patch1/RelValZEE/GEN-SIM-DIGI-RAW-HLTDEBUG/START42_V14B_RelVal_ZEErv_20Jun2013-v1/00000/FE45A2C2-E3D9-E211-8BFF-00261894394D.root'])
+    readFiles.extend( ['file:/hdfs/cms/store/relval/CMSSW_4_2_9_HLT1_patch1/RelValZEE/GEN-SIM-DIGI-RAW-HLTDEBUG/START42_V14B_RelVal_ZEErv_20Jun2013-v1/00000/1E100803-E5D9-E211-A249-0026189438CC.root',
+                       'file:/hdfs/cms/store/relval/CMSSW_4_2_9_HLT1_patch1/RelValZEE/GEN-SIM-DIGI-RAW-HLTDEBUG/START42_V14B_RelVal_ZEErv_20Jun2013-v1/00000/AAB77065-E6D9-E211-BCAF-003048FFD744.root',
+                       'file:/hdfs/cms/store/relval/CMSSW_4_2_9_HLT1_patch1/RelValZEE/GEN-SIM-DIGI-RAW-HLTDEBUG/START42_V14B_RelVal_ZEErv_20Jun2013-v1/00000/DA6FEDCA-E9D9-E211-8C76-0025905964C0.root',
+                       'file:/hdfs/cms/store/relval/CMSSW_4_2_9_HLT1_patch1/RelValZEE/GEN-SIM-DIGI-RAW-HLTDEBUG/START42_V14B_RelVal_ZEErv_20Jun2013-v1/00000/FE45A2C2-E3D9-E211-8BFF-00261894394D.root'
+                       ])
 #    readFiles.extend( ['file:/hdfs/cms/store/user/liis/El_GSF_studies/test/SingleElMinusPt10_1_1_9Rd.root']) #digi
 
 process.source = source
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
 ### conditions
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
@@ -35,16 +38,16 @@ process.load("Configuration.EventContent.EventContent_cff")
 process.load("Configuration.StandardSequences.Reconstruction_cff")
 process.load("Configuration.StandardSequences.MagneticField_cff")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(150) )
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.MessageLogger.cerr.FwkReport.reportEvery = 10
 
 maxCandDefault = 5
 maxChi2Default = 2000
 nSigmaDefault = 3.0
 
-maxCand = 2
-maxChi2 = 100
-nSigma = 4
+maxCand = maxCandDefault
+maxChi2 = maxChi2Default
+nSigma = nSigmaDefault
 
 ########################################################################
 # to change parameters  as in slides from A.Tropiano
@@ -182,10 +185,13 @@ process.printEventContent = cms.EDAnalyzer("EventContentAnalyzer")
 
 # paths
 process.p = cms.Path(
+
+    process.printEventContent *
     process.myGsfReco *
+
     process.ValidationSelectors *
     process.elGsfTracksWithQuality *
-#    process.printEventContent *
+
     process.TrackValTreeMaker
 )
 

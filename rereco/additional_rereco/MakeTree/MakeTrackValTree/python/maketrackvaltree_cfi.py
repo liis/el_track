@@ -2,14 +2,14 @@ import FWCore.ParameterSet.Config as cms
 from Validation.RecoTrack.TrackingParticleSelectionForEfficiency_cfi import * 
 from SimTracker.TrackAssociation.LhcParametersDefinerForTP_cfi import *
 
-TrackingParticleSelectionForEfficiency.tipTP = cms.double(300)
-#TrackingParticleSelectionForEfficiency.lipTP = cms.double(300)
 
+TrackingParticleSelectionForEfficiency.lipTP = cms.double(300)
+TrackingParticleSelectionForEfficiency.tipTP = cms.double(3) # omit secondary decays
 TrackingParticleSelectionForEfficiency.signalOnlyTP = cms.bool(True) # if True, dont consider PU tracks
 
-#TrackingParticleSelectionForEfficiency.minHitTP = cms.int32(3)
-#TrackingParticleSelectionForEfficiency.ptMinTP = cms.double(0.9)
-#TrackingParticleSelectionForEfficiency.pdgIdTP = cms.vint32([-11, 11])
+TrackingParticleSelectionForEfficiency.minHitTP = cms.int32(3)
+TrackingParticleSelectionForEfficiency.ptMinTP = cms.double(0.9)
+TrackingParticleSelectionForEfficiency.pdgIdTP = cms.vint32([-11, 11])
 
 
 import SimTracker.TrackAssociation.quickTrackAssociatorByHits_cfi 

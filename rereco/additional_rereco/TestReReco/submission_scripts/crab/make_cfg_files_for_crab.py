@@ -13,14 +13,14 @@ tracking_cfg_parameters["maxChi2"] = [10, 30, 50, 100, 300, 2000]
 tracking_cfg_parameters["nSigma"] = [3, 3, 3, 3, 3, 3 ]
 
 # Max cand scan
-#tracking_cfg_parameters["maxCand"] += [1, 2, 3, 4, 6, 7]
-#tracking_cfg_parameters["maxChi2"] += [2000, 2000, 2000, 2000, 2000, 2000]
-#tracking_cfg_parameters["nSigma"] += [3, 3, 3, 3, 3, 3]
+tracking_cfg_parameters["maxCand"] += [1, 2, 3, 4, 6, 7]
+tracking_cfg_parameters["maxChi2"] += [2000, 2000, 2000, 2000, 2000, 2000]
+tracking_cfg_parameters["nSigma"] += [3, 3, 3, 3, 3, 3]
 
 # nSigma scan
-#tracking_cfg_parameters["maxCand"] += [5, 5, 5, 5, 5]
-#tracking_cfg_parameters["maxChi2"] += [2000, 2000, 2000, 2000, 2000]
-#tracking_cfg_parameters["nSigma"] += [1, 2, 4, 5, 6]
+tracking_cfg_parameters["maxCand"] += [5, 5, 5, 5, 5]
+tracking_cfg_parameters["maxChi2"] += [2000, 2000, 2000, 2000, 2000]
+tracking_cfg_parameters["nSigma"] += [1, 2, 4, 5, 6]
 
 print "Creating " + str(len(tracking_cfg_parameters["maxCand"]) )+ " jobs"
 varstrings = create_varstrings(tracking_cfg_parameters, iter = len(tracking_cfg_parameters["maxCand"]), skip_default = False)

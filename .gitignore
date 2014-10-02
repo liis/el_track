@@ -6,7 +6,9 @@
 *.png
 *.root
 *__init__.py
-
+.*
+!.gitignore
+!.gitnodules
 CVS
 
 # CMSSW related stuff

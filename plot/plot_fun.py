@@ -1,4 +1,8 @@
 import ROOT
+from ROOT import RooRealVar
+print "successfully imported RooRealVar"
+from ROOT import RooDoubleCB
+
 from collections import OrderedDict as dict
 
 infilenames_eta = {
@@ -93,7 +97,7 @@ def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  
         if n==0:
             hist.SetMaximum(ymax)
             hist.SetMinimum(0.)
-            if logy: 
+            if logy:
                 hist.SetMinimum(0.001)
             hist.GetXaxis().SetTitleOffset(1.3)
             hist.GetYaxis().SetTitleOffset(1.4)
@@ -110,7 +114,7 @@ def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  
             if not ytitle == "none":
                 hist.GetYaxis().SetTitle(ytitle)
 
-            print "style = " + style
+#            print "style = " + style
             if style == "noerr":
                 hist.Draw("hist")
             else:
@@ -215,8 +219,8 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
     c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
     c.Close()
 
-    
-def draw_resolution(res_hist_2d, res_hist_name):
+
+def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False):
     """
     res_hist_2d -- histogram of eta/pt vs resolution variable
     res_hist_name -- name to be given to the output resolution histogram
@@ -229,15 +233,73 @@ def draw_resolution(res_hist_2d, res_hist_name):
 
     res_1d = ROOT.TH1F(res_hist_name,res_hist_name, nbinsx-1, res_hist_2d.GetXaxis().GetXmin(), res_hist_2d.GetXaxis().GetXmax() )
 
+
     for i in range(1, nbinsx+1 ):
-        temp_res = res_hist_2d.ProjectionY("proj",i, i+1)
-        temp_gaus = ROOT.TF1("temp_gaus","gaus", temp_res.GetMean()-1*temp_res.GetRMS(), temp_res.GetMean()+1*temp_res.GetRMS() )#, -0.05, 0.05)              
+        temp_res = res_hist_2d.ProjectionY("proj",i, i+1) #get resolution distribution at each bin
+
+        #-- initial guess of fit boarders ---
+        if "res_dxy" in res_hist_name:
+          firstRangeLeft = -0.005
+          firstRangeRight = 0.005
+        elif "res_dz" in res_hist_name:
+          firstRangeLeft = -0.1
+          firstRangeRight = 0.1
+        elif "res_cotth" in res_hist_name:
+          firstRangeLeft = -0.01
+          firstRangeRight = 0.01
+        elif "res_phi" in res_hist_name:
+          firstRangeLeft = -0.005
+          firstRangeRight = 0.005
+        elif "res_pt" in res_hist_name:
+          firstRangeLeft = -2.
+          firstRangeRight = 1.0
+        else:
+          print "Initial fit parameters not specified -- check resolution hist names!"
+          firstRangeLeft = -2.
+          firstRangeRight = 2.0
+
+        temp_gaus = ROOT.TF1("temp_gaus","gaus", firstRangeLeft, firstRangeRight )
+
+        if do_control_fit_plots:
+          c = ROOT.TCanvas("c","c", 600, 600)
 
         r = temp_res.Fit(temp_gaus, "SRML Q")
-        mean = r.Parameter(1)
-        sigma = r.Parameter(2)
-        
-        res_1d.SetBinContent(i, sigma)
+
+        if do_control_fit_plots:
+#          r.Draw() #save fits for checks
+          c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/InitialFitChecks/fit" + res_hist_name + "_bin" + str(i) + ".png")
+          c.Close()
+
+
+        tmp_mean = r.Parameter(1)
+        tmp_sigma = r.Parameter(2)
+        xmin = tmp_mean - tmp_sigma*5 # update mean and sigma according to the first fit
+        xmax = tmp_mean + tmp_sigma*5
+
+        x = ROOT.RooRealVar("x","x", xmin, xmax)
+
+
+        if tmp_mean < 0:
+          meanRangeMin = 5*tmp_mean
+          meanRangeMax = -5*tmp_mean
+        else:
+          meanRangeMin = -5*tmp_mean
+          meanRangeMax = 5*tmp_mean
+
+        meanRoo = ROOT.RooRealVar("mean","mean of gaussian", tmp_mean, meanRangeMin, meanRangeMax)
+        sigmaRoo = ROOT.RooRealVar("sigma", "width of gaussian", tmp_sigma, tmp_sigma*0.5, tmp_sigma*1.5)
+
+        # CB parameters
+        a = ROOT.RooRealVar("a","a",3.,0.3,10.)
+        aDx = ROOT.RooRealVar("aDx","aDx",3.,1.,10.)
+        n = ROOT.RooRealVar("n","n",5.,0.,10.)
+        nDx = ROOT.RooRealVar("nDx","nDx",5.,0.,10.)
+
+        f_cb = ROOT.RooDoubleCB("cb","cb PDF",x,meanRoo,sigmaRoo,a,n,aDx,nDx)
+
+        temp_res_sub = ROOT.TH1Subset(temp_res, xmin, xmax)
+        dh = ROOT.RooDataHist("dh","dh",x,Import(temp_res_sub))
+
+        res_1d.SetBinContent(i, tmp_sigma)
 
     return res_1d
-

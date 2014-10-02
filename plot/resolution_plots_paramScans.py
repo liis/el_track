@@ -23,8 +23,8 @@ is_gsf = 0
 parameters_maxCand = {
     "maxChi2": [2000],
     "nSigma": [3],
-#    "maxCand": [3, 4, 5, 6, 7],
-    "maxCand": [3,4]
+    "maxCand": [3, 4, 5, 6, 7],
+#    "maxCand": [1,2,3,4]
     } #consider all combinations of parameters
 
 parameters_maxChi2 = {
@@ -36,7 +36,8 @@ parameters_maxChi2 = {
 parameters_nSigma = {
     "maxChi2": [2000],
 #    "nSigma": [5, 6],
-    "nSigma": [1, 2, 3, 4, 5, 6],
+#    "nSigma": [1, 2, 3, 4, 5, 6],
+    "nSigma": [ 2, 3, 4, 5, 6],
     "maxCand": [5],
     }
 
@@ -48,8 +49,8 @@ parameters_test = {
 
 parameter_sets = [
     parameters_maxCand,
-    parameters_maxChi2,
-    parameters_nSigma,
+#    parameters_maxChi2,
+#    parameters_nSigma,
 #  parameters_test,
     ]
 
@@ -85,6 +86,7 @@ for parameters in parameter_sets:
     res_eta_pt = {}
     res_eta_phi = {}
 
+    ii = 0
     for input_file in input_files:
         infilenames[input_file] = get_infilenames_by_params("efficiencyHistograms", parameters, input_file, isGsf = is_gsf)
         infiles[input_file] = load_input_files(indir, infilenames[input_file])
@@ -103,6 +105,12 @@ for parameters in parameter_sets:
             res_eta_phi[input_file] = dict()
 
             for cutstring in infiles[input_file]:
+                if ii == 0: # for control fit plots (no need to do multiple times)
+                    isFirst = False #True
+                else:
+                    isFirst = False
+                ii+=1
+
                 res_eta_dxy[input_file][cutstring] = dict()
                 eff_eta[input_file][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_eta")
                 eff_wrt_seed_eta[input_file][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_wrt_seed_eta")
@@ -110,14 +118,14 @@ for parameters in parameter_sets:
 #                eff_eta_sim[input_file][cutstring] = infiles[input_file][cutstring].Get("eff_eta_simMatch_sel")
                 fake_eta[input_file][cutstring] = infiles[input_file][cutstring].Get("efficiencies/fake_rate_eta")
 
-                test = infiles[input_file][cutstring].Get("resolutions/res_dxy_vs_eta")
+                test = infiles[input_file][cutstring].Get("resolutions_eta/res_dxy_vs_eta")
 #                test.Draw()
 
-                res_eta_dxy[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions/res_dxy_vs_eta"), "res_dxy_vs_eta_"+input_file+"_"+cutstring)
-                res_eta_dz[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions/res_dz_vs_eta"), "res_dz_vs_eta"+input_file+"_"+cutstring)
-                res_eta_cotth[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions/res_cotth_vs_eta"), "res_cotth_vs_eta"+input_file+"_"+cutstring)
-                res_eta_pt[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions/res_pt_vs_eta"), "res_pt_vs_eta"+input_file+"_"+cutstring)
-                res_eta_phi[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions/res_phi_vs_eta"), "res_phi_vs_eta"+input_file+"_"+cutstring)
+                res_eta_dxy[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_dxy_vs_eta"), "res_dxy_vs_eta_"+input_file+"_"+cutstring,do_control_fit_plots=isFirst)
+                res_eta_dz[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_dz_vs_eta"), "res_dz_vs_eta"+input_file+"_"+cutstring, do_control_fit_plots=isFirst)
+                res_eta_cotth[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_cotth_vs_eta"), "res_cotth_vs_eta"+input_file+"_"+cutstring, do_control_fit_plots=isFirst)
+                res_eta_pt[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_pt_vs_eta"), "res_pt_vs_eta"+input_file+"_"+cutstring, do_control_fit_plots=isFirst)
+                res_eta_phi[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_phi_vs_eta"), "res_phi_vs_eta"+input_file+"_"+cutstring, do_control_fit_plots=isFirst)
                 random_cutstring=cutstring
 
         if input_file != "Pt10" and input_file != "Pt100":
@@ -152,8 +160,8 @@ for parameters in parameter_sets:
         print str(eff_eta[input_file])
         if input_file != "FlatPt":
             draw_and_save_eff(eff_eta[input_file], "eta", "eff", is_gsf=is_gsf, label=sel_str+"_" + input_file, leg_pos="down_right", title=input_file)
-            draw_and_save_eff(eff_seed_eta[input_file],"eta", "eff_seed", is_gsf=is_gsf, label=sel_str+"_"+input_file, leg_pos="down_right",title=input_file)
-            draw_and_save_eff(eff_wrt_seed_eta[input_file],"eta", "eff_wrt_seed", is_gsf=is_gsf, label=sel_str+"_"+input_file, leg_pos="down_right",title=input_file)
+#            draw_and_save_eff(eff_seed_eta[input_file],"eta", "eff_seed", is_gsf=is_gsf, label=sel_str+"_"+input_file, leg_pos="down_right",title=input_file)
+#            draw_and_save_eff(eff_wrt_seed_eta[input_file],"eta", "eff_wrt_seed", is_gsf=is_gsf, label=sel_str+"_"+input_file, leg_pos="down_right",title=input_file)
 #            draw_and_save_eff(eff_eta_sim[input_file], "eta", "eff", is_gsf=is_gsf, label="sim_" + sel_str + "_" + input_file, leg_pos="down_right", title="sim, " + input_file)
             draw_and_save_eff(fake_eta[input_file], "eta", "fake", is_gsf=is_gsf, label=sel_str+"_" + input_file, leg_pos="up_right", title=input_file)
 
@@ -167,8 +175,8 @@ for parameters in parameter_sets:
         if input_file != "Pt10" and input_file != "Pt100":
             for eta_region in eta_regions:
                 draw_and_save_eff(eff_pt[input_file + "_" + eta_region], "pt", "eff", is_gsf=is_gsf, label=sel_str+"_" + input_file + "_" + eta_region, leg_pos="down_right", title=eta_region + " el. , " + input_file)
-                draw_and_save_eff(eff_seed_pt[input_file + "_" + eta_region], "pt", "eff_seed", is_gsf=is_gsf, label=sel_str+"_" + input_file + "_" + eta_region, leg_pos="down_right", title=eta_region + " el. , " + input_file)
-                draw_and_save_eff(eff_wrt_seed_pt[input_file + "_" + eta_region], "pt", "eff_wrt_seed", is_gsf=is_gsf, label=sel_str+"_" + input_file + "_" + eta_region, leg_pos="down_right", title=eta_region + " el. , " + input_file)
+  #              draw_and_save_eff(eff_seed_pt[input_file + "_" + eta_region], "pt", "eff_seed", is_gsf=is_gsf, label=sel_str+"_" + input_file + "_" + eta_region, leg_pos="down_right", title=eta_region + " el. , " + input_file)
+#                draw_and_save_eff(eff_wrt_seed_pt[input_file + "_" + eta_region], "pt", "eff_wrt_seed", is_gsf=is_gsf, label=sel_str+"_" + input_file + "_" + eta_region, leg_pos="down_right", title=eta_region + " el. , " + input_file)
 
                 draw_and_save_eff(fake_pt[input_file + "_" + eta_region], "pt", "fake", is_gsf=is_gsf, label=sel_str+"_" + input_file + "_" + eta_region, leg_pos="up_right", title=eta_region + " el." + input_file, ymax_res=1)
 

@@ -79,7 +79,7 @@ def get_hit_efficiency_hist(infiles, var, quality, nrhits = 10):
 
 colors = [ROOT.kBlack, ROOT.kRed, ROOT.kYellow, ROOT.kYellow-3, ROOT.kGreen, ROOT.kGreen+3, ROOT.kCyan, ROOT.kCyan+1, ROOT.kCyan+2, ROOT.kCyan+3, ROOT.kCyan+4, ROOT.kBlue, ROOT.kViolet-3, ROOT.kViolet+3]
 
-def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  1., region="none", style=""):
+def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  1., region="none", style="", logy=False):
     """
     hists -- dictionary of histograms
     plot a list of efficiency histogras
@@ -93,6 +93,8 @@ def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  
         if n==0:
             hist.SetMaximum(ymax)
             hist.SetMinimum(0.)
+            if logy: 
+                hist.SetMinimum(0.001)
             hist.GetXaxis().SetTitleOffset(1.3)
             hist.GetYaxis().SetTitleOffset(1.4)
             hist.SetTitle("blabla")
@@ -160,6 +162,7 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
     c = ROOT.TCanvas("c","c", 600, 600)
     c.SetGrid()
 
+    logy=False
     xtitle = ""
     if var == "pt":
         c.SetLogx()
@@ -180,14 +183,16 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
     if eff_fake[:4] == "fake":
         ytitle = "Fake rate"
         ymax = 0.5
-        if var == "pt":
-            ymax = ymax_res
+#        if var == "pt":
+#            ymax = ymax_res
 
     if eff_fake[:4] == "pull":
         ytitle = "pull"
     if eff_fake[:4] == "res":
-        ytitle ="res"
+        ytitle = label
         ymax = ymax_res
+#        logy=True
+
 
     if len(title)>0:
         ytitle=ytitle + " (" + title + ")"
@@ -196,16 +201,18 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
 #        ytitle = ytitle + " (" + label + ")"
 
 
-    draw_efficiency_histograms(hists.values(), xtitle, ytitle, ymax, style=style)
+    draw_efficiency_histograms(hists.values(), xtitle, ytitle, ymax, style=style, logy=logy)
     leg = draw_legend(hists, pos = leg_pos)
     leg.Draw()
 
     GSFstr = ""
     if(is_gsf):
         GSFstr = "_GSF"
+#    if log:
+#        c.SetLogy()
 
 #    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/" + eff_fake + "_" + var + "_" + label + GSFstr + ".pdf")
-    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
+    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
     c.Close()
 
     

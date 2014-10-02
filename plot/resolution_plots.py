@@ -53,9 +53,9 @@ parameter_sets = [
 
 input_files = [
     "Pt10",
-#    "Pt100",
+    "Pt100",
 #    "FlatPt",
-#    "Zee"
+    "Zee"
 ]
 
 infilenames = {} # filenames

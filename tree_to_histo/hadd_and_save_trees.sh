@@ -1,4 +1,4 @@
-#!/bin/bash                                                                                                                         
+#!/bin/bash
 
 if [ -z $ROOTSYS ]; then
  echo "ROOTSYS is not defined: source ROOT to use hadd!"
@@ -9,8 +9,8 @@ INDIR=$1 #directory of the crab output directories with root-files
 OUTDIR=$2 #specify directory, where to put the crab output *.root files
 #OUTDIR=output_crab 
 
-OVERWRITE=1
-GET_FROM_STORAGE=1
+OVERWRITE=1 
+GET_FROM_STORAGE=1 #look for crab_0 directories (0) or not (1)
 
 if [ -z "$INDIR" ]; then echo "Usage: INDIR, where the crabdirs are has to be given as a first argument"; exit 1; fi
 if [ -z "$OUTDIR" ]; then echo "Specify OUTDIR, where the output root trees are saved as a second argument after INDIR"; exit 1; fi
@@ -19,7 +19,7 @@ cd $INDIR
 INDIR=`pwd`
 
 echo "looking for crab output directories in "$INDIR
-CRABDIRNAME=Zee_fake
+CRABDIRNAME=FlatPt #part of directory name to search
 CRABDIRS=`find $INDIR -name "*$CRABDIRNAME*"`
 
 cd -

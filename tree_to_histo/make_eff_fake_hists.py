@@ -52,7 +52,7 @@ mineta = -2.5
 maxeta = 2.5
 
 npt = 50
-minpt = 0.1
+minpt = 1 #0.1
 maxpt = 200
 
 nsimhits = 25
@@ -60,9 +60,9 @@ minsimhit = 0
 maxsimhit = 25
 
 xbinspt = log_binning(npt,minpt,maxpt) #log binning for pt histograms
+xbinspt_res = log_binning(50, minpt, 100) #slightly smaller region for resolution hists (otherwise difficlut to fit at high pt)
 
 eta_regions = ["barrel", "trans", "endcap"]
-
 #seed_vars = ["gen_matchedSeedOkCharge", "gen_matchedSeedQuality"]
 
 simeta_vars = ["sim_eta", "sim_eta_matchedTrack", "sim_eta_matchedSeed", "sim_eta_matchedSeed_matchedCharge"]
@@ -71,14 +71,25 @@ simpt_vars = ["sim_pt", "sim_pt_matchedTrack", "sim_pt_matchedSeed", "sim_pt_mat
 recpt_vars = ["reco_pt", "fake_pt"]
 receta_vars = ["reco_eta", "fake_eta"]
 
-res_vs_eta_vars = { "res_pt_vs_eta": (500,-5,5),
-                    "res_cotth_vs_eta": (500, -0.01, 0.01),
-                    "res_phi_vs_eta": (500, -0.01, 0.01),
-                    "res_dxy_vs_eta": (500, -0.05, 0.05),
-                    "res_dz_vs_eta": (500,-0.1, 0.1) }
+res_vs_eta_vars = { "res_pt_vs_eta": (300,-4,2),
+                    "res_cotth_vs_eta": (100, -0.02, 0.02),
+                    "res_phi_vs_eta": (100, -0.01, 0.01),
+                    "res_dxy_vs_eta": (100, -0.05, 0.05),
+                    "res_dz_vs_eta": (100,-0.1, 0.1),
+                    }
 
-res_vs_eta_hists = initialize_histograms( res_vs_eta_vars, bin_reg = (neta, mineta, maxeta), bin_reg_2 = (500, -5, 5), dim="2D")
+res_vs_pt_vars = {"res_pt_vs_pt": (300, -4, 2),
+                  "res_cotth_vs_pt": (100, -0.01, 0.01),
+                  "res_phi_vs_pt": (100, -0.01, 0.01),
+                  "res_dxy_vs_pt": (100, -0.05, 0.05),
+                  "res_dz_vs_pt": (100,-0.1, 0.1),
+                  }
+
+res_vs_eta_hists = initialize_histograms( res_vs_eta_vars, bin_reg = (25, -2.5, 2.5), dim="2D")
 print res_vs_eta_hists
+
+res_vs_pt_hists =initialize_histograms( res_vs_pt_vars, bin_reg = (npt, array('d', xbinspt_res)), dim="2D") #skip the eta region business (might add later)
+print res_vs_pt_hists
 
 simeta_hists = initialize_histograms( simeta_vars, bin_reg = (neta, mineta, maxeta) )
 simpt_hists = initialize_histograms( simpt_vars, bin_reg = (npt, array('d', xbinspt)), hist_in_regions = eta_regions )
@@ -111,16 +122,16 @@ for i in range(nEvt):
         reco_pt = vt['reco_pt'][it_p]
 
         fill_hists_by_eta_regions(reco_eta, reco_pt, "reco_pt", recpt_hists)
-        if reco_pt > 30:
-            receta_hists["reco_eta"].Fill(reco_eta)
+#        if reco_pt > 30:
+        receta_hists["reco_eta"].Fill(reco_eta)
 
     for it_p in range( vt['np_fake'][0]): # loop over fake traks
         fake_eta = vt['fake_eta'][it_p]
         fake_pt = vt['fake_pt'][it_p]
 
         fill_hists_by_eta_regions(fake_eta, fake_pt, "fake_pt", recpt_hists)
-        if fake_pt > 30:
-            receta_hists["fake_eta"].Fill(fake_eta)
+#        if fake_pt > 30:
+        receta_hists["fake_eta"].Fill(fake_eta)
 
     for it_p in range( vt['np_gen'][0]): #loop over simulated tracks
         gen_track_pt = vt['gen_pt'][it_p]
@@ -146,6 +157,12 @@ for i in range(nEvt):
             res_vs_eta_hists["res_dxy_vs_eta"].Fill(gen_track_eta, res_dxy)
             res_vs_eta_hists["res_dz_vs_eta"].Fill(gen_track_eta, res_dz)
 
+            res_vs_pt_hists["res_pt_vs_pt"].Fill(gen_track_pt, res_pt)
+            res_vs_pt_hists["res_cotth_vs_pt"].Fill(gen_track_pt, res_cotth)
+            res_vs_pt_hists["res_phi_vs_pt"].Fill(gen_track_pt, res_phi)
+            res_vs_pt_hists["res_dxy_vs_pt"].Fill(gen_track_pt, res_dxy)
+            res_vs_pt_hists["res_dz_vs_pt"].Fill(gen_track_pt, res_dz)
+
         # ------------------------------ matched to seed ------------------------------
         if vt["gen_matchedSeedQuality"][it_p] == 1:
             simeta_hists["sim_eta_matchedSeed"].Fill(vt['gen_eta'][it_p])
@@ -154,7 +171,7 @@ for i in range(nEvt):
                 simeta_hists["sim_eta_matchedSeed_matchedCharge"].Fill(gen_track_eta)
                 fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedSeed_matchedCharge", simpt_hists)
 
-eta_regions = ["barrel", "trans", "endcap"]
+
 
 print "Processing total Sim-to-Reco efficiencies:"
 efficiency_histograms={}
@@ -202,13 +219,21 @@ for histogram in efficiency_histograms.values():
     histogram.Write()
 
 print "Saving resolution histograms..."
-dir2 = o.mkdir("resolutions")
+dir2 = o.mkdir("resolutions_eta")
 dir2.cd()
 
-print res_vs_eta_hists
+print "-------Saving res eta hists-------"
 for histogram in res_vs_eta_hists:
     print "Saving: " + histogram
     res_vs_eta_hists[histogram].Write()
+
+dir3 = o.mkdir("resolutions_pt")
+dir3.cd()
+print "-------Saving res pt hists--------"
+for histogram in res_vs_pt_hists:
+    print "Saving: " + histogram
+    res_vs_pt_hists[histogram].Write()
+
 
 print "...done"
 o.Close()

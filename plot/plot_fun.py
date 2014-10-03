@@ -1,8 +1,6 @@
 import ROOT
-from ROOT import RooRealVar
-print "successfully imported RooRealVar"
-from ROOT import RooDoubleCB
-
+from ROOT import RooFit
+import math
 from collections import OrderedDict as dict
 
 infilenames_eta = {
@@ -186,7 +184,12 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
         ytitle = "Reco wrt seeding efficiency"
     if eff_fake[:4] == "fake":
         ytitle = "Fake rate"
-        ymax = 0.5
+        if var=="pt":
+            ymax = 0.7
+        elif var=="eta":
+            ymax = 0.25
+        else:
+            ymax = 1
 #        if var == "pt":
 #            ymax = ymax_res
 
@@ -216,7 +219,9 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
 #        c.SetLogy()
 
 #    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/" + eff_fake + "_" + var + "_" + label + GSFstr + ".pdf")
-    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
+    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_a/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
+    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_eff/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
+    
     c.Close()
 
 
@@ -233,14 +238,14 @@ def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False):
 
     res_1d = ROOT.TH1F(res_hist_name,res_hist_name, nbinsx-1, res_hist_2d.GetXaxis().GetXmin(), res_hist_2d.GetXaxis().GetXmax() )
 
-
+    i=0
     for i in range(1, nbinsx+1 ):
         temp_res = res_hist_2d.ProjectionY("proj",i, i+1) #get resolution distribution at each bin
 
         #-- initial guess of fit boarders ---
         if "res_dxy" in res_hist_name:
-          firstRangeLeft = -0.005
-          firstRangeRight = 0.005
+          firstRangeLeft = -0.03
+          firstRangeRight = 0.03
         elif "res_dz" in res_hist_name:
           firstRangeLeft = -0.1
           firstRangeRight = 0.1
@@ -267,7 +272,7 @@ def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False):
 
         if do_control_fit_plots:
 #          r.Draw() #save fits for checks
-          c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/InitialFitChecks/fit" + res_hist_name + "_bin" + str(i) + ".png")
+          c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_a/fit_checks_step1/fit" + res_hist_name + "_bin" + str(i) + ".png")
           c.Close()
 
 
@@ -289,17 +294,89 @@ def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False):
         meanRoo = ROOT.RooRealVar("mean","mean of gaussian", tmp_mean, meanRangeMin, meanRangeMax)
         sigmaRoo = ROOT.RooRealVar("sigma", "width of gaussian", tmp_sigma, tmp_sigma*0.5, tmp_sigma*1.5)
 
+
+        
         # CB parameters
         a = ROOT.RooRealVar("a","a",3.,0.3,10.)
         aDx = ROOT.RooRealVar("aDx","aDx",3.,1.,10.)
         n = ROOT.RooRealVar("n","n",5.,0.,10.)
         nDx = ROOT.RooRealVar("nDx","nDx",5.,0.,10.)
 
+        if i>1:
+            meanRoo.setVal(previousMean)
+            sigmaRoo.setVal(previousSigma)
+            a.setVal(previousA)
+            n.setVal(previousN)
+            aDx.setVal(previousADx)
+            nDx.setVal(previousNDx)
+            
         f_cb = ROOT.RooDoubleCB("cb","cb PDF",x,meanRoo,sigmaRoo,a,n,aDx,nDx)
 
-        temp_res_sub = ROOT.TH1Subset(temp_res, xmin, xmax)
-        dh = ROOT.RooDataHist("dh","dh",x,Import(temp_res_sub))
+#       temp_res_sub = ROOT.TH1Subset(temp_res, xmin, xmax)
+        dh = ROOT.RooDataHist("dh", "dh", ROOT.RooArgList(x), ROOT.RooFit.Import(temp_res))
 
-        res_1d.SetBinContent(i, tmp_sigma)
+        if do_control_fit_plots:
+            c2 = ROOT.TCanvas("c","c", 600, 600)
+            xframe = x.frame(ROOT.RooFit.Title("Gaussian p.d.f."))
+            
+        f_cb.fitTo(dh, ROOT.RooFit.NumCPU(8), ROOT.RooFit.PrintLevel(1))
+        if do_control_fit_plots:
+        
+            dh.plotOn(xframe)
+            f_cb.plotOn(xframe)
+            xframe.Draw()
 
+            c2.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_a/fit_checks_step2/fit" + res_hist_name + "_bin" + str(i) + ".png")
+            c2.Close()
+
+        tmp_mean = meanRoo.getVal()
+        tmp_sigma = sigmaRoo.getVal()
+
+        sigmaErr = sigmaRoo.getError()
+        meanErr = meanRoo.getError()
+
+        previousMean = meanRoo.getVal();
+        previousSigma = sigmaRoo.getVal();
+        previousA = a.getVal();
+        previousN = n.getVal();
+        previousADx = aDx.getVal();
+        previousNDx = nDx.getVal();
+
+
+
+
+        #-------- get 68% and 95% ------------
+        fullAverage = temp_res.GetMean()
+        step = temp_res.GetBinWidth(1)
+        peakBin = temp_res.FindBin(tmp_mean)
+        fullIntegral = temp_res.Integral(0, temp_res.GetNbinsX()+1)
+        fullIntegralSx = temp_res.Integral(0, peakBin)
+        fullIntegralDx = temp_res.Integral(peakBin, temp_res.GetNbinsX()+1)
+
+        found68=False
+        for j in range(0,temp_res.GetNbinsX()/2):
+            fraction=temp_res.Integral(peakBin-j, peakBin+j)/fullIntegral
+            fractionSx=temp_res.Integral(peakBin-j, peakBin)/fullIntegralSx
+            fractionDx=temp_res.Integral(peakBin, peakBin+j)/fullIntegralDx
+
+            if found68:
+                break
+
+            if fraction > 0.682 and found68==False:
+                found68=True
+                range68 = step*(2*j+1)*0.5
+                averageBinContent = (temp_res.GetBinContent(peakBin-j)+temp_res.GetBinContent(peakBin+j))/2
+                print averageBinContent
+                print step
+                print fullIntegral
+                uncert69 = math.sqrt(0.682*(1-0.682)/fullIntegral)/(averageBinContent/step/fullIntegral)
+
+
+        res_1d.SetBinContent(i, range68)
+        res_1d.SetBinError(i, 1/100000)
+
+#        res_1d.SetBinContent(i, tmp_sigma)
+        i+=1
+        
+        
     return res_1d

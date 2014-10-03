@@ -1,8 +1,8 @@
 #!/bin/bash
 
 INDIR=$1 # the dir, where the input trees are located
-#OUTDIR=$2 # directory where to store output histograms
-OUTDIR="./histograms/13TeV_v1"
+OUTDIR=$2 # directory where to store output histograms
+#OUTDIR="./histograms/13TeV_011014/"
 
 SUBMIT_BATCH=1
 

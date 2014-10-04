@@ -85,7 +85,7 @@ res_vs_pt_vars = {"res_pt_vs_pt": (300, -4, 2),
                   "res_dz_vs_pt": (100,-0.1, 0.1),
                   }
 
-res_vs_eta_hists = initialize_histograms( res_vs_eta_vars, bin_reg = (25, -2.5, 2.5), dim="2D")
+res_vs_eta_hists = initialize_histograms( res_vs_eta_vars, bin_reg = (50, -2.5, 2.5), dim="2D")
 print res_vs_eta_hists
 
 res_vs_pt_hists =initialize_histograms( res_vs_pt_vars, bin_reg = (npt, array('d', xbinspt_res)), dim="2D") #skip the eta region business (might add later)

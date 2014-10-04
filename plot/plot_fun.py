@@ -35,7 +35,7 @@ def load_input_files(indir, infilenames):
     for region, filename in infilenames.iteritems():
         inpath = indir + filename
         infiles[region] = ROOT.TFile(inpath)
-
+        
     return infiles
 
 def get_hit_efficiency_hist(infiles, var, quality, nrhits = 10):
@@ -96,7 +96,7 @@ def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  
             hist.SetMaximum(ymax)
             hist.SetMinimum(0.)
             if logy:
-                hist.SetMinimum(0.001)
+                hist.SetMinimum(hist.GetMinimum()*0.2)
             hist.GetXaxis().SetTitleOffset(1.3)
             hist.GetYaxis().SetTitleOffset(1.4)
             hist.SetTitle("blabla")
@@ -153,6 +153,19 @@ def add_text_box(text=''):
     latex.SetTextAlign(11)
     return latex.DrawLatex(0.17, 0.96, text)
 
+
+#def draw_and_save_res(hists, var, res_var, is_gsf, label = "", leg_pos = "up_right", title = "", ymax_res = 0.5, style=""):
+#    c = ROOT.TCanvas("c","c", 600, 600)
+#    c.SetGrid()
+
+#    if var == "eta":
+#        xtitle = "eta"
+
+#    ytitle = "resolution in " + pretty_var[res+var]
+
+    
+    
+
 def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_right", title = "", ymax_res=0.5, style=""):
     """
     hists - dictionary of process names and histograms
@@ -185,7 +198,7 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
     if eff_fake[:4] == "fake":
         ytitle = "Fake rate"
         if var=="pt":
-            ymax = 0.7
+            ymax = 0.25
         elif var=="eta":
             ymax = 0.25
         else:
@@ -198,7 +211,9 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
     if eff_fake[:4] == "res":
         ytitle = label
         ymax = ymax_res
-#        logy=True
+        logy=False # set nonzero y value
+#        c.SetLogy
+
 
 
     if len(title)>0:
@@ -215,21 +230,23 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
     GSFstr = ""
     if(is_gsf):
         GSFstr = "_GSF"
-#    if log:
-#        c.SetLogy()
+    if logy:
+        c.SetLogy()
 
 #    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/" + eff_fake + "_" + var + "_" + label + GSFstr + ".pdf")
-    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_a/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
-    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_eff/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
+#    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_a/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
+#    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_eff/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
+    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_res/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
     
     c.Close()
 
 
-def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False):
+def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False, mode="68"):
     """
     res_hist_2d -- histogram of eta/pt vs resolution variable
     res_hist_name -- name to be given to the output resolution histogram
     """
+    print "draw control fits = " + str(do_control_fit_plots)
 
     nbinsx = res_hist_2d.GetNbinsX()
     nbinsy = res_hist_2d.GetNbinsY()
@@ -238,30 +255,38 @@ def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False):
 
     res_1d = ROOT.TH1F(res_hist_name,res_hist_name, nbinsx-1, res_hist_2d.GetXaxis().GetXmin(), res_hist_2d.GetXaxis().GetXmax() )
 
-    i=0
-    for i in range(1, nbinsx+1 ):
+    for i in range(1, nbinsx+1):
+        
         temp_res = res_hist_2d.ProjectionY("proj",i, i+1) #get resolution distribution at each bin
-
+        
+        isPtPlot = False
         #-- initial guess of fit boarders ---
         if "res_dxy" in res_hist_name:
           firstRangeLeft = -0.03
           firstRangeRight = 0.03
+          tailSign = 0
         elif "res_dz" in res_hist_name:
           firstRangeLeft = -0.1
           firstRangeRight = 0.1
+          tailSign = -1
         elif "res_cotth" in res_hist_name:
           firstRangeLeft = -0.01
           firstRangeRight = 0.01
+          tailSign = -1
         elif "res_phi" in res_hist_name:
           firstRangeLeft = -0.005
           firstRangeRight = 0.005
+          tailSign = -1
         elif "res_pt" in res_hist_name:
-          firstRangeLeft = -2.
-          firstRangeRight = 1.0
+          firstRangeLeft = -1.
+          firstRangeRight = 2.0
+          tailSign = -1
+          isPtPlot = True
         else:
           print "Initial fit parameters not specified -- check resolution hist names!"
           firstRangeLeft = -2.
           firstRangeRight = 2.0
+          tailSign = 0
 
         temp_gaus = ROOT.TF1("temp_gaus","gaus", firstRangeLeft, firstRangeRight )
 
@@ -272,7 +297,7 @@ def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False):
 
         if do_control_fit_plots:
 #          r.Draw() #save fits for checks
-          c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_a/fit_checks_step1/fit" + res_hist_name + "_bin" + str(i) + ".png")
+          c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_res/fit_checks_step1/fit" + res_hist_name + "_bin" + str(i) + ".png")
           c.Close()
 
 
@@ -295,6 +320,12 @@ def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False):
         sigmaRoo = ROOT.RooRealVar("sigma", "width of gaussian", tmp_sigma, tmp_sigma*0.5, tmp_sigma*1.5)
 
 
+        if isPtPlot:
+            meanRoo.setRange(firstRangeLeft, firstRangeRight)
+            x.setRange(firstRangeLeft, firstRangeRight)
+
+            sigmaRoo.setMin(tmp_sigma*0.1)
+            sigmaRoo.setMax(tmp_sigma*5.)
         
         # CB parameters
         a = ROOT.RooRealVar("a","a",3.,0.3,10.)
@@ -302,6 +333,15 @@ def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False):
         n = ROOT.RooRealVar("n","n",5.,0.,10.)
         nDx = ROOT.RooRealVar("nDx","nDx",5.,0.,10.)
 
+
+#        if tailSign != 0:
+#            if tailSign < 0:
+#                a.setVal(1); a.setMin(0.1); a.setMax(3.)
+#                x.setRange(firstRangeLeft,firstRangeRight/3.) 
+#            else:
+#                aDx.setVal(1); aDx.setMin(0.1); aDx.setMax(3.)
+#                x.setRange(firstRangeLeft/3.,firstRangeRight) 
+            
         if i>1:
             meanRoo.setVal(previousMean)
             sigmaRoo.setVal(previousSigma)
@@ -319,15 +359,16 @@ def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False):
             c2 = ROOT.TCanvas("c","c", 600, 600)
             xframe = x.frame(ROOT.RooFit.Title("Gaussian p.d.f."))
             
-        f_cb.fitTo(dh, ROOT.RooFit.NumCPU(8), ROOT.RooFit.PrintLevel(1))
+        f_cb.fitTo(dh, ROOT.RooFit.NumCPU(8), ROOT.RooFit.PrintLevel(-3)) #FIT HERE
         if do_control_fit_plots:
         
             dh.plotOn(xframe)
             f_cb.plotOn(xframe)
             xframe.Draw()
 
-            c2.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_a/fit_checks_step2/fit" + res_hist_name + "_bin" + str(i) + ".png")
+            c2.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_res/fit_checks_step2/fit" + res_hist_name + "_bin" + str(i) + ".png")
             c2.Close()
+
 
         tmp_mean = meanRoo.getVal()
         tmp_sigma = sigmaRoo.getVal()
@@ -354,29 +395,56 @@ def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False):
         fullIntegralDx = temp_res.Integral(peakBin, temp_res.GetNbinsX()+1)
 
         found68=False
-        for j in range(0,temp_res.GetNbinsX()/2):
+        found95=False
+
+        range68=0
+        range95=0
+
+        uncert68=0
+        uncert95=0
+
+        print "fullIntegral = " + str(fullIntegral)
+        for j in range(0,temp_res.GetNbinsX()/2+1):
             fraction=temp_res.Integral(peakBin-j, peakBin+j)/fullIntegral
             fractionSx=temp_res.Integral(peakBin-j, peakBin)/fullIntegralSx
             fractionDx=temp_res.Integral(peakBin, peakBin+j)/fullIntegralDx
 
-            if found68:
+            if found68 and found95:
                 break
 
-            if fraction > 0.682 and found68==False:
-                found68=True
+            averageBinContent = (temp_res.GetBinContent(peakBin-j)+temp_res.GetBinContent(peakBin+j))/2
+            print "fraction = " + str(fraction)
+
+            if fraction > 0.68 and not found68:
+                print "pass 0.68"
+                found68=True            
                 range68 = step*(2*j+1)*0.5
-                averageBinContent = (temp_res.GetBinContent(peakBin-j)+temp_res.GetBinContent(peakBin+j))/2
-                print averageBinContent
-                print step
-                print fullIntegral
-                uncert69 = math.sqrt(0.682*(1-0.682)/fullIntegral)/(averageBinContent/step/fullIntegral)
 
+                print "average bin content = " + str(averageBinContent)
+                print "average step = " + str(step)
+                print "fullIntegral = " + str(fullIntegral)
+                try:
+                    uncert68 = math.sqrt(0.682*(1-0.682)/fullIntegral)/(averageBinContent/step/fullIntegral)
+                except ZeroDivisionError:
+                    uncert68 = 0.00001
 
-        res_1d.SetBinContent(i, range68)
-        res_1d.SetBinError(i, 1/100000)
+            if fraction > 0.95 and not found95:    
+                print "pass 0.95"
+                found95=True
+                range95 = step*(2*j+1)*0.5
+                try:
+                    uncert95 = math.sqrt(0.9*(1-0.9)/fullIntegral)/(averageBinContent/step/fullIntegral)
+                except ZeroDivisionError:
+                    uncert95 = 0.00001
 
-#        res_1d.SetBinContent(i, tmp_sigma)
-        i+=1
-        
-        
-    return res_1d
+        print "res 95 = " + str(range95) + ",  res68 = " + str(range68) 
+        if mode == "68":
+            res_1d.SetBinContent(i, range68)
+            res_1d.SetBinError(i, uncert68)
+
+        if mode == "95":
+            res_1d.SetBinContent(i, range95)
+            res_1d.SetBinError(i, uncert95)
+
+    
+    return res_1d    

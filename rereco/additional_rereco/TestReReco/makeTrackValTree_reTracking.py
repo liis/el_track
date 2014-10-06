@@ -10,6 +10,8 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 100
 #                                    )
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(500) )
 
+process.Timing = cms.Service("Timing")
+
 # source
 readFiles = cms.untracked.vstring()
 #------------------------- define secondary files -----------------------------
@@ -178,7 +180,7 @@ process.ValidationSelectors = cms.Sequence(
 #--------------------------- tree maker --------------------------
 process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi") # for writing output to a flat tree
 process.trackValTreeMaker.isGSF = cms.bool(False)
-process.trackValTreeMaker.isSinglePart = cms.bool(False)
+process.trackValTreeMaker.isSinglePart = cms.bool(True)
 
 if process.trackValTreeMaker.isGSF:
     print "Running analysis on electron GSF tracks"
@@ -199,8 +201,8 @@ process.printEventContent = cms.EDAnalyzer("EventContentAnalyzer")
 
 # paths
 process.p = cms.Path(
-#    process.myGsfReco 
-    process.ValidationSelectors
+    process.myGsfReco 
+    *process.ValidationSelectors
     *process.elTracksWithQuality #preselection for standard reco tracks
     *process.preValidation
 

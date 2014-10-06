@@ -26,7 +26,7 @@ def write_outfile(input, outname):
     out_file.write(input)
     out_file.close()
                     
-def create_crab_cfg_from_template(template, varstr, dataset, datasetname, isSinglePart, outdir = ""):
+def create_crab_cfg_from_template(template, varstr, dataset, datasetname, isSinglePart, isGsf=True, outdir = ""):
     """
     dataset = Pt100, Pt10, FlatPt
     datasetname --> corresponding full datasetname
@@ -48,10 +48,18 @@ def create_crab_cfg_from_template(template, varstr, dataset, datasetname, isSing
         singlePartLabel = ""
         input = input.replace("EVTS_PER_JOB", "1500")
 
-    out_name = outdir + "crab_" + varstr + "_" + dataset + singlePartLabel +  ".cfg"
+    if isGsf:
+        gsfLabel = "_gsf"
+    else:
+        gsfLabel = ""
+
+    input = input.replace("SINGLEPART", singlePartLabel)
+    input = input.replace("ISGSF", gsfLabel)
+
+    out_name = outdir + "crab_" + varstr + "_" + dataset +  gsfLabel + ".cfg"
     write_outfile(input, out_name)
 
-def create_cmssw_cfg_from_template(template, varstr, isSinglePart, isGSF=True, outdir = "", mode = "batch", dataset = "", infiles = [], infiles_sec = []):
+def create_cmssw_cfg_from_template(template, varstr, isSinglePart, isGSF=True, outdir = "", mode = "batch", isGsf=True, dataset = "", infiles = [], infiles_sec = []):
     """
     template -- template file name
     varstr -- string of variables and their values, separated by _
@@ -68,15 +76,18 @@ def create_cmssw_cfg_from_template(template, varstr, isSinglePart, isGSF=True, o
     #    if mode == "crab":
     #        input = input.replace("OUTFILENAME", " 'trackValTree_reTrk.root' ")
 
-    if isSinglePart:
-        varstr = varstr+"_singlePart"
-        
     if not mode == "crab":
         input = input.replace("OUTFILENAME", " ' " + "../output_batch/trackValTree_" + dataset + "_" + varstr + ".root" + " ' ")
 
         input = input.replace("INFILELIST", str(infiles))
         input = input.replace("SECFILELIST", str(infiles_sec))
-                              
+
+    if isSinglePart:
+        varstr = varstr+"_singlePart"
+
+    if isGsf:
+        varstr = varstr+"_gsf"
+    
     if len(outdir):
         outdir = outdir + "/"
     out_name = outdir + "makeTrackValTree_reTrk_" + varstr + ".py"

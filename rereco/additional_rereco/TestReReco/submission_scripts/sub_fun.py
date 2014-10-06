@@ -1,4 +1,6 @@
 import re, ntpath
+import time, datetime
+
 
 from collections import OrderedDict as dict
 tracking_cfg_parameters = dict()
@@ -66,11 +68,17 @@ def create_cmssw_cfg_from_template(template, varstr, isSinglePart, isGSF=True, o
     """
     input = read_template(template)
 
+    if isGsf:
+        gsfLabel = "_gsf"
+    else:
+        gsfLabel = ""
+
     input = input.replace("VARSTR", varstr)
     input = input.replace("MAXCAND", varstr.rsplit("maxCand_")[1].rsplit("_")[0] )
     input = input.replace("MAXCHI2", varstr.rsplit("maxChi2_")[1].rsplit("_")[0] )
     input = input.replace("NSIGMA", varstr.rsplit("nSigma_")[1].rsplit("_")[0] )
     input = input.replace("ISGSF", str(isGSF))
+    input = input.replace("GSFLABEL", gsfLabel)
     input = input.replace("ISSINGLEPART", str(isSinglePart))
 
     #    if mode == "crab":
@@ -109,6 +117,40 @@ def create_batch_submission_script(cmssw_cfg_file): # create .sh file to submit 
 
     print "Saved submission script as: " + outname
                         
+
+def create_check_timing_script(cmssw_cfg_file):
+    outname = cmssw_cfg_file.split(".py")[0] +".sh"
+    cutstr = (cmssw_cfg_file.split(".py")[0]).split("makeTrackValTree_reTrk_")[1]
+
+    ts = time.time()
+    timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d%H%M%S')
+    
+    timinglogfile = "DetailedInfo_" + cutstr + ".txt"
+    out_file = open(outname, "w")
+
+    out_file.write("#!/bin/bash\n\n")
+#    out_file.write('cd ./input_timing \n')
+    out_file.write('cd ${CMSSW_BASE}/src/TestReReco/submission_scripts/timing/input_timing \n')
+
+    out_file.write('timingdir=timing_' + cutstr + '_' +'"$(date +"%s")" \n') #create the timestamp at execution
+
+    out_file.write('mkdir -p $timingdir \n')
+    out_file.write('eval `scramv1 runtime -sh`\n')
+
+#    out_file.write("cmsRun " + ntpath.basename(cmssw_cfg_file) + " 2>" + timinglogfile +   "\n")
+    out_file.write("cmsRun " + ntpath.basename(cmssw_cfg_file) + "\n")
+
+    out_file.write("echo 'Saving timing information...' " + "\n") 
+    out_file.write("mv " + timinglogfile + " $timingdir \n")
+    out_file.write("cd $timingdir \n")
+    out_file.write("grep TimeModule\> " + timinglogfile +  " > TimingInfo.txt" + "\n")
+    out_file.write("echo 'running timing.cpp' \n")
+    out_file.write("g++ ${CMSSW_BASE}/src/TestReReco/timing.cpp \n")
+    out_file.write("./a.out>final_timing_output.txt \n")
+    out_file.write("echo '...done'")
+    out_file.close()
+    print "Saved submission script as: " + outname
+
 
 def create_varstrings(tracking_cfg_parameters, iter = 0, skip_default = True):
     """

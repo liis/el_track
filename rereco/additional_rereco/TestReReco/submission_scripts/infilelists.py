@@ -29,3 +29,9 @@ infilelist_Zee_PU50_DIGI = ['/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50
                           '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/C637DD05-63D1-E311-A4FB-02163E00EAC7.root',
                           '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/DE0B8342-62D1-E311-AECF-02163E00EA85.root'
                           ]
+
+infilelist_sam = [
+    '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_101_1_Fsb.root',
+    '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_100_2_qzC.root',
+    '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_102_1_VzM.root',
+    ]

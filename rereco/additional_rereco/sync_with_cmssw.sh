@@ -5,5 +5,5 @@ rsync -r ../CMSSW/src/MakeTree/ MakeTree
 echo Sync EvtGeneration...
 rsync -r ../CMSSW/src/EvtGeneration/ EvtGeneration
 echo Sync RawTests...
-rsync -r ../CMSSW/src/RawTests RawTests
+rsync -r ../CMSSW/src/RawTests/ RawTests
 echo ...done

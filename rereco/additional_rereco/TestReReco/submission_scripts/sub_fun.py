@@ -147,6 +147,9 @@ def create_check_timing_script(cmssw_cfg_file):
     out_file.write("echo 'running timing.cpp' \n")
     out_file.write("g++ ${CMSSW_BASE}/src/TestReReco/timing.cpp \n")
     out_file.write("./a.out>final_timing_output.txt \n")
+    out_file.write("grep CkfTrackCandidateMaker final_timing_output.txt  >> final_timing_eltrk_summary.txt \n")
+    out_file.write("grep Gsf final_timing_output.txt  >> final_timing_eltrk_summary.txt \n")
+    out_file.write("grep SeedGeneratorFromRegionHitsEDProducer final_timing_output.txt  >> final_timing_eltrk_summary.txt \n")
     out_file.write("echo '...done'")
     out_file.close()
     print "Saved submission script as: " + outname

@@ -5,7 +5,7 @@ process = cms.Process("reGsfTracking")
 # message logger
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 1
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(200) )
 
 process.Timing = cms.Service("Timing")
 process.load("FWCore.MessageService.MessageLogger_cfi")
@@ -93,11 +93,9 @@ outdir = "out_tests/"
 outfilename = "trackValTree_reTrk.root"
 print "Writing output to file: " + outfilename
 
-process.TFileService = cms.Service("TFileService", # if save
-                                   fileName = cms.string(outfilename)
-                                   )
-
-
+#process.TFileService = cms.Service("TFileService", # if save # -- no need for outputfile in case of timing checks
+#                                   fileName = cms.string(outfilename)
+#                                   )
 
 process.load("SimTracker.TrackAssociation.TrackAssociatorByHits_cfi")
 process.TrackAssociatorByHits.SimToRecoDenominator = cms.string("reco") #Quality_SimToReco = shared hits/#reco(or #sim)

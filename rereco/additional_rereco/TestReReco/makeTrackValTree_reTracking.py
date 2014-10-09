@@ -4,13 +4,13 @@ process = cms.Process("reGsfTracking")
 
 # message logger
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 100
+process.MessageLogger.cerr.FwkReport.reportEvery = 1
 #process.MessageLogger = cms.Service("MessageLogger", #??
 #                                    default = cms.untracked.PSet( limit = cms.untracked.int32(300) )
 #                                    )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(500) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(50) )
 
-process.Timing = cms.Service("Timing")
+#process.Timing = cms.Service("Timing")
 
 # source
 readFiles = cms.untracked.vstring()
@@ -63,8 +63,8 @@ source = cms.Source ("PoolSource",
 #    'file:007CEDE1-B1D1-E311-9EC9-02163E00E9CC.root' 
 #    'file:step2.root'
 #    'file:samtest_reco.root'
-#    'file:SingleElectronPt10_RECO.root',
-    'file:test2_sam.root' ## the last one
+    'file:SingleElectronPt10_RECO.root',
+#    'file:test2_sam.root' ## the last one
 #    'file:../EvtGeneration/SingleElectronPt10_RECO.root'
 #    'file:rawToReco.root'
 # -------- Zee produced by sam ----------------
@@ -147,6 +147,26 @@ process.myGsfReco = cms.Sequence(
     *process.electronSeeds    #produced merged collection of TkDriven and Ecaldriven seeds
     *process.electronCkfTrackCandidates
     *process.electronGsfTracks #run electron tracking
+
+#--------- Full electron reconstruction --------    
+
+#    *process.particleFlowRecHitHCAL #  No need to do these are present, just need to get them in a single vector https://cmssdt.cern.ch/SDT/lxr/source/DataFormats/ParticleFlowReco/interface/PFRecHitFwd.h
+
+#    *process.pfTrack
+#    *process.printEventContent #misses
+#----    RefCore: A request to resolve a reference to a product of type 'std::vector<reco::PFRecHit>' with ProductID '2:921'
+#----    can not be satisfied because the product cannot be found.
+#----    Probably the branch containing the product is not stored in the input file.
+    
+#    *process.pfTrackElec
+#    *process.ecalDrivenGsfElectronCores
+
+#    *process.electronSequence
+#    *process.ecalDrivenGsfElectronCores
+#    *process.ecalDrivenGsfElectrons
+#    *process.gsfElectrons
+#-------------------------------------------------
+ 
 #    *process.elTracksWithQuality
 )
 
@@ -159,11 +179,10 @@ process.TFileService = cms.Service("TFileService", # if save
                                    fileName = cms.string(outfilename)
                                    )
 
-
-
+#--- irrelevant here, defien both reco and sim in MakeTree/MakeTrackValTree/python/maketrackvaltree_cfi.py
 process.load("SimTracker.TrackAssociation.TrackAssociatorByHits_cfi")
-process.TrackAssociatorByHits.SimToRecoDenominator = cms.string("reco") #Quality_SimToReco = shared hits/#reco(or #sim)
-process.TrackAssociatorByHits.Quality_SimToReco = cms.double(0.75)
+#process.TrackAssociatorByHits.SimToRecoDenominator = cms.string("reco") #Quality_SimToReco = shared hits/#reco(or #sim)
+#process.TrackAssociatorByHits.Quality_SimToReco = cms.double(0.75)
 #process.TrackAssociatorByHits.AbsoluteNumberOfHits = cms.bool(True)
 #---------------- high purity selection of reco::Tracks---------------
 process.load("PhysicsTools.RecoAlgos.recoTrackSelector_cfi")

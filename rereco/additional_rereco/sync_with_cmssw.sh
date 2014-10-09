@@ -1,9 +1,13 @@
 echo Sync TestReReco...
+rm -r TestReReco
 rsync -r --exclude submission_scripts/crab/input_crab --exclude submission_scripts/crab/output_crab ../CMSSW/src/TestReReco/ TestReReco
 echo Sync MakeTree...
+rm -r MakeTree
 rsync -r ../CMSSW/src/MakeTree/ MakeTree
 echo Sync EvtGeneration...
+rm -r EvtGeneration
 rsync -r ../CMSSW/src/EvtGeneration/ EvtGeneration
 echo Sync RawTests...
+rm -r RawTests
 rsync -r ../CMSSW/src/RawTests/ RawTests
 echo ...done

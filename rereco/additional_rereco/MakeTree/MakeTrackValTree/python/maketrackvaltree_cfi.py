@@ -12,9 +12,24 @@ TrackingParticleSelectionForEfficiency.ptMinTP = cms.double(0.9)
 TrackingParticleSelectionForEfficiency.pdgIdTP = cms.vint32([-11, 11])
 
 
-import SimTracker.TrackAssociation.quickTrackAssociatorByHits_cfi 
-TrackAssociatorByHitsRecoDenom= SimTracker.TrackAssociation.quickTrackAssociatorByHits_cfi.quickTrackAssociatorByHits.clone(
-    ComponentName = cms.string('TrackAssociatorByHitsRecoDenom'),  
+#import SimTracker.TrackAssociation.quickTrackAssociatorByHits_cfi 
+#TrackAssociatorByHitsRecoDenom= SimTracker.TrackAssociation.quickTrackAssociatorByHits_cfi.quickTrackAssociatorByHits.clone(
+#    ComponentName = cms.string('TrackAssociatorByHitsRecoDenom'),  
+#    )
+
+import SimTracker.TrackAssociation.TrackAssociatorByHits_cfi
+TrackAssociatorByHitsRecoDenom= SimTracker.TrackAssociation.TrackAssociatorByHits_cfi.TrackAssociatorByHits.clone(
+    ComponentName = cms.string('TrackAssociatorByHitsRecoDenom'),
+    SimToRecoDenominator = cms.string('reco'),
+    Quality_SimToReco = cms.double(0.5), # quality = (shared hits)/(TrackingParticle hits)
+    Purity_SimToReco = cms.double(0.75), # purity = (shared hits)/(recoHits)
+    )
+
+TrackAssociatorByHitsSimDenom= SimTracker.TrackAssociation.TrackAssociatorByHits_cfi.TrackAssociatorByHits.clone(
+    ComponentName = cms.string('TrackAssociatorByHitsSimDenom'),
+    SimToRecoDenominator = cms.string('sim'), ##"reco"
+    Quality_SimToReco = cms.double(0.75), # quality = (shared hits)/(TrackingParticle hits) default=0.5
+    Purity_SimToReco = cms.double(0.75), # purity = (shared hits)/(recoHits) 
     )
 
 trackValTreeMaker = cms.EDAnalyzer('MakeTrackValTree',                                   

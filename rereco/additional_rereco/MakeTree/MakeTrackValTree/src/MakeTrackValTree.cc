@@ -118,7 +118,8 @@ class MakeTrackValTree : public edm::EDAnalyzer {
   TTree *trackValTree_;
   int run_nr_, evt_nr_, lumi_nr_;
   int np_gen_, np_gen_toReco_, np_reco_, np_reco_toGen_,np_fake_;
-  int is_reco_matched_[MAXPART], is_gen_matched_[MAXPART];
+  int is_reco_matched_[MAXPART], is_reco_matched_sim_[MAXPART], is_gen_matched_[MAXPART], is_charge_matched_[MAXPART];
+  double simrec_simD_quality_[MAXPART], simrec_recD_quality_[MAXPART];
   int gen_pdgId_[MAXPART], gen_nr_simhits_[MAXPART], gen_matched_seed_nshared_[MAXPART], gen_matched_seed_okCharge_[MAXPART], is_ecalDrivenSeed_[MAXPART], is_trackerDrivenSeed_[MAXPART];
 
   double reco_pt_[MAXPART], reco_eta_[MAXPART], reco_phi_[MAXPART], fake_pt_[MAXPART], fake_eta_[MAXPART], fake_phi_[MAXPART], fake_dxy_[MAXPART], fake_dz_[MAXPART], fake_nr_rechits_[MAXPART];
@@ -127,7 +128,9 @@ class MakeTrackValTree : public edm::EDAnalyzer {
   double gen_pt_[MAXPART], gen_eta_[MAXPART], gen_phi_[MAXPART], gen_matched_pt_[MAXPART], gen_matched_qoverp_[MAXPART], gen_matched_cotth_[MAXPART], gen_matched_eta_[MAXPART], gen_matched_theta_[MAXPART], gen_matched_phi_[MAXPART], gen_matched_dz_[MAXPART], gen_matched_dxy_[MAXPART], gen_dxy_[MAXPART], gen_dz_[MAXPART], gen_ptAtLast_[MAXPART], gen_bremFraction_[MAXPART], gen_matched_seed_quality_[MAXPART];  
 
   // parameters of reco tracks that have been matched to TPs
-  double gen_matched_rec_eta_[MAXPART], gen_matched_rec_theta_[MAXPART], gen_matched_rec_pt_[MAXPART], gen_matched_rec_qoverp_[MAXPART], gen_matched_rec_cotth_[MAXPART], gen_matched_rec_phi_[MAXPART], gen_matched_rec_dxy_[MAXPART], gen_matched_rec_dz_[MAXPART], pt_pull_[MAXPART], theta_pull_[MAXPART], phi_pull_[MAXPART], dxy_pull_[MAXPART], dz_pull_[MAXPART], qoverp_pull_[MAXPART]; 
+  double gen_matched_rec_eta_[MAXPART], gen_matched_rec_theta_[MAXPART], gen_matched_rec_pt_[MAXPART], gen_matched_rec_qoverp_[MAXPART], gen_matched_rec_cotth_[MAXPART], gen_matched_rec_phi_[MAXPART], gen_matched_rec_dxy_[MAXPART], gen_matched_rec_dz_[MAXPART];
+  int gen_matched_rec_nhits_[MAXPART];
+  double pt_pull_[MAXPART], theta_pull_[MAXPART], phi_pull_[MAXPART], dxy_pull_[MAXPART], dz_pull_[MAXPART], qoverp_pull_[MAXPART]; 
 
   bool is_gsf_, is_single_part_;
   edm::InputTag track_label_gsf_, track_label_, el_seed_label_;
@@ -570,40 +573,46 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    for (unsigned int i = 0; i < MAXPART; i++){
      //----- TPs ---------
      is_reco_matched_[i] = -10;
+     is_reco_matched_sim_[i] = -10;
+     is_charge_matched_[i] = -10;
+     
+     simrec_simD_quality_[i] = -10;
+     simrec_recD_quality_[i] = -10;
+     
      gen_eta_[i] = -99;
      gen_phi_[i] = -99;
      gen_pt_[i] = -99;
      gen_pdgId_[i] = -99;
      gen_nr_simhits_[i] = -99;
 
-	 gen_eta_[i] = -999;
-	 gen_phi_[i] = -999;
-	 gen_pt_[i] = -999;
-	 gen_ptAtLast_[i] = -999;
-	 gen_bremFraction_[i] = -10;
-	 gen_pdgId_[i] = -999;
-	 gen_dxy_[i] = -10;
-	 gen_dz_[i] = -10;
-	 gen_nr_simhits_[i] = -10;
-
-	 //------for resolutions-------
-	 gen_matched_pt_[i] = -99;
+     gen_eta_[i] = -999;
+     gen_phi_[i] = -999;
+     gen_pt_[i] = -999;
+     gen_ptAtLast_[i] = -999;
+     gen_bremFraction_[i] = -10;
+     gen_pdgId_[i] = -999;
+     gen_dxy_[i] = -10;
+     gen_dz_[i] = -10;
+     gen_nr_simhits_[i] = -10;
+     
+     //------for resolutions-------
+     gen_matched_pt_[i] = -99;
      gen_matched_eta_[i] = -99;
      gen_matched_phi_[i] = -99;
      gen_matched_qoverp_[i] = -99;
      gen_matched_theta_[i] = -99;
      gen_matched_cotth_[i] = -99;
-	 gen_matched_dxy_[i] = -999;
-	 gen_matched_dz_[i] = -999;
-
-	 //----- pulls -----------
-	 pt_pull_[i] = -99;
-	 qoverp_pull_[i] = -99;
-	 theta_pull_[i] = -99;
-	 phi_pull_[i] = -99;
-	 dxy_pull_[i] = -99;
-	 dz_pull_[i] = -99;
-	 
+     gen_matched_dxy_[i] = -999;
+     gen_matched_dz_[i] = -999;
+     
+     //----- pulls -----------
+     pt_pull_[i] = -99;
+     qoverp_pull_[i] = -99;
+     theta_pull_[i] = -99;
+     phi_pull_[i] = -99;
+     dxy_pull_[i] = -99;
+     dz_pull_[i] = -99;
+     
      //-- seeds matched to TPs ---
      is_ecalDrivenSeed_[i] = -10;
      is_trackerDrivenSeed_[i] = -10;
@@ -619,9 +628,9 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      fake_pt_[i] = -99;
      fake_eta_[i] = -99;
      fake_phi_[i] = -99;
-	 fake_dxy_[i] = -99;
-	 fake_dz_[i] = -99;
-	 fake_nr_rechits_[i] = -99;
+     fake_dxy_[i] = -99;
+     fake_dz_[i] = -99;
+     fake_nr_rechits_[i] = -99;
 	 
      gen_matched_rec_pt_[i] = -99;
      gen_matched_rec_eta_[i] = -99;
@@ -629,9 +638,9 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      gen_matched_rec_qoverp_[i] = -99;
      gen_matched_rec_cotth_[i] = -99;
      gen_matched_rec_phi_[i] = -99;
-	 gen_matched_rec_dxy_[i] = -99;
-	 gen_matched_rec_dz_[i] = -99;
-	 
+     gen_matched_rec_dxy_[i] = -99;
+     gen_matched_rec_dz_[i] = -99;
+     gen_matched_rec_nhits_[i] = -99;
    }
 
    edm::InputTag track_label; 
@@ -665,8 +674,16 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    TrackingParticleSelector tpSelector = TrackingParticleSelector(ptMinTP, minRapidityTP, maxRapidityTP,tipTP, lipTP, minHitTP,signalOnlyTP, chargedOnlyTP, stableOnlyTP,pdgIdTP);
 
    edm::ESHandle<TrackAssociatorBase> myAssociator;
+   edm::ESHandle<TrackAssociatorBase> myAssociatorRecoDenom;
+   edm::ESHandle<TrackAssociatorBase> myAssociatorSimDenom;
    iSetup.get<TrackAssociatorRecord>().get("TrackAssociatorByHits", myAssociator);
-   reco::SimToRecoCollection simRecColl = myAssociator->associateSimToReco(trackCollection, TPCollection, &iEvent, &iSetup);
+   iSetup.get<TrackAssociatorRecord>().get("TrackAssociatorByHitsRecoDenom", myAssociatorRecoDenom);
+   iSetup.get<TrackAssociatorRecord>().get("TrackAssociatorByHitsSimDenom", myAssociatorSimDenom);
+
+   reco::SimToRecoCollection simRecCollRecoDenom = myAssociatorRecoDenom->associateSimToReco(trackCollection,TPCollection, &iEvent, &iSetup);
+   reco::SimToRecoCollection simRecCollSimDenom = myAssociatorSimDenom->associateSimToReco(trackCollection,TPCollection, &iEvent, &iSetup);
+
+   //   reco::SimToRecoCollection simRecColl = myAssociator->associateSimToReco(trackCollection, TPCollection, &iEvent, &iSetup);
    reco::RecoToSimCollection recSimColl = myAssociator->associateRecoToSim(trackCollection, TPCollection, &iEvent, &iSetup);
    hitAssociator = new TrackerHitAssociator(iEvent, conf_); //to access functions from the hitAsssociator code
 
@@ -786,10 +803,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	 
      
      //	 std::cout<<"bunch crossing = "<<tp->eventId().bunchCrossing()<<", event = "<<tp->eventId().event() << std::endl; //0, 0 indicates primary vertex, the rest is PU
-
-	   
-	 //	 std::cout<<"found tracking particle nr "<<np_gen_+1<<"with pt = "<<tp->pt() <<", eta = "<<tp->eta() << ", phi = "<<tp->phi() << "nr hits = " <<tp->numberOfTrackerHits() << ", charge = " << tp->charge()<<std::endl;
-
+     //     std::cout<<"found tracking particle nr "<<np_gen_+1<<"with pt = "<<tp->pt() <<", eta = "<<tp->eta() << ", phi = "<<tp->phi() << "nr hits = " <<tp->numberOfTrackerHits() << ", charge = " << tp->charge()<<std::endl;
 	 //	 if( abs(gen_dxy_[np_gen_]) < 0.5 )
 	 //	 std::cout<<"pt TP = " << tp->pt() << ", dxy TP = "<<gen_dxy_[np_gen_] << "TP parent vertex z = "<<vertexTP.z()<<". vertex z = " << vertex.z()<<std::endl;
 
@@ -806,17 +820,32 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      //--------check for matched reco track defined by AssociatorByHits (efficiency and fake-rate plots)-----------
      const reco::Track* matchedTrackPointer=0;
      std::vector<std::pair<edm::RefToBase<reco::Track>, double> > rt;
-     // int nSharedHits = 0; int nRecoTrackHits=0;
 
-     if(simRecColl.find(tpr) != simRecColl.end()){
-       rt = simRecColl[tpr]; // find sim-to-reco association
+     if(simRecCollSimDenom.find(tpr) != simRecCollSimDenom.end()){
+       rt = simRecCollSimDenom[tpr];
+       if (rt.size() != 0){
+	 is_reco_matched_sim_[np_gen_] = 1;
+	 simrec_simD_quality_[np_gen_] = rt.begin()->second;
+       }
+     }
+     else{
+       is_reco_matched_sim_[np_gen_] = 0;
+       simrec_simD_quality_[np_gen_] = 0;
+     }
+     
+     if(simRecCollRecoDenom.find(tpr) != simRecCollRecoDenom.end()){
+       rt = simRecCollRecoDenom[tpr]; // find sim-to-reco association
        if ( rt.size()!=0 ) {
-	 matchedTrackPointer = rt.begin()->first.get(); //pointer to corresponding reco track                                                 
-	 //		 nSharedHits = rt.begin()->second;
-	 //		 nRecoTrackHits = matchedTrackPointer->numberOfValidHits();
-	 //		 std::cout<<"matched with reco track with pt = " << matchedTrackPointer->pt() <<", eta = "<<matchedTrackPointer->eta() << ", phi = " << matchedTrackPointer->phi() << std::endl;
 	 is_reco_matched_[np_gen_] = 1;
-		 
+	 simrec_recD_quality_[np_gen_] = rt.begin()->second;
+
+	 matchedTrackPointer = rt.begin()->first.get(); //pointer to corresponding reco track                                                 
+	 	 
+	 //	 std::cout<<"TP mathced with reco denom. nr shared hits = "<<nSharedHits<<", nr reco hits = "<<nRecoTrackHits <<std::endl;
+	 //		 std::cout<<"matched with reco track with pt = " << matchedTrackPointer->pt() <<", eta = "<<matchedTrackPointer->eta() << ", phi = " << matchedTrackPointer->phi() << std::endl;
+
+	 is_charge_matched_[np_gen_] = tp->charge()*matchedTrackPointer->charge();
+
 	 //-------------- efficiencies-----------------
 	 gen_matched_eta_[np_gen_] = tp->eta();
 	 gen_matched_pt_[np_gen_] = tp->pt();
@@ -830,6 +859,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	 gen_matched_dxy_[np_gen_] =  gen_dxy_[np_gen_];
 	 
 	 //------------ for resolutions, gen matched reco vars --------------------
+	 gen_matched_rec_nhits_[np_gen_] = matchedTrackPointer->numberOfValidHits();
 	 gen_matched_rec_pt_[np_gen_] = matchedTrackPointer->pt();
 	 gen_matched_rec_theta_[np_gen_] = matchedTrackPointer->theta();
 	 gen_matched_rec_eta_[np_gen_] = matchedTrackPointer->eta();
@@ -852,8 +882,10 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	 //	 std::cout<<"TP matched with RECO track"<<std::endl;
        }
      }
-     else
+     else{
        is_reco_matched_[np_gen_] = 0;
+       simrec_recD_quality_[np_gen_] = 0;
+     }
 
      if( findMatchedSeed(elSeedCollection, tp).first.size() > 0.5 && findMatchedSeed(elSeedCollection, tp).second >0.5 ){
        const reco::ElectronSeed* bestSeed = findMatchedSeed(elSeedCollection, tp).first.at(0);
@@ -988,6 +1020,8 @@ MakeTrackValTree::beginJob()
   trackValTree_->Branch("np_gen_toReco", &np_gen_toReco_, "np_gen_toReco/I");
 
   trackValTree_->Branch("gen_reco_matched", is_reco_matched_, "gen_reco_matched[np_gen]/I");
+  trackValTree_->Branch("gen_reco_matched_sim", is_reco_matched_sim_, "gen_reco_matched_sim[np_gen]/I");
+  trackValTree_->Branch("charge_matched", is_charge_matched_, "charge_matched[np_gen]/I");
 
   trackValTree_->Branch("gen_pdgId", gen_pdgId_, "gen_pdgId[np_gen]/I");
   trackValTree_->Branch("gen_pt", gen_pt_, "gen_pt[np_gen]/D");
@@ -1017,6 +1051,7 @@ MakeTrackValTree::beginJob()
   trackValTree_->Branch("gen_matched_rec_phi", gen_matched_rec_phi_, "gen_matched_rec_phi[np_gen]/D");
   trackValTree_->Branch("gen_matched_rec_dxy", gen_matched_rec_dxy_, "gen_matched_rec_dxy[np_gen]/D");
   trackValTree_->Branch("gen_matched_rec_dz", gen_matched_rec_dz_, "gen_matched_rec_dz[np_gen]/D");
+  trackValTree_->Branch("gen_matched_rec_nhits", gen_matched_rec_nhits_, "gen_matched_rec_nhits[np_gen]/I");
 
   // ------------------- pulls ---------------------------
   trackValTree_->Branch("pt_pull", pt_pull_, "pt_pull[np_gen]/D");

@@ -63,7 +63,10 @@ source = cms.Source ("PoolSource",
 #    'file:007CEDE1-B1D1-E311-9EC9-02163E00E9CC.root' 
 #    'file:step2.root'
 #    'file:samtest_reco.root'
-    'file:SingleElectronPt10_RECO.root',
+#    'file:SingleElectronPt10_RECO.root',
+#    '/store/user/liis/GSF_tracking_samples/RelValZll_HLTDEBUG_PU50/007FA6E4-EC13-E411-A7A3-002618943866.root'
+    '/store/user/liis/GSF_tracking_samples/RelValZll_HLTDEBUG_PU50/00E5A57A-3D13-E411-99D5-0025905A6076.root'
+
 #    'file:test2_sam.root' ## the last one
 #    'file:../EvtGeneration/SingleElectronPt10_RECO.root'
 #    'file:rawToReco.root'
@@ -137,16 +140,48 @@ process.elTracksWithQuality = process.selectHighPurity.clone(
 
 # sequence for re-running gsfTracking over RECO
 process.myGsfReco = cms.Sequence(
-    process.siPixelRecHits
-    *process.siStripMatchedRecHits #make local hits
-    *process.MeasurementTrackerEvent #ADD
-    *process.siPixelClusterShapeCache # needed to add when moving from CMSSW_7_1_0_pre5 to pre7
-    *process.iterTracking
+    #---- try to run on RelVal HLTDEBUG ----
+#    process.siPixelDigis
+#    *process.siPixelClusters
+#    *process.siStripDigis
+#    *process.siStripZeroSuppression
+#    *process.siStripClusters
+
+#    *process.offlineBeamSpot
+    #------------------------------
+#    *process.siPixelRecHits
+#    *process.siStripMatchedRecHits #make local hits
+#    *process.MeasurementTrackerEvent #ADD
+#    *process.siPixelClusterShapeCache # needed to add when moving from CMSSW_7_1_0_pre5 to pre7
+
+#    *process.PixelLayerTriplets
+#    *process.pixelTracks  
+#    *process.pixelVertices
+
     
-    *process.electronSeedsSeq #ADD
-    *process.electronSeeds    #produced merged collection of TkDriven and Ecaldriven seeds
-    *process.electronCkfTrackCandidates
-    *process.electronGsfTracks #run electron tracking
+#    *process.muonDTDigis
+#    *process.muonCSCDigis
+#    *process.muonRPCDigis
+#    *process.muonlocalreco
+#    *process.dtlocalreco
+#    *process.ancientMuonSeed
+#    *process.standAloneMuons
+#    *process.iterTracking
+
+    process.reconstruction_standard_candle
+#    process.localreco
+#    *process.globalreco
+#    *process.particleFlowCluster
+#    *process.particleFlowCluster
+
+#    *process.pfClusteringECAL
+
+#    *process.electronGsfTracking
+
+#    *process.electronSeedsSeq #ADD
+#    *process.electronSeeds    #produced merged collection of TkDriven and Ecaldriven seeds
+#    *process.electronCkfTrackCandidates
+#    *process.electronGsfTracks #run electron tracking
 
 #--------- Full electron reconstruction --------    
 
@@ -206,7 +241,7 @@ if process.trackValTreeMaker.isGSF:
 else:
     print "Running analysis on generalTracks"
 if process.trackValTreeMaker.isSinglePart:
-    print "Assume SingleParticle datast and skip matching to leading vertex"
+    print "Assume SingleParticle dataset and skip matching to leading vertex"
 else:
     print "Require reco tracks to originate from the leading vertex"
 
@@ -221,12 +256,12 @@ process.printEventContent = cms.EDAnalyzer("EventContentAnalyzer")
 # paths
 process.p = cms.Path(
     process.myGsfReco 
-    *process.ValidationSelectors
-    *process.elTracksWithQuality #preselection for standard reco tracks
-    *process.preValidation
+#    *process.ValidationSelectors
+#   ## *process.elTracksWithQuality #preselection for standard reco tracks
+#    *process.preValidation
 
 #    *process.printEventContent 
-    *process.trackValTreeMaker
+#    *process.trackValTreeMaker
     )
 
 

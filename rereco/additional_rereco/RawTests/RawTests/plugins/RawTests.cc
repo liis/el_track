@@ -30,6 +30,12 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "SimDataFormats/Track/interface/SimTrackContainer.h"
 
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
+
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingVertex.h"
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingVertexContainer.h"
+
+
 //
 // class declaration
 //
@@ -98,22 +104,41 @@ RawTests::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    iEvent.getByLabel("g4SimHits", simTrackCollection);
    SimTrackContainer simTC = *(simTrackCollection.product() );
    
-   for (size_t j = 0; j <simTC.size(); j++){
-     EncodedEventId simTrackEvt = simTC[j].eventId();
-     if ( !(simTrackEvt.event() == 0 && simTrackEvt.bunchCrossing() == 0) )
-       std::cout<<"Sim track evt Id = " <<simTrackEvt.event()<< ", bunchCrossing = " << simTrackEvt.bunchCrossing() <<std::endl;
+   // for (size_t j = 0; j <simTC.size(); j++){
+     //   EncodedEventId simTrackEvt = simTC[j].eventId();
+     //     if ( !(simTrackEvt.event() == 0 && simTrackEvt.bunchCrossing() == 0) )
+     //     std::cout<<"Sim track evt Id = " <<simTrackEvt.event()<< ", bunchCrossing = " << simTrackEvt.bunchCrossing() <<std::endl;
+   //}
+
+   
+
+   edm::Handle<TrackingParticleCollection>  TPCollection ; //simulated tracks
+   iEvent.getByLabel("mix","MergedTrackTruth",TPCollection);
+   const TrackingParticleCollection tPCeff = *(TPCollection.product());
+
+   for (TrackingParticleCollection::size_type i=0; i<tPCeff.size(); i++){ // get information from simulated  tracks   
+     TrackingParticleRef tpr(TPCollection, i);
+     TrackingParticle* tp=const_cast<TrackingParticle*>(tpr.get());
+
+     //     if ( (tp->eventId().bunchCrossing()== 0 && tp->eventId().event() == 0) )
+       std::cout<<"found PU particle with evtID = "<<tp->eventId().event()<<", bc = "<<tp->eventId().bunchCrossing()<<std::endl;
+
    }
 
 
-#ifdef THIS_IS_AN_EVENT_EXAMPLE
-   Handle<ExampleData> pIn;
-   iEvent.getByLabel("example",pIn);
-#endif
+   edm::Handle<TrackingVertexCollection> tvH; //For checking PU vertices
+   iEvent.getByLabel("mix","MergedTrackTruth",tvH);
+   TrackingVertexCollection tv = *tvH;
+
+   /*
+   for (size_t j = 0; j < tv.size(); j++) { //loop over trackingVertices to find a leading-one
+     std::cout<< "Found PU vertex with evt = " << tv[j].eventId().event()<<", bc = "<< tv[j].eventId().bunchCrossing() << std::endl;
+   }
+   */
+
    
-#ifdef THIS_IS_AN_EVENTSETUP_EXAMPLE
-   ESHandle<SetupData> pSetup;
-   iSetup.get<SetupRecord>().get(pSetup);
-#endif
+
+
 }
 
 

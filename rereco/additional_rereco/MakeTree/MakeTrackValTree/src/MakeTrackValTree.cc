@@ -450,7 +450,7 @@ math::XYZPoint MakeTrackValTree::getClosestPVpoint(edm::RefToBase<reco::Track> t
   for (std::vector<math::XYZPoint>::const_iterator point = points.begin(); point != points.end(); ++point) { 
     double dz_PV = trk->dz(*point);
 
-    //    std::cout<<"Checking vertex with dxy = "<<trk->dxy(*point) << ", dz = " << dz_PV << std::endl;
+    //std::cout<<"Checking vertex with dxy = "<<trk->dxy(*point) << ", dz = " << dz_PV << std::endl;
 
     if( fabs(dz_PV) < fabs(dz_max) ){
       PV = *point;
@@ -710,8 +710,8 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
        }
      }
 
-     if ( !(tv[j].eventId().bunchCrossing()== 0 && tv[j].eventId().event() == 0) ) //check whether there are PU vertices
-       std::cout<< "Found PU vertex with bc = "<< tv[j].eventId().bunchCrossing() << std::endl;
+     //if ( !(tv[j].eventId().bunchCrossing()== 0 && tv[j].eventId().event() == 0) ) //check whether there are PU vertices
+       //       std::cout<< "Found PU vertex with bc = "<< tv[j].eventId().bunchCrossing() << std::endl;
    }
    
    // Select good primary vertices for use in subsequent track selection

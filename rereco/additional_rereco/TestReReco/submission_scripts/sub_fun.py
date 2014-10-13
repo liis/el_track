@@ -130,7 +130,7 @@ def create_check_timing_script(cmssw_cfg_file):
 
     out_file.write("#!/bin/bash\n\n")
 #    out_file.write('cd ./input_timing \n')
-    out_file.write('cd ${CMSSW_BASE}/src/TestReReco/submission_scripts/timing/input_timing \n')
+    out_file.write('cd /afs/cern.ch/user/l/liis/scratch0/tracking/el_track/rereco/CMSSW/src/TestReReco/submission_scripts/timing/input_timing \n')
 
     out_file.write('timingdir=timing_' + cutstr + '_' +'"$(date +"%s")" \n') #create the timestamp at execution
 

@@ -47,6 +47,7 @@ for v in var_list: # relate vList to the tree
 
 t.StopCacheLearningPhase()
 
+neta_res = 30
 neta = 50
 mineta = -2.5
 maxeta = 2.5
@@ -71,7 +72,7 @@ simpt_vars = ["sim_pt", "sim_pt_matchedTrack", "sim_pt_matchedSeed", "sim_pt_mat
 recpt_vars = ["reco_pt", "fake_pt"]
 receta_vars = ["reco_eta", "fake_eta"]
 
-res_vs_eta_vars = { "res_pt_vs_eta": (300,-4,2),
+res_vs_eta_vars = { "res_pt_vs_eta": (100,-4,2),
                     "res_cotth_vs_eta": (100, -0.02, 0.02),
                     "res_phi_vs_eta": (100, -0.01, 0.01),
                     "res_dxy_vs_eta": (100, -0.05, 0.05),
@@ -79,13 +80,13 @@ res_vs_eta_vars = { "res_pt_vs_eta": (300,-4,2),
                     }
 
 res_vs_pt_vars = {"res_pt_vs_pt": (300, -4, 2),
-                  "res_cotth_vs_pt": (100, -0.01, 0.01),
-                  "res_phi_vs_pt": (100, -0.01, 0.01),
-                  "res_dxy_vs_pt": (100, -0.05, 0.05),
-                  "res_dz_vs_pt": (100,-0.1, 0.1),
+                  "res_cotth_vs_pt": (300, -0.01, 0.01),
+                  "res_phi_vs_pt": (300, -0.01, 0.01),
+                  "res_dxy_vs_pt": (300, -0.05, 0.05),
+                  "res_dz_vs_pt": (300,-0.1, 0.1),
                   }
 
-res_vs_eta_hists = initialize_histograms( res_vs_eta_vars, bin_reg = (50, -2.5, 2.5), dim="2D")
+res_vs_eta_hists = initialize_histograms( res_vs_eta_vars, bin_reg = (neta_res, mineta, maxeta), dim="2D")
 print res_vs_eta_hists
 
 res_vs_pt_hists =initialize_histograms( res_vs_pt_vars, bin_reg = (npt, array('d', xbinspt_res)), dim="2D") #skip the eta region business (might add later)

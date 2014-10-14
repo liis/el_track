@@ -81,11 +81,13 @@ def get_hit_efficiency_hist(infiles, var, quality, nrhits = 10):
 
 colors = [ROOT.kBlack, ROOT.kRed, ROOT.kYellow, ROOT.kYellow-3, ROOT.kGreen, ROOT.kGreen+3, ROOT.kCyan, ROOT.kCyan+1, ROOT.kCyan+2, ROOT.kCyan+3, ROOT.kCyan+4, ROOT.kBlue, ROOT.kViolet-3, ROOT.kViolet+3]
 
-def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  1., region="none", style="", logy=False):
+def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  "", region="none", style="", logy=False, is_secondary=False):
     """
     hists -- dictionary of histograms
     plot a list of efficiency histogras
+    secondary = True -- add additional histograms to existing ones
     """
+    
     n = 0
     for hist in hists:
         hist.SetLineColor(colors[n])
@@ -93,13 +95,16 @@ def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  
         hist.SetMarkerStyle(20);
         hist.SetMarkerSize(1);
         if n==0:
+            if ymax == "":
+                ymax=hist.GetMaximum()*2
+
             hist.SetMaximum(ymax)
             hist.SetMinimum(0.)
             if logy:
                 hist.SetMinimum(hist.GetMinimum()*0.2)
-            hist.GetXaxis().SetTitleOffset(1.3)
-            hist.GetYaxis().SetTitleOffset(1.4)
-            hist.SetTitle("blabla")
+            hist.GetXaxis().SetTitleOffset(1.)
+            hist.GetYaxis().SetTitleOffset(1.2)
+#            hist.SetTitle("blabla")
             hist.SetStats(False)
 
             if( region[:3]=="Pt1"):
@@ -114,14 +119,30 @@ def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  
 
 #            print "style = " + style
             if style == "noerr":
-                hist.Draw("hist")
+                if is_secondary:
+                    hist.Draw("histsame")
+                else:
+                    hist.Draw("hist")
+            elif style == "":
+                if is_secondary:
+                    hist.Draw("epsame")
+                else:
+                    hist.Draw("ep")
             else:
-                hist.Draw("ep")
+                hist.SetMarkerStyle(style)
+                if is_secondary:
+                    hist.Draw("psame")
+                else:
+                    hist.Draw("p")
         else:
             if style == "noerr":
                 hist.Draw("histsame")
-            else:
+            elif style == "":
                 hist.Draw("epsame")
+            else:
+                hist.SetMarkerStyle(style)
+                hist.Draw("psame")
+
         n = n + 1
 
 def draw_legend(hists, pos = "down_right"):
@@ -163,9 +184,39 @@ def add_text_box(text=''):
 
 #    ytitle = "resolution in " + pretty_var[res+var]
 
+res_map = {
+    "dxy": "d_{0}",
+    "dz": "z_{0}",
+    "pt": "(res p_{T})/p_{T} [%]",
+    "cotth": "cot(#theta)",
+    "phi": "#phi",
+    }
     
-    
+def draw_and_save_res(hists68, hists95, var, resvar, is_gsf, outdir, leg_pos = "up_right"):
+    c = ROOT.TCanvas("c","c", 800, 800)
+    c.SetGrid()
+    if var == "eta":
+        xtitle = "#eta"
+    if var == "pt":
+        xtitle = "p_{T}"
 
+    ytitle = "Resolution in " + res_map[resvar]
+
+    draw_efficiency_histograms(hists95.values(), xtitle, ytitle, style=4) #do 95 first, since the hist maximum is set here
+    draw_efficiency_histograms(hists68.values(), xtitle, ytitle, style=20, is_secondary=True)
+
+    leg_68 = draw_legend(hists68, pos = "up_right")
+#    leg_68.SetHeader(legend_header)
+    leg_68.Draw()
+
+    GSFstr = ""
+    if(is_gsf):
+        GSFstr = "_GSF"
+
+    c.SaveAs(outdir +"/resolution_" + var + "_" + resvar + GSFstr + ".png")
+    c.Close()
+
+        
 def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_right", title = "", ymax_res=0.5, style=""):
     """
     hists - dictionary of process names and histograms
@@ -214,14 +265,11 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
         logy=False # set nonzero y value
 #        c.SetLogy
 
-
-
     if len(title)>0:
         ytitle=ytitle + " (" + title + ")"
 
 #    if len(label) > 0:
 #        ytitle = ytitle + " (" + label + ")"
-
 
     draw_efficiency_histograms(hists.values(), xtitle, ytitle, ymax, style=style, logy=logy)
     leg = draw_legend(hists, pos = leg_pos)
@@ -413,7 +461,7 @@ def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False, mode
                 break
 
             averageBinContent = (temp_res.GetBinContent(peakBin-j)+temp_res.GetBinContent(peakBin+j))/2
-            print "fraction = " + str(fraction)
+#            print "fraction = " + str(fraction) ## for debug
 
             if fraction > 0.68 and not found68:
                 print "pass 0.68"

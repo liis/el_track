@@ -217,7 +217,7 @@ def draw_and_save_res(hists68, hists95, var, resvar, selection_string, is_gsf, o
     c.Close()
 
         
-def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_right", title = "", ymax_res=0.5, style=""):
+def draw_and_save_eff(hists, var, eff_fake, is_gsf, outdir, label = "", leg_pos = "up_right", title = "", ymax_res=0.5, style=""):
     """
     hists - dictionary of process names and histograms
     var - xaxis variable
@@ -284,7 +284,7 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, label = "", leg_pos = "up_ri
 #    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/" + eff_fake + "_" + var + "_" + label + GSFstr + ".pdf")
 #    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_a/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
 #    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_eff/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
-    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_res/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
+    c.SaveAs(outdir + "/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
     
     c.Close()
 

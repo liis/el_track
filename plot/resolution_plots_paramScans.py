@@ -55,7 +55,7 @@ parameter_sets = [
     parameters_maxCand,
     parameters_maxChi2,
     parameters_nSigma,
-#  parameters_test,
+#    parameters_test,
     ]
 
 input_files = [
@@ -92,7 +92,7 @@ for parameters in parameter_sets:
         infilenames[input_file] = get_infilenames_by_params("efficiencyHistograms", parameters, input_file, isGsf = is_gsf)
         infiles[input_file] = load_input_files(indir, infilenames[input_file])
 
-        if input_file != "FlatPt":
+        if input_file != "FlatPt": #skip eta histograms for flatPt
             res_eta_dxy_68[input_file] = dict()
             res_eta_dxy_95[input_file] = dict()
             res_eta_dz_68[input_file] = dict()
@@ -128,8 +128,13 @@ for parameters in parameter_sets:
                 
                 random_cutstring=cutstring # ??
 
-#        if input_file != "Pt10" and input_file != "Pt100":
-            #          for eta_region in eta_regions:
+        if input_file != "Pt10" and input_file != "Pt100": # skip pt histograms for fixed pt samples
+            for eta_region in eta_regions:
+                res_pt[input_file + "_" + eta_region] = dict()
+
+#                for cutstring in infiles[input_file]:
+#                    res_pt[
+
 #                eff_pt[input_file + "_" + eta_region] = dict()
 #                eff_wrt_seed_pt[input_file + "_" + eta_region] = dict()
 #                eff_seed_pt[input_file + "_" + eta_region] = dict()
@@ -161,11 +166,11 @@ for parameters in parameter_sets:
         if input_file != "flatPt":
             print "saving eta resolution"
             
-            draw_and_save_res(res_eta_dxy_68[input_file], res_eta_dxy_95[input_file], "eta", "dxy", is_gsf, outdir=outdir)
-            draw_and_save_res(res_eta_dz_68[input_file], res_eta_dz_95[input_file], "eta", "dz", is_gsf, outdir=outdir)
-            draw_and_save_res(res_eta_cotth_68[input_file], res_eta_cotth_95[input_file], "eta", "cotth", is_gsf, outdir=outdir)
-            draw_and_save_res(res_eta_pt_68[input_file], res_eta_pt_95[input_file], "eta", "pt", is_gsf, outdir=outdir)
-            draw_and_save_res(res_eta_phi_68[input_file], res_eta_phi_95[input_file], "eta", "phi", is_gsf, outdir=outdir)
+            draw_and_save_res(res_eta_dxy_68[input_file], res_eta_dxy_95[input_file], "eta", "dxy", sel_str, is_gsf, outdir=outdir, logy=True)
+            draw_and_save_res(res_eta_dz_68[input_file], res_eta_dz_95[input_file], "eta", "dz", sel_str, is_gsf, outdir=outdir, logy=True)
+            draw_and_save_res(res_eta_cotth_68[input_file], res_eta_cotth_95[input_file], "eta", "cotth", sel_str, is_gsf, outdir=outdir, logy=True)
+            draw_and_save_res(res_eta_pt_68[input_file], res_eta_pt_95[input_file], "eta", "pt", sel_str, is_gsf, outdir=outdir, logy=True)
+            draw_and_save_res(res_eta_phi_68[input_file], res_eta_phi_95[input_file], "eta", "phi", sel_str, is_gsf, outdir=outdir, logy=True)
 
 #            draw_and_save_eff(res_eta_dxy_95[input_file], "eta", "res", is_gsf=is_gsf, label=sel_str+"_dxy_"+input_file+"_95", leg_pos="up_right", title=input_file, ymax_res=res_eta_dxy_95[input_file][random_cutstring].GetMaximum()*2)
             

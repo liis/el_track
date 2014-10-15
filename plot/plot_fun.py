@@ -81,7 +81,7 @@ def get_hit_efficiency_hist(infiles, var, quality, nrhits = 10):
 
 colors = [ROOT.kBlack, ROOT.kRed, ROOT.kYellow, ROOT.kYellow-3, ROOT.kGreen, ROOT.kGreen+3, ROOT.kCyan, ROOT.kCyan+1, ROOT.kCyan+2, ROOT.kCyan+3, ROOT.kCyan+4, ROOT.kBlue, ROOT.kViolet-3, ROOT.kViolet+3]
 
-def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  "", region="none", style="", logy=False, is_secondary=False):
+def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  "", region="none", style="", logy=False, yrange = [], is_secondary=False):
     """
     hists -- dictionary of histograms
     plot a list of efficiency histogras
@@ -94,17 +94,23 @@ def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  
         hist.SetMarkerColor(colors[n])
         hist.SetMarkerStyle(20);
         hist.SetMarkerSize(1);
-        if n==0:
+        if logy:
+            if len(yrange):
+                hist.SetMinimum(yrange[0])
+                hist.SetMaximum(yrange[1])
+            else:
+                hist.SetMinimum(0.001)
+                hist.SetMaximum(hist.GetMaximum()*2)
+        else:
+            hist.SetMinimum(0.)
             if ymax == "":
                 ymax=hist.GetMaximum()*2
-
+                hist.SetMaximum(ymax)
             hist.SetMaximum(ymax)
-            hist.SetMinimum(0.)
-            if logy:
-                hist.SetMinimum(hist.GetMinimum()*0.2)
+
+        if n==0:
             hist.GetXaxis().SetTitleOffset(1.)
             hist.GetYaxis().SetTitleOffset(1.2)
-#            hist.SetTitle("blabla")
             hist.SetStats(False)
 
             if( region[:3]=="Pt1"):
@@ -175,35 +181,29 @@ def add_text_box(text=''):
     return latex.DrawLatex(0.17, 0.96, text)
 
 
-#def draw_and_save_res(hists, var, res_var, is_gsf, label = "", leg_pos = "up_right", title = "", ymax_res = 0.5, style=""):
-#    c = ROOT.TCanvas("c","c", 600, 600)
-#    c.SetGrid()
-
-#    if var == "eta":
-#        xtitle = "eta"
-
-#    ytitle = "resolution in " + pretty_var[res+var]
-
-res_map = {
-    "dxy": "d_{0}",
-    "dz": "z_{0}",
-    "pt": "(res p_{T})/p_{T} [%]",
-    "cotth": "cot(#theta)",
-    "phi": "#phi",
+res_map = { #xlabel, [ymin, ymax] for log scale 
+    "dxy": ["d_{0}", [0.002, 0.3] ],
+    "dz": ["z_{0}", [0.004, 0.8] ],
+    "pt": ["(res p_{T})/p_{T}", [0.05, 10] ],
+    "cotth": ["cot(#theta)", [0.0005, 0.04] ],
+    "phi": ["#phi", [0.0003, 0.1] ],
     }
     
-def draw_and_save_res(hists68, hists95, var, resvar, is_gsf, outdir, leg_pos = "up_right"):
+def draw_and_save_res(hists68, hists95, var, resvar, selection_string, is_gsf, outdir, logy=False, leg_pos = "up_right"):
     c = ROOT.TCanvas("c","c", 800, 800)
     c.SetGrid()
+    if(logy):
+        c.SetLogy()
+    
     if var == "eta":
         xtitle = "#eta"
     if var == "pt":
         xtitle = "p_{T}"
 
-    ytitle = "Resolution in " + res_map[resvar]
+    ytitle = "Resolution in " + res_map[resvar][0]
 
-    draw_efficiency_histograms(hists95.values(), xtitle, ytitle, style=4) #do 95 first, since the hist maximum is set here
-    draw_efficiency_histograms(hists68.values(), xtitle, ytitle, style=20, is_secondary=True)
+    draw_efficiency_histograms(hists95.values(), xtitle, ytitle, style=4, logy=logy, yrange=res_map[resvar][1]) #do 95 first, since the hist maximum is set here
+    draw_efficiency_histograms(hists68.values(), xtitle, ytitle, style=20, logy=logy, yrange=res_map[resvar][1], is_secondary=True)
 
     leg_68 = draw_legend(hists68, pos = "up_right")
 #    leg_68.SetHeader(legend_header)
@@ -212,8 +212,8 @@ def draw_and_save_res(hists68, hists95, var, resvar, is_gsf, outdir, leg_pos = "
     GSFstr = ""
     if(is_gsf):
         GSFstr = "_GSF"
-
-    c.SaveAs(outdir +"/resolution_" + var + "_" + resvar + GSFstr + ".png")
+            
+    c.SaveAs(outdir +"/resolution_" + var + "_" + selection_string + "_" + resvar + GSFstr + ".png")
     c.Close()
 
         

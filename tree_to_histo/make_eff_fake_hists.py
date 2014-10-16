@@ -13,7 +13,6 @@ parser.add_argument('--infile', dest='infile', required=True) #file name of the 
 parser.add_argument('--outdir', dest='outdir', required=False, default="histograms")
 args = parser.parse_args()
 
-#indir = "$WORKING_DIR/tree_to_histo/"
 indir = ""
 infile = args.infile
 
@@ -47,7 +46,7 @@ for v in var_list: # relate vList to the tree
 
 t.StopCacheLearningPhase()
 
-neta_res = 30
+neta_res = 50
 neta = 50
 mineta = -2.5
 maxeta = 2.5
@@ -66,17 +65,17 @@ xbinspt_res = log_binning(50, minpt, 100) #slightly smaller region for resolutio
 eta_regions = ["barrel", "trans", "endcap"]
 #seed_vars = ["gen_matchedSeedOkCharge", "gen_matchedSeedQuality"]
 
-simeta_vars = ["sim_eta", "sim_eta_matchedTrack", "sim_eta_matchedSeed", "sim_eta_matchedSeed_matchedCharge"]
-simpt_vars = ["sim_pt", "sim_pt_matchedTrack", "sim_pt_matchedSeed", "sim_pt_matchedSeed_matchedCharge"]
+simeta_vars = ["sim_eta", "sim_eta_matchedTrack", "sim_eta_matchedTrackCharge", "sim_eta_matchedTrack_matchedSeedCharge", "sim_eta_matchedTrackCharge_matchedSeedCharge", "sim_eta_matchedTrackCharge_wrongSeedCharge","sim_eta_simmatchedTrack", "sim_eta_matchedSeed", "sim_eta_matchedSeedCharge", "sim_eta_wrongTrackCharge_matchedSeedCharge", "sim_eta_matchedTrack_withNoSeed"]
+simpt_vars = ["sim_pt", "sim_pt_matchedTrack", "sim_pt_simmatchedTrack", "sim_pt_matchedTrackCharge", "sim_pt_matchedTrackCharge_matchedSeedCharge", "sim_pt_matchedTrack_matchedSeedCharge", "sim_pt_matchedSeed", "sim_pt_matchedSeedCharge"]
 
 recpt_vars = ["reco_pt", "fake_pt"]
 receta_vars = ["reco_eta", "fake_eta"]
 
-res_vs_eta_vars = { "res_pt_vs_eta": (100,-4,2),
-                    "res_cotth_vs_eta": (100, -0.02, 0.02),
-                    "res_phi_vs_eta": (100, -0.01, 0.01),
-                    "res_dxy_vs_eta": (100, -0.05, 0.05),
-                    "res_dz_vs_eta": (100,-0.1, 0.1),
+res_vs_eta_vars = { "res_pt_vs_eta": (300,-4,2),
+                    "res_cotth_vs_eta": (300, -0.02, 0.02),
+                    "res_phi_vs_eta": (300, -0.01, 0.01),
+                    "res_dxy_vs_eta": (300, -0.05, 0.05),
+                    "res_dz_vs_eta": (300,-0.1, 0.1),
                     }
 
 res_vs_pt_vars = {"res_pt_vs_pt": (300, -4, 2),
@@ -141,7 +140,12 @@ for i in range(nEvt):
         simeta_hists["sim_eta"].Fill(gen_track_eta)
         fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt", simpt_hists) # sim pt histograms in 3 eta regions
 
-        # ----------------------------- matched to track ------------------------------
+        #--------------------------- matched to track wrt sim -----------------------------------
+        if vt["gen_reco_matched_sim"][it_p]:
+            simeta_hists["sim_eta_simmatchedTrack"].Fill(gen_track_eta)
+            fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_simmatchedTrack", simpt_hists)
+
+        # ----------------------------- matched to track (default) ------------------------------
         if vt["gen_reco_matched"][it_p]: # if matched to reco tracks (associatorByHits (matched/rec > 0.75))
             simeta_hists["sim_eta_matchedTrack"].Fill(gen_track_eta)
             fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedTrack", simpt_hists)
@@ -164,13 +168,31 @@ for i in range(nEvt):
             res_vs_pt_hists["res_dxy_vs_pt"].Fill(gen_track_pt, res_dxy)
             res_vs_pt_hists["res_dz_vs_pt"].Fill(gen_track_pt, res_dz)
 
+            if vt["charge_matched"][it_p] == 1:
+                simeta_hists["sim_eta_matchedTrackCharge"].Fill(gen_track_eta)
+                fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedTrackCharge", simpt_hists)
+                if vt["gen_matchedSeedOkCharge"][it_p] <=0:
+                    simeta_hists["sim_eta_matchedTrackCharge_wrongSeedCharge"].Fill(gen_track_eta)
+
+            if  vt["gen_matchedSeedOkCharge"][it_p] > 0: # reco-matched tracks that had correctly assigned charge at seeding
+                simeta_hists["sim_eta_matchedTrack_matchedSeedCharge"].Fill(gen_track_eta)
+                fill_hists_by_eta_regions(gen_track_eta,gen_track_pt, "sim_pt_matchedTrack_matchedSeedCharge", simpt_hists)
+                if vt["charge_matched"][it_p] == 1:
+                    simeta_hists["sim_eta_matchedTrackCharge_matchedSeedCharge"].Fill(gen_track_eta)
+                    fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedTrackCharge_matchedSeedCharge", simpt_hists)
+                else:
+                    simeta_hists["sim_eta_wrongTrackCharge_matchedSeedCharge"].Fill(gen_track_eta)
+
+            if vt["gen_matchedSeedQuality"][it_p] < 0.5: #2 or 3 matched hits 
+                simeta_hists["sim_eta_matchedTrack_withNoSeed"].Fill(gen_track_eta)
+
         # ------------------------------ matched to seed ------------------------------
-        if vt["gen_matchedSeedQuality"][it_p] == 1:
+        if vt["gen_matchedSeedQuality"][it_p] > 0.5: #2 or 3 matched hits
             simeta_hists["sim_eta_matchedSeed"].Fill(vt['gen_eta'][it_p])
             fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedSeed", simpt_hists)
             if vt["gen_matchedSeedOkCharge"][it_p] > 0:
-                simeta_hists["sim_eta_matchedSeed_matchedCharge"].Fill(gen_track_eta)
-                fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedSeed_matchedCharge", simpt_hists)
+                simeta_hists["sim_eta_matchedSeedCharge"].Fill(gen_track_eta)
+                fill_hists_by_eta_regions(gen_track_eta, gen_track_pt, "sim_pt_matchedSeedCharge", simpt_hists)
 
 
 
@@ -182,13 +204,24 @@ efficiency_histograms={}
 
 efficiency_histograms["h_eff_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrack"], simeta_hists["sim_eta"], "eff_eta")
 efficiency_histograms["h_eff_seed_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedSeed"], simeta_hists["sim_eta"], "eff_seed_eta")
-efficiency_histograms["h_eff_wrt_seed_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrack"], simeta_hists["sim_eta_matchedSeed"], "eff_wrt_seed_eta")  
+efficiency_histograms["h_eff_wrt_seed_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrack"], simeta_hists["sim_eta_matchedSeed"], "eff_wrt_seed_eta")
+
+efficiency_histograms["h_eff_seed_charge_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedSeedCharge"], simeta_hists["sim_eta_matchedSeed"], "eff_seed_charge_eta")
+efficiency_histograms["h_eff_wrt_seed_charge_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrackCharge_matchedSeedCharge"], simeta_hists["sim_eta_matchedTrack_matchedSeedCharge"], "eff_wrt_seed_charge_eta") 
+efficiency_histograms["h_eff_charge_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrackCharge"], simeta_hists["sim_eta_matchedTrack"], "eff_charge_eta")
+                                                                     
+efficiency_histograms["h_eff_eta_sim"] = fill_hist_ratio(simeta_hists["sim_eta_simmatchedTrack"], simeta_hists["sim_eta"], "eff_eta_sim")
 
 for region in eta_regions:
     efficiency_histograms["h_eff_pt" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrack_" + region], simpt_hists["sim_pt_" + region], "eff_pt_" + region, binning="log")
     efficiency_histograms["h_eff_seed_pt" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedSeed_"+ region], simpt_hists["sim_pt_" + region], "eff_seed_pt_" + region, binning="log")
     efficiency_histograms["h_eff_wrt_seed_pt" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrack_" + region], simpt_hists["sim_pt_matchedSeed_" + region], "eff_wrt_seed_pt_" + region, binning = "log")
 
+    efficiency_histograms["h_eff_seed_charge_pt_" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedSeedCharge_" + region], simpt_hists["sim_pt_matchedSeed_" + region], "eff_seed_charge_pt_" + region, binning = "log")
+    efficiency_histograms["h_eff_wrt_seed_charge_pt_" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrackCharge_matchedSeedCharge_" + region], simpt_hists["sim_pt_matchedTrack_matchedSeedCharge_"+region], "eff_wrt_seed_charge_pt_" + region, binning = "log")
+    efficiency_histograms["h_eff_charge_pt_" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrackCharge_" + region], simpt_hists["sim_pt_matchedTrack_" + region], "eff_charge_pt_" + region, binning = "log")
+    
+    efficiency_histograms["h_eff_pt_sim" + region] = fill_hist_ratio(simpt_hists["sim_pt_simmatchedTrack_" + region], simpt_hists["sim_pt_" + region], "eff_pt_sim_" + region, binning="log")
 
 # -------------------- fake rates ---------------------------------
 efficiency_histograms["h_fakerate_eta"] = fill_hist_ratio(receta_hists["fake_eta"], receta_hists["reco_eta"],"fake_rate_eta")

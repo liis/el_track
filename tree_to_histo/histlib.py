@@ -48,7 +48,7 @@ def fill_hist_ratio(h_numerator, h_denominator, outhistname, binning = "const"):
 
 
     for i in range(1, nbin-1):
-#        print "numerator = " + str(h_numerator.GetBinContent(i)) + ", denominator = " + str(h_denominator.GetBinContent(i))
+        #print "numerator = " + str(h_numerator.GetBinContent(i)) + ", denominator = " + str(h_denominator.GetBinContent(i))
         if h_denominator.GetBinContent(i) == 0:
             h_ratio.SetBinContent(i,0)
         else:

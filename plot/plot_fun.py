@@ -81,7 +81,7 @@ def get_hit_efficiency_hist(infiles, var, quality, nrhits = 10):
 
 colors = [ROOT.kBlack, ROOT.kRed, ROOT.kYellow, ROOT.kYellow-3, ROOT.kGreen, ROOT.kGreen+3, ROOT.kCyan, ROOT.kCyan+1, ROOT.kCyan+2, ROOT.kCyan+3, ROOT.kCyan+4, ROOT.kBlue, ROOT.kViolet-3, ROOT.kViolet+3]
 
-def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  "", region="none", style="", logy=False, yrange = [], is_secondary=False):
+def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  "", ymin=0, region="none", style="", logy=False, yrange = [], is_secondary=False):
     """
     hists -- dictionary of histograms
     plot a list of efficiency histogras
@@ -102,7 +102,7 @@ def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  
                 hist.SetMinimum(0.001)
                 hist.SetMaximum(hist.GetMaximum()*2)
         else:
-            hist.SetMinimum(0.)
+            hist.SetMinimum(ymin)
             if ymax == "":
                 ymax=hist.GetMaximum()*2
                 hist.SetMaximum(ymax)
@@ -110,7 +110,7 @@ def draw_efficiency_histograms(hists, xtitle = "none", ytitle = "none", ymax =  
 
         if n==0:
             hist.GetXaxis().SetTitleOffset(1.)
-            hist.GetYaxis().SetTitleOffset(1.2)
+            hist.GetYaxis().SetTitleOffset(1.8)
             hist.SetStats(False)
 
             if( region[:3]=="Pt1"):
@@ -183,9 +183,9 @@ def add_text_box(text=''):
 
 res_map = { #xlabel, [ymin, ymax] for log scale 
     "dxy": ["d_{0}", [0.002, 0.3] ],
-    "dz": ["z_{0}", [0.004, 0.8] ],
-    "pt": ["(res p_{T})/p_{T}", [0.05, 10] ],
-    "cotth": ["cot(#theta)", [0.0005, 0.04] ],
+    "dz": ["z_{0}", [0.002, 0.8] ],
+    "pt": ["(res p_{T})/p_{T}", [0.05, 15] ],
+    "cotth": ["cot(#theta)", [0.0002, 0.1] ],
     "phi": ["#phi", [0.0003, 0.1] ],
     }
     
@@ -217,7 +217,7 @@ def draw_and_save_res(hists68, hists95, var, resvar, selection_string, is_gsf, o
     c.Close()
 
         
-def draw_and_save_eff(hists, var, eff_fake, is_gsf, outdir, label = "", leg_pos = "up_right", title = "", ymax_res=0.5, style=""):
+def draw_and_save_eff(hists, var, eff_fake, is_gsf, outdir, label = "", leg_pos = "up_right", title = "", ymax=1, ymin=0, style=""):
     """
     hists - dictionary of process names and histograms
     var - xaxis variable
@@ -239,21 +239,28 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, outdir, label = "", leg_pos 
         xtitle = "Number of sim. hits"
 
     ytitle = ""
-    ymax = 1
+
     if eff_fake == "eff":
         ytitle = "Efficiency "
-    if eff_fake == "eff_seed":
+    elif eff_fake == "eff_seed":
         ytitle = "Seeding efficiency"
-    if eff_fake == "eff_wrt_seed":
+    elif eff_fake == "eff_wrt_seed":
         ytitle = "Reco wrt seeding efficiency"
-    if eff_fake[:4] == "fake":
+    elif eff_fake =="eff_charge":
+        ytitle= "Charge efficiency"
+    elif eff_fake == "eff_seed_charge":
+        ytitle= "Seed charge efficiency"
+    elif eff_fake == "eff_wrt_seed_charge":
+        ytitle = "Charge efficiency wrt. seed"
+    else: #eff_fake[:4] == "fake":
         ytitle = "Fake rate"
-        if var=="pt":
-            ymax = 0.25
-        elif var=="eta":
-            ymax = 0.25
-        else:
-            ymax = 1
+        
+#        if var=="pt":
+#            ymax = 0.25
+#        elif var=="eta":
+#            ymax = 0.25
+#        else:
+#            ymax = 1
 #        if var == "pt":
 #            ymax = ymax_res
 
@@ -261,17 +268,13 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, outdir, label = "", leg_pos 
         ytitle = "pull"
     if eff_fake[:4] == "res":
         ytitle = label
-        ymax = ymax_res
         logy=False # set nonzero y value
 #        c.SetLogy
 
     if len(title)>0:
         ytitle=ytitle + " (" + title + ")"
 
-#    if len(label) > 0:
-#        ytitle = ytitle + " (" + label + ")"
-
-    draw_efficiency_histograms(hists.values(), xtitle, ytitle, ymax, style=style, logy=logy)
+    draw_efficiency_histograms(hists.values(), xtitle, ytitle, ymax, ymin=ymin, style=style, logy=logy)
     leg = draw_legend(hists, pos = leg_pos)
     leg.Draw()
 
@@ -281,15 +284,11 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, outdir, label = "", leg_pos 
     if logy:
         c.SetLogy()
 
-#    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/" + eff_fake + "_" + var + "_" + label + GSFstr + ".pdf")
-#    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_a/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
-#    c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_eff/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
-    c.SaveAs(outdir + "/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
-    
+    c.SaveAs(outdir + "/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")    
     c.Close()
 
 
-def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False, mode="68"):
+def draw_resolution(res_hist_2d, res_hist_name, outdir = "./", do_control_fit_plots=False, mode="68"):
     """
     res_hist_2d -- histogram of eta/pt vs resolution variable
     res_hist_name -- name to be given to the output resolution histogram
@@ -345,7 +344,7 @@ def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False, mode
 
         if do_control_fit_plots:
 #          r.Draw() #save fits for checks
-          c.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_res/fit_checks_step1/fit" + res_hist_name + "_bin" + str(i) + ".png")
+          c.SaveAs(outdir + "/fit_checks_step1/fit" + res_hist_name + "_bin" + str(i) + ".png")
           c.Close()
 
 
@@ -414,7 +413,7 @@ def draw_resolution(res_hist_2d, res_hist_name, do_control_fit_plots=False, mode
             f_cb.plotOn(xframe)
             xframe.Draw()
 
-            c2.SaveAs("$WORKING_DIR/plot/out_plots_paramScans/13TeV_011014_res/fit_checks_step2/fit" + res_hist_name + "_bin" + str(i) + ".png")
+            c2.SaveAs(outdir + "/fit_checks_step2/fit" + res_hist_name + "_bin" + str(i) + ".png")
             c2.Close()
 
 

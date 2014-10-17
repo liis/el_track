@@ -27,8 +27,8 @@ outdir="./out_plots_paramScans/13TeV_011014_res"
 parameters_maxCand = {
     "maxChi2": [2000],
     "nSigma": [3],
-    "maxCand": [1,2, 3, 4, 5, 6, 7],
-    #"maxCand": [1,2]
+ #   "maxCand": [1,2, 3, 4, 5, 6, 7],
+    "maxCand": [1,2]
     } #consider all combinations of parameters
 
 parameters_maxChi2 = {
@@ -54,8 +54,8 @@ parameters_test = {
 
 parameter_sets = [
     parameters_maxCand,
-    parameters_maxChi2,
-    parameters_nSigma,
+#    parameters_maxChi2,
+#    parameters_nSigma,
 #    parameters_test,
     ]
 
@@ -115,6 +115,18 @@ for parameters in parameter_sets:
         res_eta_phi_68[input_file] = dict()
         res_eta_phi_95[input_file] = dict()
 
+        for eta_region in eta_regions:
+            res_pt_dxy_68[input_file + "_" + eta_region] = dict()
+            res_pt_dxy_95[input_file + "_" + eta_region] = dict()
+            res_pt_dz_68[input_file + "_" + eta_region] = dict()
+            res_pt_dz_95[input_file + "_" + eta_region] = dict()
+            res_pt_cotth_68[input_file + "_" + eta_region] = dict()
+            res_pt_cotth_95[input_file + "_" + eta_region] = dict()
+            res_pt_pt_68[input_file + "_" + eta_region] = dict()
+            res_pt_pt_95[input_file + "_" + eta_region] = dict()
+            res_pt_phi_68[input_file + "_" + eta_region] = dict()
+            res_pt_phi_95[input_file + "_" + eta_region] = dict()
+
         for cutstring in infiles[input_file]:
             if ii == 0: # for control fit plots show only for the first entry (otherwise too many)
                 isFirst = True
@@ -127,41 +139,34 @@ for parameters in parameter_sets:
                 test = infiles[input_file][cutstring].Get("resolutions_eta/res_dxy_vs_eta")
                 #                test.Draw() ## for debug -- check if necessary res histograms are present
 
-                res_eta_dxy_68[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_dxy_vs_eta"), "res_dxy_vs_eta_"+input_file+"_"+cutstring + "_68", outdir=outdir, do_control_fit_plots=isFirst, mode="68")
-                res_eta_dxy_95[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_dxy_vs_eta"), "res_dxy_vs_eta_"+input_file+"_"+cutstring + "_95", outdir=outdir, do_control_fit_plots=isFirst, mode="95")
+#                res_eta_dxy_68[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_dxy_vs_eta"), "res_dxy_vs_eta_"+input_file+"_"+cutstring + "_68", outdir=outdir, do_control_fit_plots=isFirst, mode="68")
+#                res_eta_dxy_95[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_dxy_vs_eta"), "res_dxy_vs_eta_"+input_file+"_"+cutstring + "_95", outdir=outdir, do_control_fit_plots=isFirst, mode="95")
 
-                res_eta_dz_68[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_dz_vs_eta"), "res_dz_vs_eta"+input_file+"_"+cutstring + "_68", outdir=outdir, do_control_fit_plots=isFirst, mode = "68")
-                res_eta_dz_95[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_dz_vs_eta"), "res_dz_vs_eta"+input_file+"_"+cutstring + "_95", outdir=outdir, do_control_fit_plots=isFirst, mode = "95")
-                res_eta_cotth_68[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_cotth_vs_eta"), "res_cotth_vs_eta"+input_file+"_"+cutstring + "_68", outdir=outdir, do_control_fit_plots=isFirst, mode="68")
-                res_eta_cotth_95[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_cotth_vs_eta"), "res_cotth_vs_eta"+input_file+"_"+cutstring + "_95", outdir=outdir, do_control_fit_plots=isFirst, mode="95")
-                res_eta_pt_68[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_pt_vs_eta"), "res_pt_vs_eta"+input_file+"_"+cutstring + "_68", outdir=outdir, do_control_fit_plots=isFirst, mode = "68")
-                res_eta_pt_95[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_pt_vs_eta"), "res_pt_vs_eta"+input_file+"_"+cutstring + "_95", outdir=outdir, do_control_fit_plots=isFirst, mode = "95")
-                res_eta_phi_68[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_phi_vs_eta"), "res_phi_vs_eta"+input_file+"_"+cutstring + "_68", outdir=outdir, do_control_fit_plots=isFirst, mode="68")
-                res_eta_phi_95[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_phi_vs_eta"), "res_phi_vs_eta"+input_file+"_"+cutstring + "_95", outdir=outdir, do_control_fit_plots=isFirst, mode="95")
-                
+#                res_eta_dz_68[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_dz_vs_eta"), "res_dz_vs_eta"+input_file+"_"+cutstring + "_68", outdir=outdir, do_control_fit_plots=isFirst, mode = "68")
+#                res_eta_dz_95[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_dz_vs_eta"), "res_dz_vs_eta"+input_file+"_"+cutstring + "_95", outdir=outdir, do_control_fit_plots=isFirst, mode = "95")
+#                res_eta_cotth_68[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_cotth_vs_eta"), "res_cotth_vs_eta"+input_file+"_"+cutstring + "_68", outdir=outdir, do_control_fit_plots=isFirst, mode="68")
+#                res_eta_cotth_95[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_cotth_vs_eta"), "res_cotth_vs_eta"+input_file+"_"+cutstring + "_95", outdir=outdir, do_control_fit_plots=isFirst, mode="95")
+#                res_eta_pt_68[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_pt_vs_eta"), "res_pt_vs_eta"+input_file+"_"+cutstring + "_68", outdir=outdir, do_control_fit_plots=isFirst, mode = "68")
+#                res_eta_pt_95[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_pt_vs_eta"), "res_pt_vs_eta"+input_file+"_"+cutstring + "_95", outdir=outdir, do_control_fit_plots=isFirst, mode = "95")
+#                res_eta_phi_68[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_phi_vs_eta"), "res_phi_vs_eta"+input_file+"_"+cutstring + "_68", outdir=outdir, do_control_fit_plots=isFirst, mode="68")
+#                res_eta_phi_95[input_file][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_eta/res_phi_vs_eta"), "res_phi_vs_eta"+input_file+"_"+cutstring + "_95", outdir=outdir, do_control_fit_plots=isFirst, mode="95")
+
+
             if input_file != "Pt10" and input_file != "Pt100": # skip pt histograms for fixed pt samples
+                print res_pt_dxy_68
                 for eta_region in eta_regions:
-                    res_pt_dxy_68[input_file + "_" + eta_region] = dict()
-                    res_pt_dxy_95[input_file + "_" + eta_region] = dict()
-                    res_pt_dz_68[input_file + "_" + eta_region] = dict()
-                    res_pt_dz_95[input_file + "_" + eta_region] = dict()
-                    res_pt_cotth_68[input_file + "_" + eta_region] = dict()
-                    res_pt_cotth_95[input_file + "_" + eta_region] = dict()
-                    res_pt_pt_68[input_file + "_" + eta_region] = dict()
-                    res_pt_pt_95[input_file + "_" + eta_region] = dict()
-                    res_pt_phi_68[input_file + "_" + eta_region] = dict()
-                    res_pt_phi_95[input_file + "_" + eta_region] = dict()
+                    for cutstring in infiles[input_file]:
+                        #                       res_pt_dxy_68[input_file + "_" + eta_region][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_pt/res_dxy_vs_pt"), "res_dxy_vs_pt_"+input_file+"_"+eta_region+"_"+cutstring+"_68", outdir=outdir, do_control_fit_plots=isFirst, mode="68")
+                        #                       res_pt_dxy_95[input_file + "_" + eta_region][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_pt/res_dxy_vs_pt"), "res_dxy_vs_pt_"+input_file+"_"+eta_region+"_"+cutstring+"_95", outdir=outdir, do_control_fit_plots=isFirst, mode="95")
+                        #                        res_pt_dz_68[input_file + "_" + eta_region][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_pt/res_dz_vs_pt"), "res_dz_vs_pt_"+input_file+"_"+eta_region+"_"+cutstring+"_68", outdir=outdir, do_control_fit_plots=isFirst, mode="68")
+                        #                        res_pt_dz_68[input_file + "_" + eta_region][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_pt/res_dz_vs_pt"), "res_dz_vs_pt_"+input_file+"_"+eta_region+"_"+cutstring+"_68", outdir=outdir, do_control_fit_plots=isFirst, mode="68")
+                        #                        res_pt_cotth_68[input_file + "_" + eta_region][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_pt/res_cotth_vs_pt"), "res_cotth_vs_pt_"+input_file+"_"+eta_region+"_"+cutstring+"_68", outdir=outdir, do_control_fit_plots=isFirst, mode="68")
+                        #                        res_pt_cotth_68[input_file + "_" + eta_region][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_pt/res_cotth_vs_pt"), "res_cotth_vs_pt_"+input_file+"_"+eta_region+"_"+cutstring+"_68", outdir=outdir, do_control_fit_plots=isFirst, mode="68")
+                        #                        res_pt_phi_68[input_file + "_" + eta_region][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_pt/res_phi_vs_pt"), "res_phi_vs_pt_"+input_file+"_"+eta_region+"_"+cutstring+"_68", outdir=outdir, do_control_fit_plots=isFirst, mode="68")
+                        #                        res_pt_phi_68[input_file + "_" + eta_region][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_pt/res_phi_vs_pt"), "res_phi_vs_pt_"+input_file+"_"+eta_region+"_"+cutstring+"_68", outdir=outdir, do_control_fit_plots=isFirst, mode="68")
+                        res_pt_pt_68[input_file + "_" + eta_region][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_pt/res_pt_vs_pt"), "res_pt_vs_pt_"+input_file+"_"+eta_region+"_"+cutstring+"_68", outdir=outdir, do_control_fit_plots=isFirst, mode="68")
+                        res_pt_pt_95[input_file + "_" + eta_region][cutstring] = draw_resolution( infiles[input_file][cutstring].Get("resolutions_pt/res_pt_vs_pt"), "res_pt_vs_pt_"+input_file+"_"+eta_region+"_"+cutstring+"_95", outdir=outdir, do_control_fit_plots=isFirst, mode="95")
 
-#                for cutstring in infiles[input_file]:
-#                    res_pt_dxy_68[input_file + "_" + eta_region][cutstring[ = draw_resolution( infiles[input_file][cutstring].Get("resolutions_pt/res_dxy_vs_pt"), "res_dxy_vs_pt_"+input_file+"_"+eta_region+"_"+cutstring+"_68", doControl_fit_plots=isFirst, mode="68")
-
-
-#                for cutstring in infiles[input_file]:
-#                    eff_pt[input_file + "_" + eta_region][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_pt_" + eta_region)
-#                    eff_wrt_seed_pt[input_file + "_" + eta_region][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_wrt_seed_pt_" + eta_region)
-#                    eff_seed_pt[input_file + "_" + eta_region][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_seed_pt_" + eta_region)
-#                    
-#                    fake_pt[input_file + "_" + eta_region][cutstring] = infiles[input_file][cutstring].Get("efficiencies/fake_rate_pt_" + eta_region)
 
 
 #----------------------------------- plot and save output ---------------------------------------------------
@@ -181,19 +186,21 @@ for parameters in parameter_sets:
         if input_file != "flatPt":
             print "saving eta resolution"
             
-            draw_and_save_res(res_eta_dxy_68[input_file], res_eta_dxy_95[input_file], "eta", "dxy", sel_str, is_gsf, outdir=outdir, logy=True)
-            draw_and_save_res(res_eta_dz_68[input_file], res_eta_dz_95[input_file], "eta", "dz", sel_str, is_gsf, outdir=outdir, logy=True)
-            draw_and_save_res(res_eta_cotth_68[input_file], res_eta_cotth_95[input_file], "eta", "cotth", sel_str, is_gsf, outdir=outdir, logy=True)
-            draw_and_save_res(res_eta_pt_68[input_file], res_eta_pt_95[input_file], "eta", "pt", sel_str, is_gsf, outdir=outdir, logy=True)
-            draw_and_save_res(res_eta_phi_68[input_file], res_eta_phi_95[input_file], "eta", "phi", sel_str, is_gsf, outdir=outdir, logy=True)
+            # ------------------- eta resolutions -----------------------
+            #draw_and_save_res(res_eta_dxy_68[input_file], res_eta_dxy_95[input_file], "eta", "dxy", sel_str, is_gsf, outdir=outdir, logy=True)
+            #draw_and_save_res(res_eta_dz_68[input_file], res_eta_dz_95[input_file], "eta", "dz", sel_str, is_gsf, outdir=outdir, logy=True)
+            #draw_and_save_res(res_eta_cotth_68[input_file], res_eta_cotth_95[input_file], "eta", "cotth", sel_str, is_gsf, outdir=outdir, logy=True)
+            #draw_and_save_res(res_eta_pt_68[input_file], res_eta_pt_95[input_file], "eta", "pt", sel_str, is_gsf, outdir=outdir, logy=True)
+            #draw_and_save_res(res_eta_phi_68[input_file], res_eta_phi_95[input_file], "eta", "phi", sel_str, is_gsf, outdir=outdir, logy=True)
 
-#        if input_file != "Pt10" and input_file != "Pt100":
-#            for eta_region in eta_regions:
-#                if do_efficiencies:
-#                    draw_and_save_eff(eff_pt[input_file + "_" + eta_region], "pt", "eff", is_gsf=is_gsf, label=sel_str+"_" + input_file + "_" + eta_region, leg_pos="down_right", title=eta_region + " el. , " + input_file)
-#                    #              draw_and_save_eff(eff_seed_pt[input_file + "_" + eta_region], "pt", "eff_seed", is_gsf=is_gsf, label=sel_str+"_" + input_file + "_" + eta_region, leg_pos="down_right", title=eta_region + " el. , " + input_file)
-#                    #                draw_and_save_eff(eff_wrt_seed_pt[input_file + "_" + eta_region], "pt", "eff_wrt_seed", is_gsf=is_gsf, label=sel_str+"_" + input_file + "_" + eta_region, leg_pos="down_right", title=eta_region + " el. , " + input_file)
-#                    
-#                    draw_and_save_eff(fake_pt[input_file + "_" + eta_region], "pt", "fake", is_gsf=is_gsf, label=sel_str+"_" + input_file + "_" + eta_region, leg_pos="up_right", title=eta_region + " el." + input_file, ymax_res=1)
+            # --------------------- pt resolutions ------------------------
+
+        if input_file != "Pt10" and input_file != "Pt100":
+            for eta_region in eta_regions:
+#                draw_and_save_res(res_pt_dxy_68[input_file + "_" + eta_region], res_pt_dxy_95[input_file + "_" + eta_region], "pt", "dxy", sel_str, is_gsf, outdir=outdir, logy=True)
+#                draw_and_save_res(res_pt_dz_68[input_file + "_" + eta_region], res_pt_dz_95[input_file + "_" + eta_region], "pt", "dz", sel_str, is_gsf, outdir=outdir, logy=True)
+#                draw_and_save_res(res_pt_cotth_68[input_file + "_" + eta_region], res_pt_cotth_95[input_file + "_" + eta_region], "pt", "cotth", sel_str, is_gsf, outdir=outdir, logy=True)
+#                draw_and_save_res(res_pt_phi_68[input_file + "_" + eta_region], res_pt_phi_95[input_file + "_" + eta_region], "pt", "phi", sel_str, is_gsf, outdir=outdir, logy=True)
+                draw_and_save_res(res_pt_pt_68[input_file + "_" + eta_region], res_pt_pt_95[input_file + "_" + eta_region], "pt", "pt", sel_str, is_gsf, outdir=outdir, logy=True)
 
 ##end

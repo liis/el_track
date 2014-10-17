@@ -198,6 +198,7 @@ def draw_and_save_res(hists68, hists95, var, resvar, selection_string, is_gsf, o
     if var == "eta":
         xtitle = "#eta"
     if var == "pt":
+        c.SetLogx()
         xtitle = "p_{T}"
 
     ytitle = "Resolution in " + res_map[resvar][0]

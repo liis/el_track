@@ -11,18 +11,17 @@ args = parser.parse_args()
 
 timing_maxCand = ROOT.TH1F("tn","tn", 7, 0, 7)
 timing_maxCand.GetXaxis().SetTitle("max. cand")
-timing_maxCand.GetYaxis().SetTitle("time (ns)")
-timing_maxCand.GetYaxis().SetTitleOffset(1.6)
+timing_maxCand.GetYaxis().SetTitle("time (#mus/event)")
 timing_maxCand.SetMinimum(0)
 
 timing_nSigma = ROOT.TH1F("tns", "tns", 5, 0, 5)
 timing_nSigma.GetXaxis().SetTitle("nSigma")
-timing_nSigma.GetYaxis().SetTitle("time (ns)")
+timing_nSigma.GetYaxis().SetTitle("time (#mus/event)")
 timing_nSigma.SetMinimum(0)
 
 timing_chi2 = ROOT.TH1F("tnch", "tnch", 5, 0, 5)
 timing_chi2.GetXaxis().SetTitle("max. chi2")
-timing_chi2.GetYaxis().SetTitle("time (ns)")
+timing_chi2.GetYaxis().SetTitle("time (#mus/event)")
 timing_chi2.SetMinimum(0)
 
 ichi2 = 0
@@ -69,16 +68,16 @@ for ibin in range(0, len(chi2) ):
 
 c = ROOT.TCanvas("c1","c1", 800, 800)
 timing_maxCand.Draw()            
-c.SaveAs("timing/timing_maxCand.pdf")
+c.SaveAs("timing/timing_maxCand.png")
 c.Close()
 
 c = ROOT.TCanvas("c1","c1", 800, 800)
 timing_nSigma.Draw()
-c.SaveAs("timing/timing_nSigma.pdf")
+c.SaveAs("timing/timing_nSigma.png")
 c.Close()
 
 c = ROOT.TCanvas("c1","c1", 800, 800)
 timing_chi2.Draw()
-c.SaveAs("timing/timing_chi2.pdf")
+c.SaveAs("timing/timing_chi2.png")
 c.Close()
 

@@ -18,14 +18,11 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 # message logger
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
+process.MessageLogger.cerr.FwkReport.reportEvery = 100
 #process.MessageLogger = cms.Service("MessageLogger", #??
 #                                    default = cms.untracked.PSet( limit = cms.untracked.int32(300) )
 #                                    )
-
-process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
-
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(500) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 source = cms.Source ("PoolSource",
                      fileNames=cms.untracked.vstring(
@@ -50,6 +47,9 @@ source = cms.Source ("PoolSource",
 
 process.source = source
 
+
+
+process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:startup')
 #process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc', '') # dont use this one to rerun the reconstruction
@@ -80,9 +80,9 @@ maxCandDefault = 5
 maxChi2Default = 2000
 nSigmaDefault = 3.0
 
-maxCand = maxCandDefault
-maxChi2 = maxChi2Default
-nSigma = nSigmaDefault
+maxCand = MAXCAND
+maxChi2 = MAXCHI2
+nSigma = NSIGMA
 
 ########################################################################
 # to change parameters  as in slides from A.Tropiano
@@ -246,30 +246,29 @@ process.ValidationSelectors = cms.Sequence(
     process.cutsRecoTracksHp
     )
 
-#-----------------------------Filter Zee decays------------------
+#---------------------- gen level filter ------------------------
 process.zeeFilter = cms.EDFilter("XtoFFbarFilter",
-                        src = cms.InputTag("genParticles"),
-                        idMotherX = cms.vint32(23),
-                        idDaughterF = cms.vint32(11),
-                        idMotherY = cms.vint32(),
-                        idDaughterG = cms.vint32(),
-                        )
-
-
+                                 src = cms.InputTag("genParticles"),
+                                 idMotherX = cms.vint32(23),
+                                 idDaughterF = cms.vint32(11),
+                                 idMotherY = cms.vint32(),
+                                 idDaughterG = cms.vint32(),
+                                 )
 #--------------------------- tree maker --------------------------
 process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi") # for writing output to a flat tree
-process.trackValTreeMaker.isGSF = cms.bool(False)
+process.trackValTreeMaker.isGSF = cms.bool(ISGSF)
 process.trackValTreeMaker.leadingVertexOnly = cms.bool(False)
 
 if process.trackValTreeMaker.isGSF:
     print "Running analysis on electron GSF tracks"
 else:
     print "Running analysis on generalTracks"
-
 if process.trackValTreeMaker.leadingVertexOnly:
     print "Require reco tracks to originate from the leading vertex"
 else:
     print "Skip matching to leading vertex"
+
+
 
 process.load("SimGeneral.TrackingAnalysis.simHitTPAssociation_cfi")
 process.preValidation = cms.Sequence(

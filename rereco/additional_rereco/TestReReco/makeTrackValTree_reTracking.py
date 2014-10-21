@@ -2,13 +2,23 @@ import FWCore.ParameterSet.Config as cms
 
 process = cms.Process("reGsfTracking")
 
+process.load('Configuration.StandardSequences.Services_cff')
+process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
+process.load('Configuration.EventContent.EventContent_cff')
+process.load('SimGeneral.MixingModule.mixNoPU_cfi')
+process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
+process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
+process.load('Configuration.StandardSequences.RawToDigi_cff')
+process.load('Configuration.StandardSequences.L1Reco_cff')
+process.load('Configuration.StandardSequences.Reconstruction_cff')
+process.load('CommonTools.ParticleFlow.EITopPAG_cff')
+process.load('Configuration.StandardSequences.EndOfProcess_cff')
+process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
+
 # message logger
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 1
-#process.MessageLogger = cms.Service("MessageLogger", #??
-#                                    default = cms.untracked.PSet( limit = cms.untracked.int32(300) )
-#                                    )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(50) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(500) )
 
 #process.Timing = cms.Service("Timing")
 
@@ -23,82 +33,47 @@ if not useSecFiles: #Use secondary files
 elif run_PSI:
     secFiles = cms.untracked.vstring(
         '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/02A8EF51-62D1-E311-9270-02163E00EB1C.root',
-        '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/22360CB9-62D1-E311-AAC8-02163E00E8F4.root',
-        '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/2C4CD1E2-62D1-E311-840A-02163E00EA17.root',
-        '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/2CC8BC3A-62D1-E311-80C4-02163E00EAC3.root',
-        '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/3E92DFF4-62D1-E311-B169-02163E00E83C.root',
-        '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/4AF6D3E5-62D1-E311-BB13-02163E00F335.root',
-        '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/4E9486E1-62D1-E311-B091-02163E00EB07.root',
-        '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/563694CA-62D1-E311-B8B7-02163E00E9F6.root',
-        '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/6A17CF7C-62D1-E311-A943-02163E00E6D6.root',
-        '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/76B6063A-72D1-E311-95E6-02163E00CDE3.root',
-        '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/9E65F9A2-62D1-E311-8D37-02163E00E8D2.root',
-        '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/9EA489AB-62D1-E311-9A1A-02163E00E776.root',
-        '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/AE3BAC91-62D1-E311-B275-02163E00E869.root',
-        '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/C637DD05-63D1-E311-A4FB-02163E00EAC7.root',
-        '/store/user/liis/GSF_tracking_samples/Zee_DIGI_PU50_710pre7/DE0B8342-62D1-E311-AECF-02163E00EA85.root'
         )
 else:  # run at EE
     secFiles = scms.untracked.vstring(
         'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/02A8EF51-62D1-E311-9270-02163E00EB1C.root',
-        'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/22360CB9-62D1-E311-AAC8-02163E00E8F4.root',
-        'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/2C4CD1E2-62D1-E311-840A-02163E00EA17.root',
-        'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/2CC8BC3A-62D1-E311-80C4-02163E00EAC3.root',
-        'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/3E92DFF4-62D1-E311-B169-02163E00E83C.root',
-        'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/4AF6D3E5-62D1-E311-BB13-02163E00F335.root',
-        'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/4E9486E1-62D1-E311-B091-02163E00EB07.root',
-        'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/563694CA-62D1-E311-B8B7-02163E00E9F6.root',
-        'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/6A17CF7C-62D1-E311-A943-02163E00E6D6.root',
-        'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/76B6063A-72D1-E311-95E6-02163E00CDE3.root',
-        'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/9E65F9A2-62D1-E311-8D37-02163E00E8D2.root',
-        'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/9EA489AB-62D1-E311-9A1A-02163E00E776.root',
-        'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/AE3BAC91-62D1-E311-B275-02163E00E869.root',
-        'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/C637DD05-63D1-E311-A4FB-02163E00EAC7.root',
-        'file:/hdfs/cms/store/user/liis/El_GSF_studies/Zee_7_1_0_pre7_PU50_DIGI/DE0B8342-62D1-E311-AECF-02163E00EA85.root', 
         )
 #----------------------------------------------------------------------------------------------
+
+process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
     
 source = cms.Source ("PoolSource",
                      fileNames=cms.untracked.vstring(
-#    'file:007CEDE1-B1D1-E311-9EC9-02163E00E9CC.root' 
-#    'file:step2.root'
-#    'file:samtest_reco.root'
-#    'file:SingleElectronPt10_RECO.root',
-#    '/store/user/liis/GSF_tracking_samples/RelValZll_HLTDEBUG_PU50/007FA6E4-EC13-E411-A7A3-002618943866.root'
-    '/store/user/liis/GSF_tracking_samples/RelValZll_HLTDEBUG_PU50/00E5A57A-3D13-E411-99D5-0025905A6076.root'
-
-#    'file:test2_sam.root' ## the last one
-#    'file:../EvtGeneration/SingleElectronPt10_RECO.root'
-#    'file:rawToReco.root'
-# -------- Zee produced by sam ----------------
-#        '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_101_1_Fsb.root',
-#        '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_100_2_qzC.root',
-#        '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_102_1_VzM.root',
-#-----------------------------------------------
-#        'file:SingleElectronPt10_RECO.root'   
+        #    'file:007CEDE1-B1D1-E311-9EC9-02163E00E9CC.root' 
+        #    'file:step2.root'
+        #    'file:SingleElectronPt10_RECO.root',
+        
+        ########### work in progress ##############
+        #    '/store/user/liis/GSF_tracking_samples/RelValZll_HLTDEBUG_PU50/007FA6E4-EC13-E411-A7A3-002618943866.root'
+        #    '/store/user/liis/GSF_tracking_samples/RelValZll_HLTDEBUG_PU50/00E5A57A-3D13-E411-99D5-0025905A6076.root'
+        ###########################################
+        
+        'file:test2_sam.root' ## the last one
+        #    'file:../EvtGeneration/SingleElectronPt10_RECO.root'
+        #    'file:rawToReco.root'
+        # -------- Zee produced by sam ----------------
+        #        '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_101_1_Fsb.root',
+        #        '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_100_2_qzC.root',
+        #        '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_102_1_VzM.root',
+        #-----------------------------------------------
+        #        'file:SingleElectronPt10_RECO.root'   
         ),
                      secondaryFileNames=secFiles #Provide corresponding DIGI files for tracking particles
                      )
 
 process.source = source
 
+from Configuration.AlCa.GlobalTag import GlobalTag
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:startup')
+#process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc', '') ## dont use
+print "Global tag = " + str(process.GlobalTag.globaltag)
 
-
-process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-#from Configuration.AlCa.GlobalTag import GlobalTag
-#process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:startup')
-process.GlobalTag.globaltag = 'PRE_STA71_V4::All'
-
-process.load('Configuration/StandardSequences/Services_cff')
-process.load("Configuration.Geometry.GeometryIdeal_cff")
-
-process.load('Configuration.StandardSequences.GeometryPilot2_cff')
-process.load("Configuration.StandardSequences.RawToDigi_cff")
-
-process.load("Configuration.EventContent.EventContent_cff")
-process.load("Configuration.StandardSequences.MagneticField_cff")
 process.load("CondCore.DBCommon.CondDBSetup_cfi")
-process.load("Configuration.StandardSequences.Reconstruction_cff")
 
 from SimGeneral.MixingModule.trackingTruthProducer_cfi import *
 
@@ -123,10 +98,9 @@ process.ElectronChi2.nSigma = cms.double( nSigma )
 
 ########################################################################
 
-process.load("RecoPixelVertexing.PixelLowPtUtilities.siPixelClusterShapeCache_cfi")
+process.load("RecoPixelVertexing.PixelLowPtUtilities.siPixelClusterShapeCache_cfi") #?
 
 process.printEventContent = cms.EDAnalyzer("EventContentAnalyzer")
-
 
 process.load("RecoTracker.FinalTrackSelectors.selectHighPurity_cfi")
 process.elTracksWithQuality = process.selectHighPurity.clone(
@@ -136,77 +110,36 @@ process.elTracksWithQuality = process.selectHighPurity.clone(
 #    src = "electronGsfTracks",
 )
 
-#process.elGsfTracksWithQuality.src = cms.InputTag("electronGsfTracks")
+process.preGsfReco = cms.Sequence(
+    process.siPixelDigis
+    *process.siPixelClusters                                                                                                              
+    *process.siStripDigis                                                                                                                 
+    *process.siStripZeroSuppression                                                                                                       
+    )
 
 # sequence for re-running gsfTracking over RECO
 process.myGsfReco = cms.Sequence(
-    #---- try to run on RelVal HLTDEBUG ----
-#    process.siPixelDigis
-#    *process.siPixelClusters
-#    *process.siStripDigis
-#    *process.siStripZeroSuppression
-#    *process.siStripClusters
+    process.siPixelRecHits
+    *process.siStripMatchedRecHits #make local hits
+    *process.MeasurementTrackerEvent #ADD
+    *process.siPixelClusterShapeCache # needed to add when moving from CMSSW_7_1_0_pre5 to pre7
 
-#    *process.offlineBeamSpot
-    #------------------------------
-#    *process.siPixelRecHits
-#    *process.siStripMatchedRecHits #make local hits
-#    *process.MeasurementTrackerEvent #ADD
-#    *process.siPixelClusterShapeCache # needed to add when moving from CMSSW_7_1_0_pre5 to pre7
+    *process.iterTracking #probably don't need to run all of it
 
-#    *process.PixelLayerTriplets
-#    *process.pixelTracks  
-#    *process.pixelVertices
+    *process.electronSeedsSeq #ADD
+    *process.electronSeeds    #produced merged collection of TkDriven and Ecaldriven seeds
+    *process.electronCkfTrackCandidates
+    *process.electronGsfTracks #run electron tracking
 
-    
-#    *process.muonDTDigis
-#    *process.muonCSCDigis
-#    *process.muonRPCDigis
-#    *process.muonlocalreco
-#    *process.dtlocalreco
-#    *process.ancientMuonSeed
-#    *process.standAloneMuons
-#    *process.iterTracking
-
-    process.reconstruction_standard_candle
-#    process.localreco
-#    *process.globalreco
-#    *process.particleFlowCluster
-#    *process.particleFlowCluster
-
-#    *process.pfClusteringECAL
-
-#    *process.electronGsfTracking
-
-#    *process.electronSeedsSeq #ADD
-#    *process.electronSeeds    #produced merged collection of TkDriven and Ecaldriven seeds
-#    *process.electronCkfTrackCandidates
-#    *process.electronGsfTracks #run electron tracking
-
-#--------- Full electron reconstruction --------    
-
-#    *process.particleFlowRecHitHCAL #  No need to do these are present, just need to get them in a single vector https://cmssdt.cern.ch/SDT/lxr/source/DataFormats/ParticleFlowReco/interface/PFRecHitFwd.h
-
+    # -- for full electron reconstruction --
 #    *process.pfTrack
-#    *process.printEventContent #misses
-#----    RefCore: A request to resolve a reference to a product of type 'std::vector<reco::PFRecHit>' with ProductID '2:921'
-#----    can not be satisfied because the product cannot be found.
-#----    Probably the branch containing the product is not stored in the input file.
-    
 #    *process.pfTrackElec
-#    *process.ecalDrivenGsfElectronCores
-
-#    *process.electronSequence
-#    *process.ecalDrivenGsfElectronCores
-#    *process.ecalDrivenGsfElectrons
-#    *process.gsfElectrons
-#-------------------------------------------------
- 
-#    *process.elTracksWithQuality
-)
+    
+#    process.reconstruction
+   
+    )
 
 outdir = "out_tests/"
-#outfilename = outdir + "reGsfTracking_maxCand_" + str(maxCand) + "_MaxChi2_" + str(maxChi2) + "_nSigma_" + str(nSigma) + ".root"
 outfilename = "trackValTree_reTrk.root"
 print "Writing output to file: " + outfilename
 
@@ -219,13 +152,13 @@ process.load("SimTracker.TrackAssociation.TrackAssociatorByHits_cfi")
 #process.TrackAssociatorByHits.SimToRecoDenominator = cms.string("reco") #Quality_SimToReco = shared hits/#reco(or #sim)
 #process.TrackAssociatorByHits.Quality_SimToReco = cms.double(0.75)
 #process.TrackAssociatorByHits.AbsoluteNumberOfHits = cms.bool(True)
+
 #---------------- high purity selection of reco::Tracks---------------
 process.load("PhysicsTools.RecoAlgos.recoTrackSelector_cfi")
 process.cutsRecoTracksHp = process.recoTrackSelector.clone()
 process.cutsRecoTracksHp.quality = cms.vstring("highPurity")
 process.cutsRecoTracksHp.minAbsEta = cms.double(0.0)
 process.cutsRecoTracksHp.maxAbsEta = cms.double(2.5)
-
 
 process.ValidationSelectors = cms.Sequence(
     process.cutsRecoTracksHp
@@ -234,16 +167,16 @@ process.ValidationSelectors = cms.Sequence(
 #--------------------------- tree maker --------------------------
 process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi") # for writing output to a flat tree
 process.trackValTreeMaker.isGSF = cms.bool(False)
-process.trackValTreeMaker.isSinglePart = cms.bool(True)
+process.trackValTreeMaker.leadingVertexOnly = cms.bool(False) # consider only tracks from the leading vertex (needed for Zee sample without the PU tracking particles)
 
 if process.trackValTreeMaker.isGSF:
     print "Running analysis on electron GSF tracks"
 else:
     print "Running analysis on generalTracks"
-if process.trackValTreeMaker.isSinglePart:
-    print "Assume SingleParticle dataset and skip matching to leading vertex"
-else:
+if process.trackValTreeMaker.leadingVertexOnly:
     print "Require reco tracks to originate from the leading vertex"
+else:
+    print "Skip matching to leading vertex"
 
 
 process.load("SimGeneral.TrackingAnalysis.simHitTPAssociation_cfi")
@@ -256,12 +189,12 @@ process.printEventContent = cms.EDAnalyzer("EventContentAnalyzer")
 # paths
 process.p = cms.Path(
     process.myGsfReco 
-#    *process.ValidationSelectors
+    *process.ValidationSelectors
 #   ## *process.elTracksWithQuality #preselection for standard reco tracks
-#    *process.preValidation
+    *process.preValidation
 
 #    *process.printEventContent 
-#    *process.trackValTreeMaker
+    *process.trackValTreeMaker
     )
 
 

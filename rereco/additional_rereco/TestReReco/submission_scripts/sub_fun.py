@@ -28,11 +28,11 @@ def write_outfile(input, outname):
     out_file.write(input)
     out_file.close()
                     
-def create_crab_cfg_from_template(template, varstr, dataset, datasetname, isSinglePart, isGsf=True, outdir = ""):
+def create_crab_cfg_from_template(template, varstr, dataset, datasetname, leadingVertexOnly, isGsf=True, outdir = ""):
     """
     dataset = Pt100, Pt10, FlatPt
     datasetname --> corresponding full datasetname
-    isSinglePart -- is it a singleParticle dataset (true) or with PU (false)
+    leadingVertexOnly -- consider only tracks from the leading vertex for fake rate studies
     """
     input = read_template(template)
     input = input.replace("CUTVALS", varstr)    
@@ -43,12 +43,12 @@ def create_crab_cfg_from_template(template, varstr, dataset, datasetname, isSing
     if len(outdir):
         outdir = outdir + "/"
 
-    if isSinglePart:
-        singlePartLabel = "_singlePart"
-        input = input.replace("EVTS_PER_JOB", "5000")
+    if leadingVertexOnly:
+        singlePartLabel = "_leadVtx"
+        input = input.replace("EVTS_PER_JOB", "1500")
     else:
         singlePartLabel = ""
-        input = input.replace("EVTS_PER_JOB", "1500")
+        input = input.replace("EVTS_PER_JOB", "4000")
 
     if isGsf:
         gsfLabel = "_gsf"
@@ -61,7 +61,7 @@ def create_crab_cfg_from_template(template, varstr, dataset, datasetname, isSing
     out_name = outdir + "crab_" + varstr + "_" + dataset +  gsfLabel + ".cfg"
     write_outfile(input, out_name)
 
-def create_cmssw_cfg_from_template(template, varstr, isSinglePart, isGSF=True, outdir = "", mode = "batch", isGsf=True, dataset = "", infiles = [], infiles_sec = []):
+def create_cmssw_cfg_from_template(template, varstr, leadingVertexOnly, isGSF=True, outdir = "", mode = "batch", isGsf=True, dataset = "", infiles = [], infiles_sec = []):
     """
     template -- template file name
     varstr -- string of variables and their values, separated by _
@@ -79,7 +79,7 @@ def create_cmssw_cfg_from_template(template, varstr, isSinglePart, isGSF=True, o
     input = input.replace("NSIGMA", varstr.rsplit("nSigma_")[1].rsplit("_")[0] )
     input = input.replace("ISGSF", str(isGSF))
     input = input.replace("GSFLABEL", gsfLabel)
-    input = input.replace("ISSINGLEPART", str(isSinglePart))
+    input = input.replace("LEADINGVERTEXONLY", str(leadingVertexOnly))
 
     #    if mode == "crab":
     #        input = input.replace("OUTFILENAME", " 'trackValTree_reTrk.root' ")
@@ -90,8 +90,8 @@ def create_cmssw_cfg_from_template(template, varstr, isSinglePart, isGSF=True, o
         input = input.replace("INFILELIST", str(infiles))
         input = input.replace("SECFILELIST", str(infiles_sec))
 
-    if isSinglePart:
-        varstr = varstr+"_singlePart"
+    if leadingVertexOnly:
+        varstr = varstr+"_leadVtx"
 
     if isGsf:
         varstr = varstr+"_gsf"
@@ -130,7 +130,7 @@ def create_check_timing_script(cmssw_cfg_file):
 
     out_file.write("#!/bin/bash\n\n")
 #    out_file.write('cd ./input_timing \n')
-    out_file.write('cd /afs/cern.ch/user/l/liis/scratch0/tracking/el_track/rereco/CMSSW/src/TestReReco/submission_scripts/timing/input_timing \n')
+    out_file.write('cd ${CMSSW_BASE}/src/TestReReco/submission_scripts/timing/input_timing \n')
 
     out_file.write('timingdir=timing_' + cutstr + '_' +'"$(date +"%s")" \n') #create the timestamp at execution
 

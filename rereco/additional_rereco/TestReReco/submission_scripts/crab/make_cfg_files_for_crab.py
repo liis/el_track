@@ -10,15 +10,16 @@ is_gsf = True
 
 tracking_cfg_parameters = dict()
 # Chi2 scan
-tracking_cfg_parameters["maxCand"] = [5, 5, 5, 5, 5, 5, 5, 5, 5 ]
-tracking_cfg_parameters["maxChi2"] = [2, 5, 8, 10, 30, 50, 100, 300, 2000]
+tracking_cfg_parameters["maxCand"] = [5, 5, 5, 5, 5, 5, 5, 5 ]
+tracking_cfg_parameters["maxChi2"] = [5, 10, 20, 30, 50, 100, 300, 2000]
 #tracking_cfg_parameters["maxChi2"] = [2, 3, 5, 7]
-tracking_cfg_parameters["nSigma"] = [3, 3, 3, 3, 3, 3, 3, 3, 3 ]
+tracking_cfg_parameters["nSigma"] = [3, 3, 3, 3, 3, 3, 3, 3 ]
+
 
 # Max cand scan
-tracking_cfg_parameters["maxCand"] += [1, 2, 3, 4, 6, 7]
-tracking_cfg_parameters["maxChi2"] += [2000, 2000, 2000, 2000, 2000, 2000]
-tracking_cfg_parameters["nSigma"] += [3, 3, 3, 3, 3, 3]
+#tracking_cfg_parameters["maxCand"] += [1, 2, 3, 4, 6, 7]
+#tracking_cfg_parameters["maxChi2"] += [2000, 2000, 2000, 2000, 2000, 2000]
+#tracking_cfg_parameters["nSigma"] += [3, 3, 3, 3, 3, 3]
 
 # nSigma scan
 #tracking_cfg_parameters["maxCand"] += [5, 5, 5, 5, 5]
@@ -32,23 +33,32 @@ datasets = {
 #    "FlatPt": "/SingleElectronFlatPt_GENRAW/liis-SingleElectronFlatPt_RECO-b0d97c8144eaac9090ed0cd9df0f13de/USER",
 #    "Pt10": "/SingleElectronPt10_GENRAW/liis-SingleElectronPt10_RECO-b0d97c8144eaac9090ed0cd9df0f13de/USER",
 #    "Pt100": "/SingleElectronPt100_GENRAW/liis-SingleElectronPt100_RECO-b0d97c8144eaac9090ed0cd9df0f13de/USER",
-    "Zee": "/DYJetsToLL_M-50_13TeV-pythia6/phys_egamma-EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1-ffac44eb0cb582bdcc6ecfb3c5f327a8/USER",
+#    "Zee": "/DYJetsToLL_M-50_13TeV-pythia6/phys_egamma-EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1-ffac44eb0cb582bdcc6ecfb3c5f327a8/USER",
+    "Zee_full": "/RelValDYJetsToLL/CMSSW_7_1_2-PU50ns_START71_V8A_rundep_dvmc-v7/GEN-SIM-DIGI-RAW-HLTDEBUG",
     }
+
+
+
+cfg_template_file="../templates/makeTrackValTree_reTracking_crab_template.py"
 
 outdir = "./input_crab"
 for varstr in varstrings:
     for dataset in datasets:
         if dataset == "Zee":
-            isSinglePart=False
+            leadingVertexOnly=True # choose only leading vertex (because others not matched to TP)
         else:
-            isSinglePart=True
-            
-        create_cmssw_cfg_from_template("../templates/makeTrackValTree_reTracking_crab_template.py", varstr, isSinglePart, isGsf=is_gsf, outdir=outdir, mode = "crab")
-#        create_cmssw_cfg_from_template("../templates/makeTrackValTree_reTracking_crab_template.py", varstr+"_gsf", isSinglePart, isGSF=True, outdir=outdir, mode = "crab")
+            leadingVertexOnly=False 
+        if dataset == "Zee_full":
+            cfg_template_file="../templates/makeTrackValTree_reTracking_fullRereco_crab_template.py"
+            crab_template_file="../templates/crab_template_fullRereco.cfg"
+        else:
+            cfg_template_file="../templates/makeTrackValTree_reTracking_crab_template.py"
+            crab_template_file="../templates/crab_template.cfg"
 
+        create_cmssw_cfg_from_template(cfg_template_file, varstr, leadingVertexOnly, isGsf=is_gsf, outdir=outdir, mode = "crab")
         #--- create crab.cfg files
-        create_crab_cfg_from_template("../templates/crab_template.cfg", varstr, dataset, datasets[dataset], isSinglePart, isGsf=is_gsf, outdir = outdir)
- #       create_crab_cfg_from_template("../templates/crab_template.cfg", varstr+"_gsf", dataset, datasets[dataset], isSinglePart, outdir = outdir)
+        create_crab_cfg_from_template(crab_template_file, varstr, dataset, datasets[dataset], leadingVertexOnly, isGsf=is_gsf, outdir = outdir)
+
 
 
         

@@ -132,7 +132,7 @@ class MakeTrackValTree : public edm::EDAnalyzer {
   int gen_matched_rec_nhits_[MAXPART];
   double pt_pull_[MAXPART], theta_pull_[MAXPART], phi_pull_[MAXPART], dxy_pull_[MAXPART], dz_pull_[MAXPART], qoverp_pull_[MAXPART]; 
 
-  bool is_gsf_, is_single_part_;
+  bool is_gsf_, leading_vertex_only_;
   edm::InputTag track_label_gsf_, track_label_, el_seed_label_;
 
   std::vector<std::string> trackerContainers;
@@ -157,7 +157,7 @@ MakeTrackValTree::MakeTrackValTree(const edm::ParameterSet& iConfig):
 {
    //now do what ever initialization is needed
   is_gsf_ = iConfig.getParameter<bool>("isGSF");
-  is_single_part_ = iConfig.getParameter<bool>("isSinglePart");
+  leading_vertex_only_ = iConfig.getParameter<bool>("leadingVertexOnly");
   track_label_gsf_ = iConfig.getParameter<edm::InputTag>("trackLabelGSF");
   track_label_ = iConfig.getParameter<edm::InputTag>("trackLabel");
   el_seed_label_ = iConfig.getParameter<edm::InputTag>("elSeedLabel");
@@ -746,7 +746,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   
    if( PV_points.size() ) //write vertex that is closest in dz to the leading TrackingVertex
      leading_PV_point = PV_points[leading_pv_index];
-   else if(is_single_part_) // accept all vertices for singleParticle samples later, here use placeholder
+   else if(!leading_vertex_only_) // accept all vertices for singleParticle samples later, here use placeholder
      leading_PV_point.SetXYZ(0,0,0);
    else{
      leading_PV_point.SetXYZ(1000,1000,1000);
@@ -930,7 +930,7 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
      // std::cout<<"LEADING PV point dz distance to track = " <<track->dz(leading_PV_point) <<std::endl;
      //std::cout<<"Closest PV point dz distance to track = " <<track->dz(PV_point) <<std::endl;
 
-     if( is_single_part_ || fabs( track->dz(leading_PV_point) - track->dz(PV_point) ) < 0.001 ){ //choose tracks from leading vertex (workaround for missing PU tracking particles)
+     if( !leading_vertex_only_ || fabs( track->dz(leading_PV_point) - track->dz(PV_point) ) < 0.001 ){ //choose tracks from leading vertex (workaround for missing PU tracking particles)
 
        //std::cout<<"Found reco track with pt = " << track->pt() << " eta = " << track->eta() << ", dz leadPV = "<<track->dz(leading_PV_point) <<std::endl;
      
@@ -978,6 +978,13 @@ MakeTrackValTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    //   for( edm::View<reco::ElectronSeed>::const_iterator it_seed = elSeedCollection->begin(); it_seed != elSeedCollection->end(); it_seed++){
    //  TrajectorySeed::range rechits = it_seed->recHits(); //get recHits associated to the seed
    // } //FIXME add fake seeds
+
+
+   // -------------------- reconstructed Z->ee mass --------------------------
+
+   
+   
+
 
 
    trackValTree_->Fill();

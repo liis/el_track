@@ -9,6 +9,8 @@ INDIR=$1 #directory of the crab output directories with root-files
 OUTDIR=$2 #specify directory, where to put the crab output *.root files
 #OUTDIR=output_crab 
 
+IS_PSI=1 #need to copy locally first
+
 OVERWRITE=1 
 GET_FROM_STORAGE=1 #look for crab_0 directories (0) or not (1)
 
@@ -19,7 +21,7 @@ cd $INDIR
 INDIR=`pwd`
 
 echo "looking for crab output directories in "$INDIR
-CRABDIRNAME=FlatPt #part of directory name to search
+CRABDIRNAME=Zee #part of directory name to search
 CRABDIRS=`find $INDIR -name "*$CRABDIRNAME*"`
 
 cd -
@@ -39,9 +41,22 @@ for CRABDIR in $CRABDIRS; do
     
     if [ -e $OUTPATH ] && [ ! $OVERWRITE = 1 ]; then
 	echo "File exists, skipping"
+    elif [ IS_PSI ]; then # this is impossibly slow!
+	echo "Working at PSI: copy files and hadd locally"
+
+	TMPDIR=$OUTDIR/`basename $CRABDIR`
+	if [ ! -e $TMPDIR ]; then
+	    mkdir $TMPDIR
+	fi
+	for ROOTFILE in `ls $CRABDIR`; do
+	#	    echo "srmcp -2 "srm://t3se01.psi.ch:8443/srm/managerv2?SFN="$CRABDIR/$ROOTFILE file:///$TMPDIR/`basename $ROOTFILE`"
+	    srmcp -2 "srm://t3se01.psi.ch:8443/srm/managerv2?SFN="$CRABDIR/$ROOTFILE file:///$TMPDIR/`basename $ROOTFILE`
+	done
+	hadd -f $OUTPATH $TMPDIR/*.root
+	rm -r $TMPDIR
     else
 	echo "Writing merged histograms to:"$OUTPATH 
 	hadd -f $OUTPATH $INPATH/*.root
-   fi
+    fi
 
 done

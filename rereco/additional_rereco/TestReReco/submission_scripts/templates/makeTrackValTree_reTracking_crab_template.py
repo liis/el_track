@@ -169,16 +169,17 @@ process.ValidationSelectors = cms.Sequence(
 #--------------------------- tree maker --------------------------
 process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi") # for writing output to a flat tree
 process.trackValTreeMaker.isGSF = cms.bool(ISGSF)
-process.trackValTreeMaker.isSinglePart = cms.bool(ISSINGLEPART)
+process.trackValTreeMaker.leadingVertexOnly = cms.bool(LEADINGVERTEXONLY)
 
 if process.trackValTreeMaker.isGSF:
     print "Running analysis on electron GSF tracks"
 else:
     print "Running analysis on generalTracks"
-if process.trackValTreeMaker.isSinglePart:
-    print "Assume SingleParticle datast and skip matching to leading vertex"
-else:
+
+if process.trackValTreeMaker.leadingVertexOnly:
     print "Require reco tracks to originate from the leading vertex"
+else:
+    print "Skip matching to leading vertex"
 
 process.load("SimGeneral.TrackingAnalysis.simHitTPAssociation_cfi")
 process.preValidation = cms.Sequence(

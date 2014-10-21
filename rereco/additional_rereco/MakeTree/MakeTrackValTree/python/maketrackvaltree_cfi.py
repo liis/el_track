@@ -36,7 +36,7 @@ trackValTreeMaker = cms.EDAnalyzer('MakeTrackValTree',
                                    TrackingParticleSelectionForEfficiency, # default tracking particle selection tresholds
                                    
                                    isGSF = cms.bool(True),
-                                   isSinglePart = cms.bool(False),
+                                   leadingVertexOnly = cms.bool(False),
                                    trackLabelGSF = cms.InputTag("electronGsfTracks"),
                                    trackLabel = cms.InputTag("generalTracks"),
                                    elSeedLabel = cms.InputTag("electronMergedSeeds"),                      

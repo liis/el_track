@@ -1,3 +1,0 @@
--jobtype=cmssw
--cfg=crab_genraw.cfg
--scheduler=remoteGlidein

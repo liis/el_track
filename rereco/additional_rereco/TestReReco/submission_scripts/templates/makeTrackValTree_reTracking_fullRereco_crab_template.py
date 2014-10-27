@@ -72,7 +72,7 @@ print process.GlobalTag.globaltag #update automatically
 process.load("CondCore.DBCommon.CondDBSetup_cfi")
 
 from SimGeneral.MixingModule.trackingTruthProducer_cfi import *
-process.TrajectoryBuilderForElectrons.estimator = cms.string('Chi2') #comment out for an alternative trajectory finder
+#process.TrajectoryBuilderForElectrons.estimator = cms.string('Chi2') #comment out for an alternative trajectory finder
 # 'Chi2A' -- separate costum producer defined in /TrackingTools/KalmanUpdators/python/Chi2MeasurementEstimatorESProducer_cfi.py
 # TrajectoryBuilderForElectrons -- defined at TrackingTools/GsfTracking/python/CkfElectronCandidateMaker_cff.py: TrajectoryBuilderForElectrons =RecoTracker.CkfPattern.CkfTrajectoryBuilder_cfi.CkfTrajectoryBuilder.clone()
 

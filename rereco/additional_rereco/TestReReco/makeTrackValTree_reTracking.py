@@ -18,7 +18,7 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 # message logger
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 1
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(500) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(200) )
 
 #process.Timing = cms.Service("Timing")
 
@@ -53,12 +53,14 @@ source = cms.Source ("PoolSource",
         #    '/store/user/liis/GSF_tracking_samples/RelValZll_HLTDEBUG_PU50/00E5A57A-3D13-E411-99D5-0025905A6076.root'
         ###########################################
         
-        'file:test2_sam.root' ## the last one
-        #    'file:../EvtGeneration/SingleElectronPt10_RECO.root'
+#        'file:test2_sam.root' ## the last one
+#        'file:../EvtGeneration/samtest_reco.root'
         #    'file:rawToReco.root'
         # -------- Zee produced by sam ----------------
-        #        '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_101_1_Fsb.root',
-        #        '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_100_2_qzC.root',
+        'file:../EvtGeneration/zeetest_reco.root'
+
+#                '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_101_1_Fsb.root',
+#                '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_100_2_qzC.root',
         #        '/store/group/phys_egamma/sharper/DYJetsToLL_M-50_13TeV-pythia6/EGM711_PU40bx25_POSTLS171_V11_RECODEBUG-v1/ffac44eb0cb582bdcc6ecfb3c5f327a8/DYJetsToLL_M-50_13TeV-pythia6_EGM711_PU40bx25_POSTLS171_V11-v1_102_1_VzM.root',
         #-----------------------------------------------
         #        'file:SingleElectronPt10_RECO.root'   
@@ -77,16 +79,18 @@ process.load("CondCore.DBCommon.CondDBSetup_cfi")
 
 from SimGeneral.MixingModule.trackingTruthProducer_cfi import *
 
-process.TrajectoryBuilderForElectrons.estimator = cms.string('Chi2') #comment out for an alternative trajectory finder
+#process.TrajectoryBuilderForElectrons.estimator = cms.string('Chi2') #comment out for an alternative trajectory finder
 # 'Chi2A' -- separate costum producer defined in /TrackingTools/KalmanUpdators/python/Chi2MeasurementEstimatorESProducer_cfi.py
 # TrajectoryBuilderForElectrons -- defined at TrackingTools/GsfTracking/python/CkfElectronCandidateMaker_cff.py: TrajectoryBuilderForElectrons =RecoTracker.CkfPattern.CkfTrajectoryBuilder_cfi.CkfTrajectoryBuilder.clone()
+## ---- !!! if this is uncommented, normal overwriting of tracking parameters doesn't work !!! -----
+
 
 maxCandDefault = 5
 maxChi2Default = 2000
 nSigmaDefault = 3.0
 
 maxCand = maxCandDefault
-maxChi2 =maxChi2Default
+maxChi2 = 20 #maxChi2Default
 nSigma = nSigmaDefault
 
 ########################################################################
@@ -140,7 +144,7 @@ process.myGsfReco = cms.Sequence(
     )
 
 outdir = "out_tests/"
-outfilename = "trackValTree_reTrk.root"
+outfilename = "trackValTree_reTrk_newtry2.root"
 print "Writing output to file: " + outfilename
 
 process.TFileService = cms.Service("TFileService", # if save
@@ -166,7 +170,7 @@ process.ValidationSelectors = cms.Sequence(
 
 #--------------------------- tree maker --------------------------
 process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi") # for writing output to a flat tree
-process.trackValTreeMaker.isGSF = cms.bool(False)
+process.trackValTreeMaker.isGSF = cms.bool(True)
 process.trackValTreeMaker.leadingVertexOnly = cms.bool(False) # consider only tracks from the leading vertex (needed for Zee sample without the PU tracking particles)
 
 if process.trackValTreeMaker.isGSF:

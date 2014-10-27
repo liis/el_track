@@ -81,7 +81,7 @@ maxChi2Default = 2000
 nSigmaDefault = 3.0
 
 maxCand = maxCandDefault
-maxChi2 = maxChi2Default
+maxChi2 = 1 #maxChi2Default
 nSigma = nSigmaDefault
 
 ########################################################################
@@ -191,11 +191,11 @@ process.myGsfReco = cms.Sequence(
 #    *process.mixedTripletStep #Clusters
  #   *process.pixelLessStepClusters
 
-#    *process.electronSeedsSeq #ADD
-#    *process.electronGsfTracking
-#    *process.electronSeeds    #produced merged collection of TkDriven and Ecaldriven seeds
-#    *process.electronCkfTrackCandidates
-#    *process.electronGsfTracks #run electron tracking
+    *process.electronSeedsSeq #ADD
+    *process.electronGsfTracking
+    *process.electronSeeds    #produced merged collection of TkDriven and Ecaldriven seeds
+    *process.electronCkfTrackCandidates
+    *process.electronGsfTracks #run electron tracking
 
 #--------- Full electron reconstruction --------    
 
@@ -222,7 +222,7 @@ process.myGsfReco = cms.Sequence(
 
 outdir = "out_tests/"
 #outfilename = outdir + "reGsfTracking_maxCand_" + str(maxCand) + "_MaxChi2_" + str(maxChi2) + "_nSigma_" + str(nSigma) + ".root"
-outfilename = "trackValTree_reTrk.root"
+outfilename = "trackValTree_reTrk_1.root"
 print "Writing output to file: " + outfilename
 
 process.TFileService = cms.Service("TFileService", # if save
@@ -258,7 +258,7 @@ process.zeeFilter = cms.EDFilter("XtoFFbarFilter",
 
 #--------------------------- tree maker --------------------------
 process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi") # for writing output to a flat tree
-process.trackValTreeMaker.isGSF = cms.bool(False)
+process.trackValTreeMaker.isGSF = cms.bool(True)
 process.trackValTreeMaker.leadingVertexOnly = cms.bool(False)
 
 if process.trackValTreeMaker.isGSF:

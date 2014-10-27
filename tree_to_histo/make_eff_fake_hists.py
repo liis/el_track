@@ -60,7 +60,7 @@ minsimhit = 0
 maxsimhit = 25
 
 xbinspt = log_binning(npt,minpt,maxpt) #log binning for pt histograms
-xbinspt_res = log_binning(50, minpt, 100) #slightly smaller region for resolution hists (otherwise difficlut to fit at high pt)
+xbinspt_res = log_binning(50, minpt, maxpt) #slightly smaller region for resolution hists (otherwise difficlut to fit at high pt)
 
 eta_regions = ["barrel", "trans", "endcap"]
 #seed_vars = ["gen_matchedSeedOkCharge", "gen_matchedSeedQuality"]
@@ -209,8 +209,10 @@ efficiency_histograms["h_eff_wrt_seed_eta"] = fill_hist_ratio(simeta_hists["sim_
 efficiency_histograms["h_eff_seed_charge_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedSeedCharge"], simeta_hists["sim_eta_matchedSeed"], "eff_seed_charge_eta")
 efficiency_histograms["h_eff_wrt_seed_charge_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrackCharge_matchedSeedCharge"], simeta_hists["sim_eta_matchedTrack_matchedSeedCharge"], "eff_wrt_seed_charge_eta") 
 efficiency_histograms["h_eff_charge_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrackCharge"], simeta_hists["sim_eta_matchedTrack"], "eff_charge_eta")
+efficiency_histograms["h_eff_charge_full_eta"] = fill_hist_ratio(simeta_hists["sim_eta_matchedTrackCharge"], simeta_hists["sim_eta"], "eff_charge_full_eta")
                                                                      
 efficiency_histograms["h_eff_eta_sim"] = fill_hist_ratio(simeta_hists["sim_eta_simmatchedTrack"], simeta_hists["sim_eta"], "eff_eta_sim")
+
 
 for region in eta_regions:
     efficiency_histograms["h_eff_pt" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrack_" + region], simpt_hists["sim_pt_" + region], "eff_pt_" + region, binning="log")
@@ -220,6 +222,7 @@ for region in eta_regions:
     efficiency_histograms["h_eff_seed_charge_pt_" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedSeedCharge_" + region], simpt_hists["sim_pt_matchedSeed_" + region], "eff_seed_charge_pt_" + region, binning = "log")
     efficiency_histograms["h_eff_wrt_seed_charge_pt_" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrackCharge_matchedSeedCharge_" + region], simpt_hists["sim_pt_matchedTrack_matchedSeedCharge_"+region], "eff_wrt_seed_charge_pt_" + region, binning = "log")
     efficiency_histograms["h_eff_charge_pt_" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrackCharge_" + region], simpt_hists["sim_pt_matchedTrack_" + region], "eff_charge_pt_" + region, binning = "log")
+    efficiency_histograms["h_eff_charge_full_pt_" + region] = fill_hist_ratio(simpt_hists["sim_pt_matchedTrackCharge_" + region], simpt_hists["sim_pt_" + region], "eff_charge_full_pt_" + region, binning = "log")
     
     efficiency_histograms["h_eff_pt_sim" + region] = fill_hist_ratio(simpt_hists["sim_pt_simmatchedTrack_" + region], simpt_hists["sim_pt_" + region], "eff_pt_sim_" + region, binning="log")
 

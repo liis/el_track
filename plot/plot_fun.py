@@ -156,7 +156,10 @@ def draw_legend(hists, pos = "down_right"):
     hist - dictionary of process names and histograms
     """
     if pos == "down_right":
-        leg = ROOT.TLegend(0.55,0.5,0.95,0.29);
+        leg = ROOT.TLegend(0.55,0.4,0.95,0.19);
+
+    if pos == "down_left":
+        leg = ROOT.TLegend(0.2, 0.4, 0.45, 0.19)
 
     if pos == "up_right":
         leg = ROOT.TLegend(0.55, 0.7, 0.95, 0.89);
@@ -198,7 +201,7 @@ def draw_and_save_res(hists68, hists95, var, resvar, selection_string, is_gsf, o
     if var == "eta":
         xtitle = "#eta"
     if var == "pt":
-        c.SetLogx()
+#        c.SetLogx()
         xtitle = "p_{T}"
 
     ytitle = "Resolution in " + res_map[resvar][0]
@@ -214,7 +217,8 @@ def draw_and_save_res(hists68, hists95, var, resvar, selection_string, is_gsf, o
     if(is_gsf):
         GSFstr = "_GSF"
             
-    c.SaveAs(outdir +"/resolution_" + var + "_" + selection_string + "_" + resvar + GSFstr + ".png")
+#    c.SaveAs(outdir +"/resolution_" + var + "_" + selection_string + "_" + resvar + GSFstr + ".png")
+    c.SaveAs(outdir +"/resolution_" + var + "_" + selection_string + "_" + resvar + GSFstr + ".pdf")
     c.Close()
 
         
@@ -249,6 +253,8 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, outdir, label = "", leg_pos 
         ytitle = "Reco wrt seeding efficiency"
     elif eff_fake =="eff_charge":
         ytitle= "Charge efficiency"
+    elif eff_fake == "eff_charge_full":
+        ytitle = "Efficiency with correct charge"
     elif eff_fake == "eff_seed_charge":
         ytitle= "Seed charge efficiency"
     elif eff_fake == "eff_wrt_seed_charge":
@@ -285,7 +291,8 @@ def draw_and_save_eff(hists, var, eff_fake, is_gsf, outdir, label = "", leg_pos 
     if logy:
         c.SetLogy()
 
-    c.SaveAs(outdir + "/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")    
+#    c.SaveAs(outdir + "/" + eff_fake + "_" + var + "_" + label + GSFstr + ".png")
+    c.SaveAs(outdir + "/" + eff_fake + "_" + var + "_" + label + GSFstr + ".pdf")    
     c.Close()
 
 

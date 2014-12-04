@@ -20,7 +20,7 @@ indir = args.indir #"../tree_to_histo/histograms/" #location of input histograms
 print "Opening input files from " + indir
 
 is_gsf = 1
-outdir="./out_plots_paramScans/13TeV_131014_eff"
+outdir="./out_plots_paramScans/13TeV_231014_eff"
 #--------- run over all combinations of parameter values in list of input files, have multiple values for only 1 parameter for comparisons ----------
 
 parameters_maxCand = {
@@ -33,7 +33,8 @@ parameters_maxCand = {
 parameters_maxChi2 = {
 #    "maxChi2": [10, 30, 50, 100, 300, 2000],
 #    "maxChi2": [2, 3, 5, 7, 10, 30, 50, 100, 300, 2000],
-    "maxChi2": [2, 5, 8, 10, 30, 50, 100, 300, 2000],
+#    "maxChi2": [2, 5, 8, 10, 30, 50, 100, 300, 2000], # last old Zee
+    "maxChi2": [5, 10, 20, 30, 50, 100, 300, 2000], # 1st test with new Zee
     "nSigma": [3],
     "maxCand": [5]
      }
@@ -53,9 +54,9 @@ parameters_test = {
 }
 
 parameter_sets = [
-    parameters_maxCand,
+#    parameters_maxCand,
     parameters_maxChi2,
-    parameters_nSigma,
+#    parameters_nSigma,
 #  parameters_test,
     ]
 
@@ -63,7 +64,8 @@ input_files = [
 #    "Pt10",
 #    "Pt100",
 #    "FlatPt",
-    "Zee"
+#    "Zee",
+    "Zee_full"
 ]
 
 infilenames = {} # filenames
@@ -80,6 +82,7 @@ for parameters in parameter_sets:
     eff_wrt_seed_eta = {}
 
     eff_charge_eta = {}
+    eff_charge_full_eta = {}
     eff_seed_charge_eta = {}
     eff_wrt_seed_charge_eta ={}
 
@@ -90,6 +93,7 @@ for parameters in parameter_sets:
     eff_wrt_seed_pt = {}
 
     eff_charge_pt = {}
+    eff_charge_full_pt = {}
     eff_seed_charge_pt = {}
     eff_wrt_seed_charge_pt = {}
 
@@ -111,6 +115,7 @@ for parameters in parameter_sets:
             eff_seed_eta[input_file] = dict()
 
             eff_charge_eta[input_file] = dict()
+            eff_charge_full_eta[input_file] = dict()
             eff_wrt_seed_charge_eta[input_file] = dict()
             eff_seed_charge_eta[input_file] = dict()
 
@@ -122,6 +127,7 @@ for parameters in parameter_sets:
                 eff_seed_eta[input_file][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_seed_eta")
                 
                 eff_charge_eta[input_file][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_charge_eta")
+                eff_charge_full_eta[input_file][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_charge_full_eta")
                 eff_wrt_seed_charge_eta[input_file][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_wrt_seed_charge_eta")
                 eff_seed_charge_eta[input_file][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_seed_charge_eta")
                 
@@ -140,6 +146,7 @@ for parameters in parameter_sets:
                 eff_seed_pt[input_file + "_" + eta_region] = dict()
 
                 eff_charge_pt[input_file + "_" + eta_region] = dict()
+                eff_charge_full_pt[input_file + "_" + eta_region] = dict()
                 eff_wrt_seed_charge_pt[input_file + "_" + eta_region] = dict()
                 eff_seed_charge_pt[input_file + "_" + eta_region] = dict()
 
@@ -153,6 +160,7 @@ for parameters in parameter_sets:
                     eff_seed_pt[input_file + "_" + eta_region][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_seed_pt_" + eta_region)
 
                     eff_charge_pt[input_file + "_" + eta_region][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_charge_pt_" + eta_region)
+                    eff_charge_full_pt[input_file + "_" + eta_region][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_charge_full_pt_" + eta_region)
                     eff_wrt_seed_charge_pt[input_file + "_" + eta_region][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_wrt_seed_charge_pt_" + eta_region)
                     eff_seed_charge_pt[input_file + "_" + eta_region][cutstring] = infiles[input_file][cutstring].Get("efficiencies/eff_seed_charge_pt_" + eta_region)
 
@@ -182,6 +190,8 @@ for parameters in parameter_sets:
             
             
             draw_and_save_eff(eff_charge_eta[input_file], "eta", "eff_charge", is_gsf=is_gsf, outdir=outdir, label=sel_str+"_" + input_file, leg_pos="down_right", title=input_file, ymin=0.95)
+            draw_and_save_eff(eff_charge_full_eta[input_file], "eta", "eff_charge_full", is_gsf=is_gsf, outdir=outdir, label=sel_str+"_" + input_file, leg_pos="down_right", title=input_file, ymin=0.5)
+
             draw_and_save_eff(eff_seed_charge_eta[input_file],"eta", "eff_seed_charge", is_gsf=is_gsf, outdir=outdir, label=sel_str+"_"+input_file, leg_pos="down_right",title=input_file, ymin=0.7)
             draw_and_save_eff(eff_wrt_seed_charge_eta[input_file],"eta", "eff_wrt_seed_charge", is_gsf=is_gsf, outdir=outdir, label=sel_str+"_"+input_file, leg_pos="down_right",title=input_file, ymin=0.95)
             
@@ -197,6 +207,8 @@ for parameters in parameter_sets:
                 draw_and_save_eff(eff_wrt_seed_pt[input_file + "_" + eta_region], "pt", "eff_wrt_seed", is_gsf=is_gsf, outdir=outdir, label=sel_str+"_" + input_file + "_" + eta_region, leg_pos="down_right", title=eta_region + " , " + input_file)
                 
                 draw_and_save_eff(eff_charge_pt[input_file + "_" + eta_region], "pt", "eff_charge", is_gsf=is_gsf, outdir=outdir, label=sel_str+"_"+input_file+"_"+eta_region, leg_pos="down_right", title=eta_region + ", " + input_file, ymin=0.95)
+                draw_and_save_eff(eff_charge_full_pt[input_file + "_" + eta_region], "pt", "eff_charge_full", is_gsf=is_gsf, outdir=outdir, label=sel_str+"_" + input_file+"_"+eta_region, leg_pos="up_left", title=eta_region + ", " + input_file, ymin=0.5)
+                                  
                 draw_and_save_eff(eff_seed_charge_pt[input_file + "_" + eta_region], "pt", "eff_seed_charge", is_gsf=is_gsf, outdir=outdir, label=sel_str+"_"+input_file+"_"+eta_region, leg_pos="down_right", title=eta_region + ", " + input_file, ymin=0.5)
                 draw_and_save_eff(eff_wrt_seed_charge_pt[input_file + "_" + eta_region], "pt", "eff_wrt_seed_charge", is_gsf=is_gsf, outdir=outdir, label=sel_str+"_"+input_file+"_"+eta_region, leg_pos="down_right", title=eta_region + ", " + input_file, ymin=0.95)
                 

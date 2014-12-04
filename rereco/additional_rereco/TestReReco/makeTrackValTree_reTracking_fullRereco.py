@@ -109,8 +109,7 @@ process.elTracksWithQuality = process.selectHighPurity.clone(
 
 # sequence for re-running gsfTracking over RECO
 process.myGsfReco = cms.Sequence(
-    #---- try to run on RelVal HLTDEBUG ----
-  
+    #---- try to run on RelVal HLTDEBUG ----  
     process.siPixelDigis
     *process.siStripDigis
     *process.ecalPreshowerDigis
@@ -130,9 +129,7 @@ process.myGsfReco = cms.Sequence(
     *process.muonCSCDigis
     *process.muonRPCDigis
     *process.csctfDigis
-
     # ------------------------------
-
 ##    *process.offlineBeamSpot
 ##    *process.siStripZeroSuppression
 ##    *process.siStripClusters
@@ -141,9 +138,7 @@ process.myGsfReco = cms.Sequence(
 ##    *process.particleFlowClusterPS
 ##    *process.pfClusteringECAL #used to segfault due to wrong geometry
 
-
-##########################
-        
+##########################        
     #------------ standard ------------------
 ##    *process.siPixelRecHits
 ##   *process.siStripMatchedRecHits #make local hits
@@ -191,11 +186,11 @@ process.myGsfReco = cms.Sequence(
 #    *process.mixedTripletStep #Clusters
  #   *process.pixelLessStepClusters
 
-    *process.electronSeedsSeq #ADD
-    *process.electronGsfTracking
-    *process.electronSeeds    #produced merged collection of TkDriven and Ecaldriven seeds
-    *process.electronCkfTrackCandidates
-    *process.electronGsfTracks #run electron tracking
+#    *process.electronSeedsSeq #ADD
+#    *process.electronGsfTracking
+#    *process.electronSeeds    #produced merged collection of TkDriven and Ecaldriven seeds
+#    *process.electronCkfTrackCandidates
+#    *process.electronGsfTracks #run electron tracking
 
 #--------- Full electron reconstruction --------    
 
@@ -214,10 +209,8 @@ process.myGsfReco = cms.Sequence(
 #    *process.ecalDrivenGsfElectronCores
 #    *process.ecalDrivenGsfElectrons
 #    *process.gsfElectrons
-#-------------------------------------------------
- 
-#    *process.elTracksWithQuality
-    
+#------------------------------------------------- 
+#    *process.elTracksWithQuality    
 )
 
 outdir = "out_tests/"
@@ -254,7 +247,6 @@ process.zeeFilter = cms.EDFilter("XtoFFbarFilter",
                         idMotherY = cms.vint32(),
                         idDaughterG = cms.vint32(),
                         )
-
 
 #--------------------------- tree maker --------------------------
 process.load("MakeTree.MakeTrackValTree.maketrackvaltree_cfi") # for writing output to a flat tree
